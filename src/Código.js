@@ -1,6 +1,7 @@
 /**
  * This function builds the homepage card for the Add-on.
  * It will run whenever the Add-on is opened in Drive or Sheets.
+ * @param {number} e 
  */
 function buildHelloWorldCard(e) {
     // 1. Create a text widget

@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "lib": [
+            "es2023"
+        ]
+    },
+    "include": [
+        "src/*.js"
+    ]
+}
