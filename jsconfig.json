@@ -6,6 +6,10 @@
         ]
     },
     "include": [
-        "src/*.js"
+        "src/**/*.js",
+        "types/**/*.d.ts"
+    ],
+    "exclude": [
+        "node_modules"
     ]
 }

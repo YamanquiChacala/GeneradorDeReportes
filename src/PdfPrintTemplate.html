@@ -439,6 +439,8 @@
     <div class="footer big">
         <div class="address">
             <b>Montessori Chacala</b>
+            C.C.T. Preescolar: 18PJN0157K<br />
+            C.C.T. Primaria: 18PPR0093G<br />
             C.C.T. Secundaria: 18PES0053Z<br />
             T: (327) 219-4011 / info@chacala.school
         </div>
@@ -478,19 +480,19 @@
                     </th>
                 </tr>
                 <tr>
-                    <th>
+                    <th style="min-width: 7em;">
                         <?= data.period ?>
                     </th>
-                    <? if (data.absences) { ?>
-                    <th>
+                    <? if (data.absences === undefined) { ?>
+                    <th colspan="2">
+                        <?= data.date ?>
+                    </th>
+                    <? } else { ?>
+                    <th style="min-width: 4.4em;">
                         Faltas:
                         <?= data.absences ?>
                     </th>
                     <th>
-                        <?= data.date ?>
-                    </th>
-                    <? } else { ?>
-                    <th colspan="2">
                         <?= data.date ?>
                     </th>
                     <? } ?>
@@ -499,11 +501,11 @@
                     <th colspan="3" class="seaparation"></th>
                 </tr>
                 <tr>
-                    <? if (data.absences) { ?>
-                    <th colspan="2" style="width: 20%;">Asignatura</th>
-                    <? } else { ?>
+                    <? if (data.absences === undefined) { ?>
                     <th style="width: 20%;">Asignatura</th>
                     <th style="width: 5%;">Faltas</th>
+                    <? } else { ?>
+                    <th colspan="2" style="width: 20%;">Asignatura</th>
                     <? } ?>
                     <th>Comentarios del Docente</th>
                 </tr>
@@ -512,7 +514,14 @@
             <tbody>
                 <? data.courses.forEach(function(course) { ?>
                 <tr>
-                    <? if (course.absences) { ?>
+                    <? if (course.absences === undefined) { ?>
+                    <td colspan="2">
+                        <b>
+                            <?= course.name ?>
+                        </b>
+                    </td>
+
+                    <? } else { ?>
                     <td>
                         <b>
                             <?= course.name ?>
@@ -521,12 +530,6 @@
                     <td>
                         <b>
                             <?= course.absences ?>
-                        </b>
-                    </td>
-                    <? } else { ?>
-                    <td colspan="2">
-                        <b>
-                            <?= course.name ?>
                         </b>
                     </td>
                     <? } ?>

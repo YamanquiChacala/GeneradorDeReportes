@@ -28,11 +28,11 @@ function buildHelloWorldCard(e) {
  * @param {GoogleAppsScript.Addons.EventObject} e
  * @returns {GoogleAppsScript.Card_Service.Card} 
  */
-function buildDriveCard(e) {
+function buildDriveTestPdfCreationCard(e) {
     const builder = CardService.newCardBuilder();
     const section = CardService.newCardSection();
 
-    const generateAction = CardService.newAction().setFunctionName('handleSavePdfClick');
+    const generateAction = CardService.newAction().setFunctionName(handleSavePdfClick.name);
 
     const button = CardService.newTextButton()
         .setText('Generate & Save PDF')
@@ -85,9 +85,10 @@ function handleSavePdfClick(e) {
  * @returns {GoogleAppsScript.Base.Blob}
  */
 function createPdf() {
-    const htmlTemplate = HtmlService.createTemplateFromFile('src/template');
+    const htmlTemplate = HtmlService.createTemplateFromFile('src/PdfPrintTemplate');
 
-    htmlTemplate.data = {
+    /** @type {StudentData} */
+    const data = {
         start_year: "2025",
         end_year: "2026",
         period: "3er trimestre",
@@ -161,6 +162,8 @@ function createPdf() {
             italic: BASE64_FONTS.montserratItalic,
         }
     };
+
+    htmlTemplate.data = data;
 
     const htmlOutput = htmlTemplate.evaluate();
     //return htmlOutput.getContent();
