@@ -1,0 +1,117 @@
+<div style="display:flex;justify-content:center;align-items:center;padding:20px 0">
+  <canvas id="c" width="600" height="600"></canvas>
+</div>
+<script>
+  const cv = document.getElementById('c');
+  const ctx = cv.getContext('2d');
+  const cx = 300, cy = 300;
+
+  function spiralPoints(startR, endR, startAngle, endAngle, steps) {
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const angle = startAngle + t * (endAngle - startAngle);
+      const r = startR + t * (endR - startR);
+      pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+    }
+    return pts;
+  }
+
+  const turns = 3.5;
+  const startAngle = Math.PI / 2;
+  const endAngle = startAngle - turns * 2 * Math.PI;
+  const innerR = 18;
+  const outerR = 240;
+  const steps = 400;
+
+  const pts = spiralPoints(innerR, outerR, startAngle, endAngle, steps);
+
+  const grad = ctx.createLinearGradient(cx - outerR, cy - outerR, cx + outerR, cy + outerR);
+  grad.addColorStop(0, '#4ecb71');
+  grad.addColorStop(0.5, '#1e7d34');
+  grad.addColorStop(1, '#0a3018');
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetX = 5;
+  ctx.shadowOffsetY = 8;
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 38;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.stroke();
+  ctx.restore();
+
+  const hiGrad = ctx.createLinearGradient(cx - outerR, cy - outerR, cx, cy);
+  hiGrad.addColorStop(0, 'rgba(255,255,255,0.28)');
+  hiGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.save();
+  ctx.strokeStyle = hiGrad;
+  ctx.lineWidth = 38;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.stroke();
+  ctx.restore();
+
+  const edgeHi = spiralPoints(innerR - 19, outerR - 19, startAngle, endAngle, steps);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(110,220,138,0.45)';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(edgeHi[0][0], edgeHi[0][1]);
+  for (let i = 1; i < edgeHi.length; i++) ctx.lineTo(edgeHi[i][0], edgeHi[i][1]);
+  ctx.stroke();
+  ctx.restore();
+
+  const edgeShadow = spiralPoints(innerR + 19, outerR + 19, startAngle, endAngle, steps);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(6,40,16,0.5)';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(edgeShadow[0][0], edgeShadow[0][1]);
+  for (let i = 1; i < edgeShadow.length; i++) ctx.lineTo(edgeShadow[i][0], edgeShadow[i][1]);
+  ctx.stroke();
+  ctx.restore();
+
+  const checkGrad = ctx.createLinearGradient(cx - 60, cy + 60, cx + 120, cy - 30);
+  checkGrad.addColorStop(0, '#b89000');
+  checkGrad.addColorStop(0.4, '#f0e060');
+  checkGrad.addColorStop(1, '#ffffff');
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(58,40,0,0.6)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetX = 3;
+  ctx.shadowOffsetY = 4;
+  ctx.strokeStyle = checkGrad;
+  ctx.lineWidth = 46;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 60, cy + 60);
+  ctx.lineTo(cx - 10, cy + 115);
+  ctx.lineTo(cx + 110, cy - 40);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.38)';
+  ctx.lineWidth = 13;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - 60, cy + 60);
+  ctx.lineTo(cx - 10, cy + 115);
+  ctx.lineTo(cx + 110, cy - 40);
+  ctx.stroke();
+  ctx.restore();
+</script>

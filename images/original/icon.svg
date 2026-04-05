@@ -1,0 +1,75 @@
+<svg width="100%" viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg-grad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#050505"/>
+    </radialGradient>
+    <radialGradient id="sheets-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#34a853" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#34a853" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pdf-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e84040" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#e84040" stop-opacity="0"/>
+    </radialGradient>
+    <marker id="arr-head" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M1 1L11 6L1 11" fill="none" stroke="#666" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <filter id="soft-shadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="8" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+  <mask id="imagine-text-gaps-rdn0hz" maskUnits="userSpaceOnUse"><rect x="0" y="0" width="680" height="680" fill="white"/><rect x="169.6663818359375" y="437.6667175292969" width="16.667245864868164" height="18.48148250579834" fill="black" rx="2"/><rect x="472.748291015625" y="437.9259338378906" width="34.50347328186035" height="16.5925931930542" fill="black" rx="2"/></mask></defs>
+
+  <!-- Background rounded square -->
+  <rect x="40" y="40" width="600" height="600" rx="90" fill="url(#bg-grad)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Very subtle green rim -->
+  <rect x="40" y="40" width="600" height="600" rx="90" fill="none" stroke="#2a5c35" stroke-width="1.5" opacity="0.5" style="fill:none;stroke:rgb(42, 92, 53);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- ══ LOGO SPACE — clean empty square, centred and slightly above middle ══ -->
+  <!-- Nothing here — just open black space for the logo -->
+
+  <!-- ══ GOOGLE SHEETS ICON (bottom-left) ══ -->
+  <ellipse cx="178" cy="498" rx="80" ry="80" fill="url(#sheets-glow)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Page body -->
+  <rect x="126" y="436" width="104" height="126" rx="8" fill="#1e7e34" filter="url(#soft-shadow)" style="fill:rgb(30, 126, 52);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Folded corner cutout -->
+  <polygon points="206,436 230,460 206,460" fill="#155c27" style="fill:rgb(21, 92, 39);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="206" y1="436" x2="230" y2="460" stroke="#0e3d1a" stroke-width="1" style="fill:rgb(0, 0, 0);stroke:rgb(14, 61, 26);color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="206" y1="460" x2="230" y2="460" stroke="#0e3d1a" stroke-width="1" style="fill:rgb(0, 0, 0);stroke:rgb(14, 61, 26);color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Column header bar -->
+  <rect x="126" y="436" width="80" height="18" rx="0" fill="#166d2c" opacity="0.8" style="fill:rgb(22, 109, 44);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.8;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="126" y="436" width="80" height="18" rx="0" fill="none" style="fill:none;stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Grid lines horizontal -->
+  <line x1="144" y1="472" x2="204" y2="472" stroke="#4ecb71" stroke-width="1.8" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(78, 203, 113);color:rgb(255, 255, 255);stroke-width:1.8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="144" y1="488" x2="204" y2="488" stroke="#4ecb71" stroke-width="1.8" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(78, 203, 113);color:rgb(255, 255, 255);stroke-width:1.8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="144" y1="504" x2="204" y2="504" stroke="#4ecb71" stroke-width="1.8" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(78, 203, 113);color:rgb(255, 255, 255);stroke-width:1.8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="144" y1="520" x2="204" y2="520" stroke="#4ecb71" stroke-width="1.8" stroke-linecap="round" style="fill:rgb(0, 0, 0);stroke:rgb(78, 203, 113);color:rgb(255, 255, 255);stroke-width:1.8px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Grid line vertical -->
+  <line x1="172" y1="455" x2="172" y2="548" stroke="#4ecb71" stroke-width="1.2" opacity="0.6" mask="url(#imagine-text-gaps-rdn0hz)" style="fill:rgb(0, 0, 0);stroke:rgb(78, 203, 113);color:rgb(255, 255, 255);stroke-width:1.2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Spreadsheet "S" badge -->
+  <text x="178" y="451" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="800" fill="#9effc4" style="fill:rgb(158, 255, 196);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:sans-serif;font-size:13px;font-weight:800;text-anchor:middle;dominant-baseline:auto">S</text>
+
+  <!-- ══ ARROW ══ -->
+  <line x1="254" y1="498" x2="406" y2="498" stroke="#666" stroke-width="4.5" stroke-linecap="round" marker-end="url(#arr-head)" style="fill:rgb(0, 0, 0);stroke:rgb(102, 102, 102);color:rgb(255, 255, 255);stroke-width:4.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="296" cy="498" r="3.5" fill="#555" style="fill:rgb(85, 85, 85);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="330" cy="498" r="3.5" fill="#555" style="fill:rgb(85, 85, 85);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="364" cy="498" r="3.5" fill="#555" style="fill:rgb(85, 85, 85);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- ══ PDF ICON (bottom-right) ══ -->
+  <ellipse cx="502" cy="498" rx="80" ry="80" fill="url(#pdf-glow)" style="stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Page body -->
+  <rect x="450" y="436" width="104" height="126" rx="8" fill="#c0392b" filter="url(#soft-shadow)" style="fill:rgb(192, 57, 43);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Folded corner -->
+  <polygon points="530,436 554,460 530,460" fill="#922b21" style="fill:rgb(146, 43, 33);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="530" y1="436" x2="554" y2="460" stroke="#641e16" stroke-width="1" style="fill:rgb(0, 0, 0);stroke:rgb(100, 30, 22);color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="530" y1="460" x2="554" y2="460" stroke="#641e16" stroke-width="1" style="fill:rgb(0, 0, 0);stroke:rgb(100, 30, 22);color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- PDF header band -->
+  <rect x="450" y="436" width="80" height="20" rx="0" fill="#a93226" opacity="0.9" style="fill:rgb(169, 50, 38);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.9;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <text x="490" y="450" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#fde8e6" letter-spacing="1.5" style="fill:rgb(253, 232, 230);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:sans-serif;font-size:11px;font-weight:800;text-anchor:middle;dominant-baseline:auto">PDF</text>
+  <!-- Document lines -->
+  <rect x="466" y="470" width="56" height="6" rx="3" fill="#f1948a" opacity="0.85" style="fill:rgb(241, 148, 138);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.85;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="466" y="484" width="46" height="5" rx="2.5" fill="#f1948a" opacity="0.6" style="fill:rgb(241, 148, 138);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="466" y="497" width="52" height="5" rx="2.5" fill="#f1948a" opacity="0.6" style="fill:rgb(241, 148, 138);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.6;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="466" y="510" width="38" height="5" rx="2.5" fill="#f1948a" opacity="0.45" style="fill:rgb(241, 148, 138);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.45;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <rect x="466" y="523" width="44" height="5" rx="2.5" fill="#f1948a" opacity="0.45" style="fill:rgb(241, 148, 138);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.45;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+</svg>
