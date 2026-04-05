@@ -1,6 +1,14 @@
 {
   "timeZone": "America/Mazatlan",
-  "dependencies": {},
+  "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Drive",
+        "version": "v3",
+        "serviceId": "drive"
+      }
+    ]
+  },
   "oauthScopes": [
     "https://www.googleapis.com/auth/script.external_request",
     "https://www.googleapis.com/auth/drive.addons.metadata.readonly"
@@ -9,13 +17,10 @@
   "runtimeVersion": "V8",
   "addOns": {
     "common": {
-      "name": "Generador de Reportes",
-      "logoUrl": "https://www.gstatic.com/images/icons/material/system/1x/receipt_black_24dp.png",
+      "name": "🗄️ Reportes",
+      "logoUrl": "https://media.githubusercontent.com/media/YamanquiChacala/GeneradorDeReportes/refs/heads/main/images/icon_32.png",
       "layoutProperties": {
-        "primaryColor": "#4285F4"
-      },
-      "homepageTrigger": {
-        "runFunction": "buildHelloWorldCard"
+        "primaryColor": "#0b5394"
       }
     },
     "drive": {
@@ -26,6 +31,14 @@
         "runFunction": "buildDriveCard"
       }
     },
-    "sheets": {}
+    "sheets": {
+      "homepageTrigger": {
+        "enabled": true,
+        "runFunction": "buildSheetsCard"
+      },
+      "onFileScopeGrantedTrigger": {
+        "runFunction": "buildSheetsCard"
+      }
+    }
   }
 }
