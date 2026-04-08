@@ -66,7 +66,7 @@ function buildSheetsCard(e) {
  */
 function buildWrongSelectionCard() {
     const warning = CardService.newDecoratedText()
-        .setStartIcon(CardParts.icon({ name: Icon.folder_question, color: "orange", height: 64 }))
+        .setStartIcon(CardParts.icon({ iconName: Icon.folder_question, color: "orange", height: 64 }))
         .setText("Selección no válida");
 
     const explanation = CardService.newTextParagraph()
@@ -77,60 +77,8 @@ function buildWrongSelectionCard() {
         .addWidget(explanation);
 
     return CardService.newCardBuilder()
-        .setHeader(CardParts.header({ title: "Montessori Chacala", subtitle: "Archivo no reconocido", icon: "school" }))
+        .setHeader(CardParts.headerImage({ title: "Montessori Chacala", subtitle: "Archivo no reconocido", image: "school" }))
         .addSection(mainSection)
-        .build();
-}
-
-
-
-/**
- * 
- * @param {GoogleAppsScript.Addons.EventObject} e 
- * @returns {GoogleAppsScript.Card_Service.ActionResponse}
- */
-function onSetPropClick(e) {
-
-    let message = "No item selected";
-
-    if (e.drive?.selectedItems?.length) {
-        const itemId = e.drive.selectedItems[0].id;
-
-        FileValidation.setFileType(itemId, FileType.INIT);
-
-        message = "Property Set";
-    }
-
-    return CardService.newActionResponseBuilder()
-        .setNotification(
-            CardService.newNotification()
-                .setText(message)
-        )
-        .build();
-}
-
-/**
- * 
- * @param {GoogleAppsScript.Addons.EventObject} e 
- * @returns {GoogleAppsScript.Card_Service.ActionResponse}
- */
-function onGetPropClick(e) {
-
-    let message = "No item selected";
-
-    if (e.drive?.selectedItems?.length) {
-        const itemId = e.drive.selectedItems[0].id;
-
-        const type = FileValidation.getFileType(itemId);
-
-        message = type ?? "No file type"
-    }
-
-    return CardService.newActionResponseBuilder()
-        .setNotification(
-            CardService.newNotification()
-                .setText(message)
-        )
         .build();
 }
 

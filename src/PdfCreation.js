@@ -85,7 +85,7 @@ const PdfCreation = {
      * @returns {GoogleAppsScript.Base.Blob}
      */
     createPdf() {
-        const htmlTemplate = HtmlService.createTemplateFromFile('src/PdfPrintTemplate');
+        const htmlTemplate = HtmlService.createTemplateFromFile('templates/PdfPrintTemplate');
 
         /** @type {StudentData} */
         const data = {

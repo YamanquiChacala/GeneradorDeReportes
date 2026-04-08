@@ -6,7 +6,7 @@
  */
 function buildRequestAuthorizationCard() {
     const warning = CardService.newDecoratedText()
-        .setStartIcon(CardParts.icon({ name: Icon.warning, color: "red", height: 64 }))
+        .setStartIcon(CardParts.icon({ iconName: Icon.warning, color: "red", height: 64 }))
         .setText("Verifica antes de continuar");
     const explanation = CardService.newTextParagraph()
         .setText("Confirma que estás en la hoja correcta:<br/><br/>• 📋 <b>Registro inicial de grupos</b><br/><br/>• 📊 <b>Calificaciones, asistencias y reportes</b><br/><br/>🔒 Autorizar permitirá <b>editar</b> esta hoja.");
@@ -20,7 +20,7 @@ function buildRequestAuthorizationCard() {
         .addWidget(explanation)
         .addWidget(askPermissionButton);
     return CardService.newCardBuilder()
-        .setHeader(CardParts.header({ title: "Montessori Chacala", subtitle: "Permiso de edición", icon: "school" }))
+        .setHeader(CardParts.headerImage({ title: "Montessori Chacala", subtitle: "Permiso de edición", image: "school" }))
         .addSection(mainSection)
         .build();
 }
