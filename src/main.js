@@ -5,29 +5,33 @@
  * @returns {GoogleAppsScript.Card_Service.Card} 
  */
 function buildDriveCard(e) {
-    console.log(e);
 
-    const setPropAction = CardService.newAction().setFunctionName(onSetPropClick.name);
-    const getPropAction = CardService.newAction().setFunctionName(onGetPropClick.name);
+    if (e.drive?.selectedItems?.length) {
+        const selectedFile = e.drive.selectedItems[0];
+        const selectedFileFileType = FileValidation.getFileType(selectedFile.id);
+        switch (selectedFileFileType) {
+            case FileType.INIT:
+            // TODO: return Card "Ready to initialize?"
+            case FileType.REPORT:
+            // TODO: return Card "Open in Sheets to edit or generate all reports"
+        }
 
-    const setPropButton = CardService.newTextButton()
-        .setText("Add Identifier")
-        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-        .setOnClickAction(setPropAction);
-    const getPropButton = CardService.newTextButton()
-        .setText("Get Identifier")
-        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-        .setOnClickAction(getPropAction);
+        /** @type {GoogleAppsScript.Drive.Folder} */
+        let selectedFolder;
+        if (selectedFile.mimeType === "application/vnd.google-apps.folder") {
+            selectedFolder = DriveApp.getFolderById(selectedFile.id);
+        } else {
+            const parents = DriveApp.getFileById(selectedFile.id).getParents();
+            if (parents.hasNext()) {
+                selectedFolder = parents.next();
+            } else {
+                return buildWrongSelectionCard();
+            }
+        }
+        // TODO: return Card "Create Initialization file here?"
+    }
 
-    const buttonSection = CardService.newCardSection()
-        .addWidget(setPropButton)
-        .addWidget(getPropButton);
-
-    const card = CardService.newCardBuilder()
-        .setHeader(CardParts.header("File Properties", "", "spiral"))
-        .addSection(buttonSection);
-
-    return card.build();
+    return buildWrongSelectionCard();
 }
 
 
@@ -37,13 +41,47 @@ function buildDriveCard(e) {
  * @returns {GoogleAppsScript.Card_Service.Card} 
  */
 function buildSheetsCard(e) {
-    console.log(e);
+    if (!e.sheets?.addonHasFileScopePermission) {
+        return buildRequestAuthorizationCard()
+    }
 
-    const card = CardService.newCardBuilder()
-        .setHeader(CardParts.header("Sheets Cardd"));
+    const sheetId = e.sheets.id;
+    const sheetFileType = FileValidation.getFileType(sheetId);
 
-    return card.build();
+    switch (sheetFileType) {
+        case FileType.INIT:
+        // TODO: Return Card "Init options"
+        case FileType.REPORT:
+        // TODO: Return Card "Report options"
+    }
+
+    return buildWrongSelectionCard();
 }
+
+/**
+ * A card indicating the user has selected an invalid file or folder.
+ * Reminds them of the specific files/folders the add-on can manage.
+ * 
+ * @returns {GoogleAppsScript.Card_Service.Card}
+ */
+function buildWrongSelectionCard() {
+    const warning = CardService.newDecoratedText()
+        .setStartIcon(CardParts.icon({ name: Icon.folder_question, color: "orange", height: 64 }))
+        .setText("Selección no válida");
+
+    const explanation = CardService.newTextParagraph()
+        .setText("El archivo o carpeta seleccionado no es compatible.<br/><br/>Por favor, selecciona una de las siguientes opciones para continuar:<br/><br/>• 📁 Una <b>carpeta vacía</b> (para crear la configuración inicial)<br/><br/>• 📋 Un archivo de <b>Registro inicial de grupos</b><br/><br/>• 📊 Un archivo de <b>Calificaciones, asistencias y reportes</b>");
+
+    const mainSection = CardService.newCardSection()
+        .addWidget(warning)
+        .addWidget(explanation);
+
+    return CardService.newCardBuilder()
+        .setHeader(CardParts.header({ title: "Montessori Chacala", subtitle: "Archivo no reconocido", icon: "school" }))
+        .addSection(mainSection)
+        .build();
+}
+
 
 
 /**
@@ -95,4 +133,7 @@ function onGetPropClick(e) {
         )
         .build();
 }
+
+
+
 
