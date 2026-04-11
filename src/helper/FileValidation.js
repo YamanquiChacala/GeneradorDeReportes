@@ -1,9 +1,3 @@
-/** @enum {string} */
-const FileType = {
-    INIT: "MontessoriChacalaSchoolReportInitialization",
-    REPORT: "MontessoriChacalaSchoolReport",
-}
-
 const FileValidation = {
     KEY: "fileType",
 

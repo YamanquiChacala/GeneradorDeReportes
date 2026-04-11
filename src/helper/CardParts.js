@@ -78,11 +78,3 @@ const CardParts = {
             .setAltText(displayName);
     }
 }
-
-/** @enum {string} */
-const Icon = {
-    warning: "material-symbols/warning-rounded",
-    folder_question: "mdi/folder-question",
-    clipboard: "noto/clipboard",
-    chart: "noto/bar-chart",
-}

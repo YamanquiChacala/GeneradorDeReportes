@@ -46,45 +46,45 @@ function runFileValidationTest() {
             "File should initially have an undefined FileType"
         );
         assert(
-            FileValidation.isFileType(tempFileId, FileType.INIT) === false,
+            FileValidation.isFileType(tempFileId, FileType.setup) === false,
             "isFileType should return false for an unmarked file"
         );
 
         // 3. Test Setting the File Type
-        FileValidation.setFileType(tempFileId, FileType.INIT);
+        FileValidation.setFileType(tempFileId, FileType.setup);
 
         // Wait briefly to ensure Drive API propagates the property (sometimes it's not strictly synchronous)
         Utilities.sleep(500);
 
         assert(
-            FileValidation.getFileType(tempFileId) === FileType.INIT,
+            FileValidation.getFileType(tempFileId) === FileType.setup,
             "getFileType should return INIT after setting it"
         );
         assert(
-            FileValidation.isFileType(tempFileId, FileType.INIT) === true,
+            FileValidation.isFileType(tempFileId, FileType.setup) === true,
             "isFileType should return true for INIT after setting it"
         );
         assert(
-            FileValidation.isFileType(tempFileId, FileType.REPORT) === false,
+            FileValidation.isFileType(tempFileId, FileType.report) === false,
             "isFileType should still return false for REPORT"
         );
 
         // 4. Test Setting the File Type
-        FileValidation.setFileType(tempFileId, FileType.REPORT);
+        FileValidation.setFileType(tempFileId, FileType.report);
 
         // Wait briefly to ensure Drive API propagates the property (sometimes it's not strictly synchronous)
         Utilities.sleep(500);
 
         assert(
-            FileValidation.getFileType(tempFileId) === FileType.REPORT,
+            FileValidation.getFileType(tempFileId) === FileType.report,
             "getFileType should return REPORT after setting it"
         );
         assert(
-            FileValidation.isFileType(tempFileId, FileType.INIT) === false,
+            FileValidation.isFileType(tempFileId, FileType.setup) === false,
             "isFileType should return false for INIT after setting it"
         );
         assert(
-            FileValidation.isFileType(tempFileId, FileType.REPORT) === true,
+            FileValidation.isFileType(tempFileId, FileType.report) === true,
             "isFileType should return true for REPORT"
         );
 

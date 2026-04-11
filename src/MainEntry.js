@@ -10,9 +10,9 @@ function buildDriveCard(e) {
         const selectedFile = e.drive.selectedItems[0];
         const selectedFileFileType = FileValidation.getFileType(selectedFile.id);
         switch (selectedFileFileType) {
-            case FileType.INIT:
+            case FileType.setup:
             // TODO: return Card "Ready to initialize?"
-            case FileType.REPORT:
+            case FileType.report:
             // TODO: return Card "Open in Sheets to edit or generate all reports"
         }
 
@@ -28,7 +28,7 @@ function buildDriveCard(e) {
                 return buildWrongSelectionCard();
             }
         }
-        // TODO: return Card "Create Initialization file here?"
+        return Initialization.buildCreateInitializationCard(selectedFolder.getId())
     }
 
     return buildWrongSelectionCard();
@@ -41,6 +41,7 @@ function buildDriveCard(e) {
  * @returns {GoogleAppsScript.Card_Service.Card} 
  */
 function buildSheetsCard(e) {
+
     if (!e.sheets?.addonHasFileScopePermission) {
         return buildRequestAuthorizationCard()
     }
@@ -49,9 +50,9 @@ function buildSheetsCard(e) {
     const sheetFileType = FileValidation.getFileType(sheetId);
 
     switch (sheetFileType) {
-        case FileType.INIT:
+        case FileType.setup:
         // TODO: Return Card "Init options"
-        case FileType.REPORT:
+        case FileType.report:
         // TODO: Return Card "Report options"
     }
 

@@ -33,5 +33,60 @@ const Utils = {
         const name = nameParts[nameParts.length - 1];
 
         return ({ url, name });
+    },
+
+    /**
+     * Normalizes unicode, collapses multiple spaces, and trims edges.
+     * @param {string} input - The raw string.
+     * @returns {string} - The baseline sanitized string.
+     */
+    _baseSanitize(input) {
+        if (!input) return '';
+
+        return input
+            .normalize("NFKC")        // Standardize composed characters (keeps Spanish accents intact)
+            .replace(/\s+/g, ' ')     // Replace multiple spaces with a single space
+            .trim();                  // Remove leading/trailing spaces
+    },
+
+    /**
+     * Sanitizes a string for safe use as a file name across Drive, Windows, Mac and Linux.
+     * @param {string} [input] - The raw user input.
+     * @param {string} [fallback="Grupo"] - In case the input turns up empty.
+     * @returns {string} - The cleaned file name.
+     */
+    sanitizeFileName(input, fallback = "Grupo") {
+        if (!input) return fallback;
+        // Remove OS-prohibited characters: < > : " / \ | ? *
+        const sanitized = input.replace(/[<>:"\/\\|?*]/g, '');
+
+        return Utils._baseSanitize(sanitized) || fallback;
+    },
+
+    /**
+     * Sanitizes a string for use as a Google Sheets tab name.
+     * @param {string} input - The raw student name.
+     * @returns {string} - The cleaned sheet tab name.
+     */
+    sanitizeSheetName(input) {
+        // Handle Apostrophes and Quotes, leaving a space behind: '"`
+        let sanitized = input.replace(/['"`]/g, ' ');
+
+        // Remove Spreadsheet-prohibited characters: []:*?/\|
+        sanitized = sanitized.replace(/[\[\]:*?\/\\|]/g, '');
+
+        sanitized = Utils._baseSanitize(sanitized);
+
+        // 4. Enforce Character Limits for downloading to Excell
+        if (sanitized.length > 31) {
+            sanitized = sanitized.substring(0, 31).trim();
+        }
+
+        return sanitized;
     }
+};
+
+
+if (typeof module !== "undefined") {
+    eval("module.exports = Utils;");
 }

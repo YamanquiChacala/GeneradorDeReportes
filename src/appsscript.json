@@ -6,14 +6,20 @@
         "userSymbol": "Drive",
         "version": "v3",
         "serviceId": "drive"
+      },
+      {
+        "userSymbol": "Sheets",
+        "version": "v4",
+        "serviceId": "sheets"
       }
     ]
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive.addons.metadata.readonly",
     "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/drive.addons.metadata.readonly"
+    "https://www.googleapis.com/auth/spreadsheets"
   ],
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
