@@ -1,191 +1,8 @@
-/**
- * Callback to the button to create a new Initialization Group File.
- * @param {GoogleAppsScript.Addons.EventObject} e 
- * @returns {GoogleAppsScript.Card_Service.ActionResponse}
- */
-function onCreateInitializationFile(e) {
-    const formInput = e.commonEventObject.formInputs;
-    const folderId = e.commonEventObject.parameters.destinationFolder;
-
-    const groupName = Utils.sanitizeFileName(formInput.groupName.stringInputs?.value[0]);
-
-    const attendancePerClass = formInput.attendancePerClass ? true : false;
-    const averagePerField = formInput.averagePerField ? true : false;
-
-    const dateStart = parseInt(formInput.dateStart.dateInput?.msSinceEpoch ?? "");
-    const dateEndTrimester1 = parseInt(formInput.dateEndTrimester1.dateInput?.msSinceEpoch ?? "");
-    const dateEndTrimester2 = parseInt(formInput.dateEndTrimester2.dateInput?.msSinceEpoch ?? "");
-    const dateEnd = parseInt(formInput.dateEnd.dateInput?.msSinceEpoch ?? "");
-
-    if (!(dateStart < dateEndTrimester1 && dateEndTrimester1 < dateEndTrimester2 && dateEndTrimester2 < dateEnd)) {
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification()
-                .setText("❌ Las fechas deben estar en orden ascendente."))
-            .build();
-    }
-
-    const moreThanAYear = 400 * 24 * 60 * 60 * 1000;
-    if (dateEnd - dateStart > moreThanAYear) {
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification()
-                .setText("❌ Periodo demasiado largo."))
-            .build();
-    }
-
-    /** @type {InitFileData} */
-    const initData = {
-        folderId,
-        groupName,
-        attendancePerClass,
-        averagePerField,
-        dateStart,
-        dateEndTrimester1,
-        dateEndTrimester2,
-        dateEnd,
-    }
-
-    // TODO: Surrond by try-catch, show a card with the error if error.
-    Initialization.createInitializationFile(initData);
-    /*
-    const trigger = ScriptApp.newTrigger(fireCreateInitializationFile.name)
-        .timeBased()
-        .after(1)
-        .create();
-
-    const triggerId = trigger.getUniqueId();
-    PropertiesService.getUserProperties().setProperty(triggerId, JSON.stringify(initData));
-    */
-
-    // TODO: Extract this into a generic function buildParagraphCard(header, htmlText)
-    const successCard = CardService.newCardBuilder()
-        .setHeader(CardParts.headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }))
-        .addSection(CardService.newCardSection()
-            .addWidget(CardService.newTextParagraph()
-                .setText(`✅ Creación del Registro para "<b>${groupName}</b>" en proceso.<br><br>El archivo aparecerá la carpeta de Drive en un momento.<br><br>(Por favor espera al menos 1 minúto antes de intentarlo de nuevo.)`))
-            .addWidget(CardService.newTextButton()
-                .setText("Regresar al inicio")
-                .setOnClickAction(CardService.newAction().setFunctionName(onPopCardStack.name))))
-        .build();
-
-    return CardService.newActionResponseBuilder()
-        .setNavigation(CardService.newNavigation().pushCard(successCard))
-        .build();
-}
-
-// TODO: Move to file with generic reusable functions.
-/**
- * Pops the Card Stack to the root.
- * @returns {GoogleAppsScript.Card_Service.ActionResponse}
- */
-function onPopCardStack() {
-    return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().popToRoot()).build();
-}
-
-/**
- * Trigger callback to create a new Initialization Group File.
- * @param {GoogleAppsScript.Events.TimeDriven} e 
- */
-function fireCreateInitializationFile(e) {
-    const triggerId = e.triggerUid;
-    if (!triggerId) return;
-
-    const userProperties = PropertiesService.getUserProperties();
-    const payloadString = userProperties.getProperty(triggerId);
-
-    userProperties.deleteProperty(triggerId);
-    ScriptApp.getProjectTriggers().forEach(trigger => {
-        if (trigger.getUniqueId() === triggerId) {
-            ScriptApp.deleteTrigger(trigger);
-        }
-    });
-
-    if (!payloadString) return;
-    /** @type {InitFileData} */
-    const initData = JSON.parse(payloadString);
-
-    try {
-        Initialization.createInitializationFile(initData);
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`Error creando Registro para "${initData.groupName}": ${errorMessage}`);
-    }
-}
-
-
 const Initialization = {
     /**
-     * Presents the user with a form to fill and a button to create the initialization file.
-     * 
-     * @param {string} folderId The Drive folder where the Initialization file will be created.
-     * @returns {GoogleAppsScript.Card_Service.Card}
-     */
-    buildCreateInitializationCard(folderId) {
-        const card = CardService.newCardBuilder()
-            .setHeader(CardParts.headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }));
-
-        const section = CardService.newCardSection().setHeader("Información del Grupo:");
-
-        section.addWidget(CardService.newTextInput()
-            .setValue("Secundaria")
-            .setFieldName("groupName")
-            .setTitle("Nombre del Grupo")
-            .setHint("Ejemplo: 5to y 6to"));
-
-        section.addWidget(CardService.newDecoratedText()
-            .setText("Asistencia individual por materia")
-            .setSwitchControl(CardService.newSwitch()
-                .setFieldName("attendancePerClass")
-                .setValue("attendancePerClass")
-                .setSelected(false)));
-
-        section.addWidget(CardService.newDecoratedText()
-            .setText("Promedios por Campo Formativo")
-            .setSwitchControl(CardService.newSwitch()
-                .setFieldName("averagePerField")
-                .setValue("averagePerField")
-                .setSelected(false)));
-
-        section.addWidget(CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1788220800000)
-            .setFieldName("dateStart")
-            .setTitle("Primer dia de clases"));
-
-        section.addWidget(CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1793491200000)
-            .setFieldName("dateEndTrimester1")
-            .setTitle("Último día del primer trimestre"));
-
-        section.addWidget(CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1797292800000)
-            .setFieldName("dateEndTrimester2")
-            .setTitle("Último día del segundo trimestre"));
-
-        section.addWidget(CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1812326400000)
-            .setFieldName("dateEnd")
-            .setTitle("Último día de clases"));
-
-        const createAction = CardService.newAction()
-            .setFunctionName(onCreateInitializationFile.name)
-            .setParameters({ destinationFolder: folderId })
-            .addRequiredWidget("groupName")
-            .addRequiredWidget("dateStart")
-            .addRequiredWidget("dateEndTrimester1")
-            .addRequiredWidget("dateEndTrimester2")
-            .addRequiredWidget("dateEnd");
-
-        section.addWidget(CardService.newTextButton()
-            .setText("📋 Crear Registro Inicial del Grupo")
-            .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-            .setOnClickAction(createAction));
-
-        return card.addSection(section).build();
-    },
-
-    /**
-     * Creates a new Group Initialization file with the given data.
-     * @param {InitFileData} initData
-     */
+  * Creates a new Group Initialization file with the given data.
+  * @param {InitFileData} initData
+  */
     createInitializationFile(initData) {
 
         // ========== Create File ============
@@ -253,9 +70,6 @@ const Initialization = {
             day: calendarFormatData.rowMetadata?.[1].pixelSize ?? 21,
         }
 
-        // TODO: Do I need this? Couldn't I do a NORMAL_COPY of the full header, to get everything, including format.
-        const calendarHeaders = calendarFormatData.rowData?.[0].values?.map(cellData => cellData.formattedValue ?? "");
-
         /** @type {string[]} */
         const monthNamesHigh3 = [];
         /** @type {string[]} */
@@ -300,6 +114,8 @@ const Initialization = {
                     gridProperties: {
                         rowCount: totalRows,
                         columnCount: 15,
+                        frozenRowCount: 1,
+                        frozenColumnCount: 1,
                         hideGridlines: true,
                     }
                 }
@@ -372,7 +188,7 @@ const Initialization = {
 
             if (currentMonthIndex !== monthIndex) {
                 if (currentMonthIndex !== -1) {
-                    monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex, year });
+                    monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
                 }
                 currentMonthIndex = monthIndex;
                 currentYear = year;
@@ -390,7 +206,10 @@ const Initialization = {
                 const inBounds = currentMs >= initData.dateStart && currentMs <= initData.dateEnd;
 
                 rowCells.push({ userEnteredValue: { numberValue: dayDate.getUTCDate() } });
-                rowCells.push({ userEnteredValue: { boolValue: (inBounds && isWeekday) }, dataValidation: { condition: { type: "BOOLEAN" }, strict: true, showCustomUi: true } });
+                rowCells.push({
+                    userEnteredValue: { boolValue: (inBounds && isWeekday) },
+                    dataValidation: { condition: { type: "BOOLEAN" }, strict: true, showCustomUi: true },
+                });
 
                 // TODO: Some magic numbers here, it would be best to have them elsewhere.
                 // Format the cells
@@ -398,7 +217,7 @@ const Initialization = {
                 if (currentMs > initData.dateEndTrimester2) formatRowIndex = 4;
                 else if (currentMs > initData.dateEndTrimester1) formatRowIndex = 3;
 
-                const formatColumnIndex = isWeekday ? 3 : 7; // Column D and H
+                const formatColumnIndex = isWeekday && inBounds ? 3 : 7; // Column D and H
 
                 apiRequests.push({
                     copyPaste: {
@@ -423,6 +242,57 @@ const Initialization = {
 
         monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
 
+        // Handle month and year labels
+        monthBlocks.forEach(block => {
+            const rowSpan = block.endRow - block.startRow;
+            let monthLabelRow = 7;
+            let monthLabelColumn = 0;
+
+            let monthName = monthNamesHigh3[block.monthIndex];
+
+            if (rowSpan === 2) {
+                monthLabelColumn = 2;
+                monthName = monthNamesHigh2[block.monthIndex];
+            } else if (rowSpan === 1) {
+                monthLabelColumn = 4;
+                monthName = monthNamesHigh1[block.monthIndex];
+            }
+
+            const monthYearText = `${monthName}\n${block.year}`
+
+            // Merge
+            apiRequests.push({
+                mergeCells: {
+                    range: {
+                        sheetId: calendarSheetId,
+                        startRowIndex: block.startRow, endRowIndex: block.endRow,
+                        startColumnIndex: 0, endColumnIndex: 1,
+                    },
+                    mergeType: "MERGE_ALL",
+                }
+            });
+            //Format
+            apiRequests.push({
+                copyPaste: {
+                    source: {
+                        sheetId: templateSheetId,
+                        startRowIndex: monthLabelRow + block.monthIndex, endRowIndex: monthLabelRow + block.monthIndex + 1,
+                        startColumnIndex: monthLabelColumn, endColumnIndex: monthLabelColumn + 1,
+                    },
+                    destination: {
+                        sheetId: calendarSheetId,
+                        startRowIndex: block.startRow, endRowIndex: block.endRow,
+                        startColumnIndex: 0, endColumnIndex: 1,
+                    },
+                    pasteType: "PASTE_FORMAT"
+                },
+            });
+            //Insert text in the data array.
+            const targetRowData = rowDataArray[block.startRow - 1];
+            if (targetRowData.values) {
+                targetRowData.values[0] = { userEnteredValue: { stringValue: monthYearText } };
+            }
+        });
 
         // Update all the cell values.
         apiRequests.push({
@@ -442,6 +312,44 @@ const Initialization = {
             }
         });
 
+        // Protect the Calendar Sheet
+        /** @type {GoogleAppsScript.Sheets.Schema.GridRange[]} */
+        const unprotectedRanges = []
+        for (let i = 2; i < 15; i += 2) {
+            unprotectedRanges.push({
+                sheetId: calendarSheetId,
+                startRowIndex: 1,
+                startColumnIndex: i, endColumnIndex: i + 1
+            });
+        }
+        apiRequests.push({
+            addProtectedRange: {
+                protectedRange: {
+                    range: { sheetId: calendarSheetId },
+                    description: "Calendario",
+                    warningOnly: true,
+                    unprotectedRanges: unprotectedRanges,
+                    editors: {
+                        users: [],
+                        groups: [],
+                        domainUsersCanEdit: false,
+                    }
+                }
+            }
+        });
+
+        // Clean up
+        apiRequests.push({
+            updateSheetProperties: {
+                properties: {
+                    sheetId: templateSheetId,
+                    hidden: true,
+                },
+                fields: "hidden"
+            }
+        });
+
+        // Execute them all!
         Sheets.Spreadsheets.batchUpdate({ requests: apiRequests }, newFileId);
     }
 }

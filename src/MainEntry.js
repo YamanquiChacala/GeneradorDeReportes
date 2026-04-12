@@ -28,7 +28,7 @@ function buildDriveCard(e) {
                 return buildWrongSelectionCard();
             }
         }
-        return Initialization.buildCreateInitializationCard(selectedFolder.getId())
+        return InitializationCards.buildCreateInitializationFileCard(selectedFolder.getId())
     }
 
     return buildWrongSelectionCard();
