@@ -68,5 +68,25 @@ const InitializationCards = {
         return card.addSection(section).build();
     },
 
+    /**
+     * 
+     * @param {string} fileId 
+     */
+    buildInitializationFileEditCard(fileId) {
+        const card = CardService.newCardBuilder()
+            .setHeader(CardParts.headerIcon({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", iconName: Icon.clipboard }));
 
+        const section = CardService.newCardSection();
+
+        const calendarAction = CardService.newAction()
+            .setFunctionName(onGenerateCalendar.name)
+            .setParameters({ fileId });
+
+        section.addWidget(CardService.newTextButton()
+            .setText("Regenerar Calendario")
+            .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+            .setOnClickAction(calendarAction));
+
+        return card.addSection(section).build();
+    }
 }

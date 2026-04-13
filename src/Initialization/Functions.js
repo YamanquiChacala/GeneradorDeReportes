@@ -44,9 +44,17 @@ function onCreateInitializationFile(e) {
         dateEnd,
     }
 
-    // TODO: Surrond by try-catch, show a card with the error if error.
-    Initialization.createInitializationFile(initData);
 
+    try {
+        Initialization.createInitializationFile(initData);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(errorMessage);
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification()
+                .setText(`❌ Error creando Registro de Grupo: ${errorMessage}`))
+            .build();
+    }
 
     // Trigger creation example
     // const trigger = ScriptApp.newTrigger(fireCreateInitializationFile.name)
@@ -57,7 +65,6 @@ function onCreateInitializationFile(e) {
     // const triggerId = trigger.getUniqueId();
     // PropertiesService.getUserProperties().setProperty(triggerId, JSON.stringify(initData));
 
-    // TODO: Extract this into a generic function buildParagraphCard(header, htmlText)
     const successCard = CardService.newCardBuilder()
         .setHeader(CardParts.headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }))
         .addSection(CardService.newCardSection()
@@ -73,13 +80,28 @@ function onCreateInitializationFile(e) {
         .build();
 }
 
-// TODO: Move to file with generic reusable functions.
 /**
- * Pops the Card Stack to the root.
+ * 
+ * @param {GoogleAppsScript.Addons.EventObject} e 
  * @returns {GoogleAppsScript.Card_Service.ActionResponse}
  */
-function onPopCardStack() {
-    return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().popToRoot()).build();
+function onGenerateCalendar(e) {
+    const fileId = e.commonEventObject.parameters.fileId;
+
+    try {
+        Initialization.generateCalendar(fileId);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(errorMessage);
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification()
+                .setText(`❌ Error generando calendario: ${errorMessage}`))
+            .build();
+    }
+
+    return CardService.newActionResponseBuilder()
+        .setNotification(CardService.newNotification().setText("✅ Calendario creado."))
+        .build()
 }
 
 

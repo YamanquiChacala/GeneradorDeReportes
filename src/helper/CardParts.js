@@ -2,7 +2,6 @@ const CardParts = {
 
     /**
      * Base builder for headers.
-     * 
      * @param {Object} options
      * @param {string} options.title
      * @param {string} [options.subtitle]
@@ -26,7 +25,6 @@ const CardParts = {
 
     /**
      * Header with a local hosted image.
-     * 
      * @param {Object} options
      * @param {string} options.title The title on the header
      * @param {string} [options.subtitle] The subtitle on the header
@@ -42,7 +40,6 @@ const CardParts = {
 
     /**
      * Header using an Iconify icon.
-     * 
      * @param {Object} options
      * @param {string} options.title 
      * @param {string} [options.subtitle] 
@@ -51,7 +48,8 @@ const CardParts = {
      * @param {string} [options.color] 
      * @param {number} [options.width] 
      * @param {number} [options.height] 
-     * @param {boolean} [options.box] 
+     * @param {boolean} [options.box]
+     * @returns {GoogleAppsScript.Card_Service.CardHeader}
      */
     headerIcon({ title, subtitle, cropCircle, iconName, color, width, height, box }) {
         const { url: imageUrl, name: imageAltText } = Utils.iconifyUrl({ iconName, color, width, height, box });
@@ -61,7 +59,6 @@ const CardParts = {
 
     /**
      * Builds am IconImage using the Iconify API.
-     * 
      * @param {Object} options
      * @param {Icon} options.iconName 
      * @param {string} [options.color] 
@@ -76,5 +73,19 @@ const CardParts = {
         return CardService.newIconImage()
             .setIconUrl(url)
             .setAltText(displayName);
-    }
+    },
+
+    /**
+     * Build a Card with a header and text.
+     * @param {GoogleAppsScript.Card_Service.CardHeader} header 
+     * @param {string} htmlText 
+     * @returns {GoogleAppsScript.Card_Service.Card}
+     */
+    buildParagraphCard(header, htmlText) {
+        return CardService.newCardBuilder()
+            .setHeader(header)
+            .addSection(CardService.newCardSection()
+                .addWidget(CardService.newTextParagraph().setText(htmlText)))
+            .build();
+    },
 }

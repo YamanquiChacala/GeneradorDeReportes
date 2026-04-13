@@ -47,11 +47,14 @@ function buildSheetsCard(e) {
     }
 
     const sheetId = e.sheets.id;
+
+    if (!sheetId) return buildWrongSelectionCard();
+
     const sheetFileType = FileValidation.getFileType(sheetId);
 
     switch (sheetFileType) {
         case FileType.setup:
-        // TODO: Return Card "Init options"
+            return InitializationCards.buildInitializationFileEditCard(sheetId)
         case FileType.report:
         // TODO: Return Card "Report options"
     }

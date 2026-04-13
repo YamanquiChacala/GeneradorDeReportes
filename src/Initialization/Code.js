@@ -1,8 +1,8 @@
 const Initialization = {
     /**
-  * Creates a new Group Initialization file with the given data.
-  * @param {InitFileData} initData
-  */
+     * Creates a new Group Initialization file with the given data.
+     * @param {InitFileData} initData
+     */
     createInitializationFile(initData) {
 
         // ========== Create File ============
@@ -48,26 +48,70 @@ const Initialization = {
         }, newFileId)
 
         // ========= Create Calendar ==========
+        Initialization.generateCalendar(newFileId);
 
-        const calendarFormatResponse = Sheets.Spreadsheets.get(newFileId, {
-            ranges: ["CalendarioTemplate!A1:O19"],
-            includeGridData: true
-        })
+    },
 
-        const calendarFormatData = calendarFormatResponse.sheets?.[0]?.data?.[0];
-        if (!calendarFormatData) throw new Error("Error al crear calendario: No se encuentra la hoja \"CalendarioTemplate\"");
+    /**
+     * 
+     * @param {GoogleAppsScript.Sheets.Schema.GridRange} [range] 
+     * @param {GoogleAppsScript.Sheets.Schema.Sheet} [sheet] 
+     * @returns {number | null}
+     */
+    getDateMs(range, sheet) {
+        if (!range?.startRowIndex || !range.startColumnIndex) return null;
 
-        const templateSheetId = calendarFormatResponse.sheets?.[0].properties?.sheetId ?? 0;
+        const cell = sheet?.data?.[0]?.rowData?.[range.startRowIndex]?.values?.[range.startColumnIndex];
+        const rawNumber = cell?.effectiveValue?.numberValue;
+
+        if (!rawNumber) return null;
+
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
+        return sheetsEpoch + (rawNumber * msPerDay);
+    },
+
+    /**
+     * Generates a Calendar in the given Spreadsheet
+     * The spreadsheet must be a Setup Group.
+     * @param {string} fileId 
+     */
+    generateCalendar(fileId) {
+        const registroSpreadsheet = Sheets.Spreadsheets.get(fileId, {
+            fields: "sheets(properties(sheetId,title),data(rowMetadata/pixelSize,columnMetadata/pixelSize,rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges(name,range)"
+        });
+
+        const dataSheet = registroSpreadsheet.sheets?.find(s => s.properties?.title === "Registro Inicial");
+        const calendarTemplateSheet = registroSpreadsheet.sheets?.find(s => s.properties?.title === "CalendarioTemplate");
+        const calendarSheet = registroSpreadsheet.sheets?.find(s => s.properties?.title === "Calendario");
+
+        const templateSheetId = calendarTemplateSheet?.properties?.sheetId;
+
+        if (!dataSheet || !calendarTemplateSheet || !registroSpreadsheet.namedRanges) throw new Error("Error al crear calendario: Faltan hojas de datos o formato.");
+
+        const namedRanges = registroSpreadsheet.namedRanges.reduce((acc, namedRange) => {
+            if (namedRange.name) {
+                acc[namedRange.name] = namedRange;
+            }
+            return acc;
+        },/** @type {Record<string, GoogleAppsScript.Sheets.Schema.NamedRange>} */({}));
+
+        const dateStart = Initialization.getDateMs(namedRanges["dateStart"]?.range, dataSheet);
+        const dateEndTrimester1 = Initialization.getDateMs(namedRanges["dateEndTrimester1"]?.range, dataSheet);
+        const dateEndTrimester2 = Initialization.getDateMs(namedRanges["dateEndTrimester2"]?.range, dataSheet);
+        const dateEnd = Initialization.getDateMs(namedRanges["dateEnd"]?.range, dataSheet);
+
+        if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) return new Error("Error al crear calendario: Faltan las fechas.")
 
         const columnWidths = {
-            month: calendarFormatData.columnMetadata?.[0].pixelSize ?? 100,
-            number: calendarFormatData.columnMetadata?.[1].pixelSize ?? 100,
-            checkmark: calendarFormatData.columnMetadata?.[2].pixelSize ?? 100,
+            month: calendarTemplateSheet.data?.[0]?.columnMetadata?.[0]?.pixelSize ?? 100,
+            number: calendarTemplateSheet.data?.[0]?.columnMetadata?.[1]?.pixelSize ?? 100,
+            checkmark: calendarTemplateSheet.data?.[0]?.columnMetadata?.[2]?.pixelSize ?? 100,
         }
 
         const rowHights = {
-            header: calendarFormatData.rowMetadata?.[0].pixelSize ?? 21,
-            day: calendarFormatData.rowMetadata?.[1].pixelSize ?? 21,
+            header: calendarTemplateSheet.data?.[0]?.rowMetadata?.[0]?.pixelSize ?? 21,
+            day: calendarTemplateSheet.data?.[0]?.rowMetadata?.[1]?.pixelSize ?? 21,
         }
 
         /** @type {string[]} */
@@ -77,7 +121,7 @@ const Initialization = {
         /** @type {string[]} */
         const monthNamesHigh1 = [];
         for (let i = 7; i < 19; i++) {
-            const row = calendarFormatData.rowData?.[i];
+            const row = calendarTemplateSheet.data?.[0]?.rowData?.[i];
             const cellHigh3 = row?.values?.[0];
             const cellHigh2 = row?.values?.[2];
             const cellHigh1 = row?.values?.[4];
@@ -90,12 +134,12 @@ const Initialization = {
         const msPerDay = 24 * 60 * 60 * 1000;
 
         // Snap to first Sunday
-        const dateStartDayOfWeek = new Date(initData.dateStart).getUTCDay();
-        const calStart = initData.dateStart - (dateStartDayOfWeek * msPerDay);
+        const dateStartDayOfWeek = new Date(dateStart).getUTCDay();
+        const calStart = dateStart - (dateStartDayOfWeek * msPerDay);
 
         // Snap to last Saturday
-        const dateEndDayOfWeek = new Date(initData.dateEnd).getUTCDay();
-        const calEnd = initData.dateEnd + ((6 - dateEndDayOfWeek) * msPerDay);
+        const dateEndDayOfWeek = new Date(dateEnd).getUTCDay();
+        const calEnd = dateEnd + ((6 - dateEndDayOfWeek) * msPerDay);
 
         const totalDays = ((calEnd - calStart) / msPerDay) + 1;
         const totalRows = 1 + Math.ceil(totalDays / 7);
@@ -105,6 +149,14 @@ const Initialization = {
 
         /** @type {GoogleAppsScript.Sheets.Schema.Request[]} */
         const apiRequests = [];
+
+        if (calendarSheet) {
+            apiRequests.push({
+                deleteSheet: {
+                    sheetId: calendarSheet.properties?.sheetId,
+                }
+            });
+        }
 
         apiRequests.push({
             addSheet: {
@@ -203,7 +255,7 @@ const Initialization = {
                 const dayDate = new Date(currentMs);
                 const dayOfWeek = dayDate.getUTCDay();
                 const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6;
-                const inBounds = currentMs >= initData.dateStart && currentMs <= initData.dateEnd;
+                const inBounds = currentMs >= dateStart && currentMs <= dateEnd;
 
                 rowCells.push({ userEnteredValue: { numberValue: dayDate.getUTCDate() } });
                 rowCells.push({
@@ -214,8 +266,8 @@ const Initialization = {
                 // TODO: Some magic numbers here, it would be best to have them elsewhere.
                 // Format the cells
                 let formatRowIndex = 2; // Default to trimester 1;
-                if (currentMs > initData.dateEndTrimester2) formatRowIndex = 4;
-                else if (currentMs > initData.dateEndTrimester1) formatRowIndex = 3;
+                if (currentMs > dateEndTrimester2) formatRowIndex = 4;
+                else if (currentMs > dateEndTrimester1) formatRowIndex = 3;
 
                 const formatColumnIndex = isWeekday && inBounds ? 3 : 7; // Column D and H
 
@@ -329,11 +381,6 @@ const Initialization = {
                     description: "Calendario",
                     warningOnly: true,
                     unprotectedRanges: unprotectedRanges,
-                    editors: {
-                        users: [],
-                        groups: [],
-                        domainUsersCanEdit: false,
-                    }
                 }
             }
         });
@@ -350,6 +397,6 @@ const Initialization = {
         });
 
         // Execute them all!
-        Sheets.Spreadsheets.batchUpdate({ requests: apiRequests }, newFileId);
+        Sheets.Spreadsheets.batchUpdate({ requests: apiRequests }, fileId);
     }
 }
