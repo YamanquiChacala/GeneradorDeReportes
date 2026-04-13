@@ -45,7 +45,7 @@ const Initialization = {
         Sheets.Spreadsheets.Values.batchUpdate({
             valueInputOption: "USER_ENTERED",
             data: updateData,
-        }, newFileId)
+        }, newFileId);
 
         // ========= Create Calendar ==========
         Initialization.generateCalendar(newFileId);
@@ -101,7 +101,9 @@ const Initialization = {
         const dateEndTrimester2 = Initialization.getDateMs(namedRanges["dateEndTrimester2"]?.range, dataSheet);
         const dateEnd = Initialization.getDateMs(namedRanges["dateEnd"]?.range, dataSheet);
 
-        if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) return new Error("Error al crear calendario: Faltan las fechas.")
+        if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) return new Error("Error al crear calendario: Faltan las fechas.");
+        if (dateStart <= dateEndTrimester1 || dateEndTrimester1 <= dateEndTrimester2 || dateEndTrimester2 <= dateEnd) return new Error("Error al crear calendario: Fechas en desorden.");
+        if (dateEnd - dateStart > 365 * 24 * 60 * 60 * 1000) return new Error("Error al crear calendario: Calendario demasiado grande.")
 
         const columnWidths = {
             month: calendarTemplateSheet.data?.[0]?.columnMetadata?.[0]?.pixelSize ?? 100,
