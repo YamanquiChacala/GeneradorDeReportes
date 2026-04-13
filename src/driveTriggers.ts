@@ -1,6 +1,7 @@
 import { FileType } from "./common/enums";
 import { getFileType } from "./common/fileValidation";
 import { buildWrongSelectionCard } from "./common/premadeCards";
+import { buildCreateInitializationFileCard } from "./initialization/cards";
 
 /**
  *
@@ -27,8 +28,7 @@ export function buildDriveCard(e: GoogleAppsScript.Addons.EventObject): GoogleAp
                 return buildWrongSelectionCard();
             }
         }
-        // TODO: return Card
-        // return InitializationCards.buildCreateInitializationFileCard(selectedFolder.getId())
+        return buildCreateInitializationFileCard(selectedFolder.getId());
     }
 
     return buildWrongSelectionCard();
