@@ -80,3 +80,37 @@ export function sanitizeSheetName(input: string): string {
 
     return sanitized;
 }
+
+/**
+ * Flattens the nested GAS formInputs object into a clean dictionary.
+ * Uses a generic <T> so you can strongly type the returned object!
+ */
+export function flattenFormInputs<T = Record<string, any>>(inputs: Record<string, any> | undefined): Partial<T> {
+    const flat: Record<string, any> = {};
+
+    // If the entire form was empty/omitted, return an empty object safely
+    if (!inputs) return flat as Partial<T>;
+
+    // Object.entries avoids the "noPropertyAccessFromIndexSignature" error!
+    for (const [key, obj] of Object.entries(inputs)) {
+        if (!obj) continue;
+
+        if (obj.stringInputs?.value !== undefined) {
+            const values = obj.stringInputs.value;
+            // If it's a single input (text/radio), return the string.
+            // If it's a multiselect checkbox, return the array of strings.
+            flat[key] = values.length === 1 ? values[0] : values;
+        } else if (obj.dateInput?.msSinceEpoch !== undefined) {
+            // Extract the timestamp for dates
+            flat[key] = parseInt(obj.dateInput.msSinceEpoch, 10);
+        } else if (obj.dateTimeInput?.msSinceEpoch !== undefined) {
+            // Extract the timestamp for DateTimes
+            flat[key] = parseInt(obj.dateTimeInput.msSinceEpoch, 10);
+        } else {
+            // Fallback for anything unexpected
+            flat[key] = obj;
+        }
+    }
+
+    return flat as Partial<T>;
+}

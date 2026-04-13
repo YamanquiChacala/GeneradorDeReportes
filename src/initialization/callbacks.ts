@@ -1,35 +1,57 @@
+import { onPopCardStack } from "../common/callbacks";
+import { headerImage } from "../common/cardParts";
+import { flattenFormInputs, sanitizeFileName } from "../common/utils";
+
+interface InitFileData {
+    folderId: string;
+    groupName: string;
+    attendancePerClass: boolean;
+    averagePerField: boolean;
+    dateStart: number;
+    dateEndTrimester1: number;
+    dateEndTrimester2: number;
+    dateEnd: number;
+}
+
 /**
  * Callback to the button to create a new Initialization Group File.
  */
 export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
-    const formInput = e.commonEventObject.formInputs;
-    const folderId = e.commonEventObject.parameters.destinationFolder;
+    const { destinationFolder: folderId } = e.commonEventObject.parameters;
 
-    const groupName = Utils.sanitizeFileName(formInput.groupName.stringInputs?.value[0]);
+    const { groupName, attendancePerClass, averagePerField, dateStart, dateEndTrimester1, dateEndTrimester2, dateEnd } = flattenFormInputs<InitFileData>(
+        e.commonEventObject.formInputs,
+    );
 
-    const attendancePerClass = formInput.attendancePerClass ? true : false;
-    const averagePerField = formInput.averagePerField ? true : false;
+    if (!folderId) {
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText("❌ Error creando Registro de Grupo: Falta carpeta de destino."))
+            .build();
+    }
+    if (!groupName || !dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) {
+        return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("❌ Error creando Registro de Grupo: Faltan datos.")).build();
+    }
 
-    const dateStart = parseInt(formInput.dateStart.dateInput?.msSinceEpoch ?? "");
-    const dateEndTrimester1 = parseInt(formInput.dateEndTrimester1.dateInput?.msSinceEpoch ?? "");
-    const dateEndTrimester2 = parseInt(formInput.dateEndTrimester2.dateInput?.msSinceEpoch ?? "");
-    const dateEnd = parseInt(formInput.dateEnd.dateInput?.msSinceEpoch ?? "");
+    const groupNameSanitized = sanitizeFileName(groupName);
 
     if (!(dateStart < dateEndTrimester1 && dateEndTrimester1 < dateEndTrimester2 && dateEndTrimester2 < dateEnd)) {
-        return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("❌ Las fechas deben estar en orden ascendente.")).build();
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText("❌ Error creando Registro de Grupo: Las fechas deben estar en orden ascendente."))
+            .build();
     }
 
     const moreThanAYear = 400 * 24 * 60 * 60 * 1000;
     if (dateEnd - dateStart > moreThanAYear) {
-        return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("❌ Periodo demasiado largo.")).build();
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText("❌ Error creando Registro de Grupo: Periodo demasiado largo."))
+            .build();
     }
 
-    /** @type {InitFileData} */
-    const initData = {
+    const initData: InitFileData = {
         folderId,
-        groupName,
-        attendancePerClass,
-        averagePerField,
+        groupName: groupNameSanitized,
+        attendancePerClass: attendancePerClass ?? false,
+        averagePerField: averagePerField ?? false,
         dateStart,
         dateEndTrimester1,
         dateEndTrimester2,
@@ -56,7 +78,7 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
     // PropertiesService.getUserProperties().setProperty(triggerId, JSON.stringify(initData));
 
     const successCard = CardService.newCardBuilder()
-        .setHeader(CardParts.headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }))
+        .setHeader(headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }))
         .addSection(
             CardService.newCardSection()
                 .addWidget(
