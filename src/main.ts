@@ -1,7 +1,6 @@
-export { buildDriveCard } from './driveTriggers';
-
-export { buildCard } from './example1';
-export { buildAnotherCard } from './example2';
+export { buildDriveCard } from "./driveTriggers";
+export { buildDriveTestPdfCreationCard } from "./pdf/PdfCreation";
+export { buildSheetsCard } from "./sheetTriggers";
 
 // Tests
-export * from './tests/_index';
+export * from "./tests/_index";

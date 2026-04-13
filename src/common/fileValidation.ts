@@ -1,13 +1,16 @@
-import { FileType } from "./enums";
+import type { FileType } from "./enums";
 
 const key = "fileType";
 
 export function setFileType(fileId: string, fileType: FileType) {
-    Drive?.Files.update({
-        appProperties: {
-            [key]: fileType
-        }
-    }, fileId);
+    Drive?.Files.update(
+        {
+            appProperties: {
+                [key]: fileType,
+            },
+        },
+        fileId,
+    );
 }
 
 /**
@@ -15,9 +18,9 @@ export function setFileType(fileId: string, fileType: FileType) {
  */
 export function getFileType(fileId: string): FileType | undefined {
     if (!fileId) return undefined;
-    const fileData = Drive?.Files.get(fileId, { fields: 'appProperties' });
+    const fileData = Drive?.Files.get(fileId, { fields: "appProperties" });
 
-    return fileData?.appProperties?.[key]
+    return fileData?.appProperties?.[key];
 }
 
 /**
@@ -33,9 +36,12 @@ export function isFileType(fileId: string, fileType: FileType): boolean {
  * Removes FileType mark
  */
 export function removeFileType(fileId: string) {
-    Drive?.Files.update({
-        appProperties: {
-            [key]: null
-        }
-    }, fileId);
+    Drive?.Files.update(
+        {
+            appProperties: {
+                [key]: null,
+            },
+        },
+        fileId,
+    );
 }

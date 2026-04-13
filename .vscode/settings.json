@@ -8,5 +8,6 @@
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
   },
-  "html.validate.styles": false
+  "html.validate.styles": false,
+  "js/ts.tsserver.experimental.enableProjectDiagnostics": true
 }

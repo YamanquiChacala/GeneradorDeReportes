@@ -1,19 +1,19 @@
-import { Icon } from "./enums";
+import type { Icon } from "./enums";
 
 export interface IconifyParams {
-    iconName: Icon | string,
-    color?: string,
-    width?: number,
-    height?: number,
-    box?: boolean,
+    iconName: Icon | string;
+    color?: string;
+    width?: number;
+    height?: number;
+    box?: boolean;
 }
 
 /**
  * Helper method to generate the URL for an Iconify icon.
  */
-export function iconifyUrl({ iconName, color, width, height, box }: IconifyParams): { name: string, url: string } {
+export function iconifyUrl({ iconName, color, width, height, box }: IconifyParams): { name: string; url: string } {
     // Sanitize the color (replace # with %23 for the URL)
-    let safeColor = color?.startsWith("#") ? "%23" + color.substring(1) : color;
+    const safeColor = color?.startsWith("#") ? `%23${color.substring(1)}` : color;
 
     // Collect provided options into a parameters array
     const params = [];
@@ -32,22 +32,22 @@ export function iconifyUrl({ iconName, color, width, height, box }: IconifyParam
 
     // Extract the alt text from the last element of the name
     const nameParts = iconName.split("/");
-    const name = nameParts[nameParts.length - 1];
+    const name = nameParts[nameParts.length - 1] || "";
 
-    return ({ url, name });
+    return { url, name };
 }
 
 /**
  * Normalizes unicode, collapses multiple spaces, and trims edges.
- * 
+ *
  */
 function baseSanitize(input: string): string {
-    if (!input) return '';
+    if (!input) return "";
 
     return input
-        .normalize("NFKC")        // Standardize composed characters (keeps Spanish accents intact)
-        .replace(/\s+/g, ' ')     // Replace multiple spaces with a single space
-        .trim();                  // Remove leading/trailing spaces
+        .normalize("NFKC") // Standardize composed characters (keeps Spanish accents intact)
+        .replace(/\s+/g, " ") // Replace multiple spaces with a single space
+        .trim(); // Remove leading/trailing spaces
 }
 
 /**
@@ -56,7 +56,7 @@ function baseSanitize(input: string): string {
 export function sanitizeFileName(input?: string, fallback = "Grupo"): string {
     if (!input) return fallback;
     // Remove OS-prohibited characters: < > : " / \ | ? *
-    const sanitized = input.replace(/[<>:"\/\\|?*]/g, '');
+    const sanitized = input.replace(/[<>:"/\\|?*]/g, "");
 
     return baseSanitize(sanitized) || fallback;
 }
@@ -66,10 +66,10 @@ export function sanitizeFileName(input?: string, fallback = "Grupo"): string {
  */
 export function sanitizeSheetName(input: string): string {
     // Handle Apostrophes and Quotes, leaving a space behind: '"`
-    let sanitized = input.replace(/['"`]/g, ' ');
+    let sanitized = input.replace(/['"`]/g, " ");
 
     // Remove Spreadsheet-prohibited characters: []:*?/\|
-    sanitized = sanitized.replace(/[\[\]:*?\/\\|]/g, '');
+    sanitized = sanitized.replace(/[[\]:*?/\\|]/g, "");
 
     sanitized = baseSanitize(sanitized);
 

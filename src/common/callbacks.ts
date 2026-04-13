@@ -1,7 +1,6 @@
 /**
  * Pops the Card Stack to the root.
- * @returns {GoogleAppsScript.Card_Service.ActionResponse}
  */
-function onPopCardStack() {
+export function onPopCardStack(): GoogleAppsScript.Card_Service.ActionResponse {
     return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().popToRoot()).build();
 }

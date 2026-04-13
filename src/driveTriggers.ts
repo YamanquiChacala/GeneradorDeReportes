@@ -1,13 +1,13 @@
-import { getFileType } from "./common/fileValidation";
 import { FileType } from "./common/enums";
+import { getFileType } from "./common/fileValidation";
+import { buildWrongSelectionCard } from "./common/premadeCards";
 
 /**
- * 
+ *
  */
 export function buildDriveCard(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.Card {
-
-    if (e.drive?.selectedItems?.length) {
-        const selectedFile = e.drive.selectedItems[0];
+    const selectedFile = e.drive?.selectedItems?.[0];
+    if (selectedFile) {
         const selectedFileFileType = getFileType(selectedFile.id);
         switch (selectedFileFileType) {
             case FileType.SETUP:
@@ -16,8 +16,7 @@ export function buildDriveCard(e: GoogleAppsScript.Addons.EventObject): GoogleAp
             // TODO: return Card "Open in Sheets to edit or generate all reports"
         }
 
-        /** @type {GoogleAppsScript.Drive.Folder} */
-        let selectedFolder;
+        let selectedFolder: GoogleAppsScript.Drive.Folder;
         if (selectedFile.mimeType === "application/vnd.google-apps.folder") {
             selectedFolder = DriveApp.getFolderById(selectedFile.id);
         } else {
@@ -33,22 +32,4 @@ export function buildDriveCard(e: GoogleAppsScript.Addons.EventObject): GoogleAp
     }
 
     return buildWrongSelectionCard();
-}
-
-
-/**
- * A card indicating the user has selected an invalid file or folder.
- * Reminds them of the specific files/folders the add-on can manage.
- */
-function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
-
-    const explanation = CardService.newTextParagraph()
-        .setText("El archivo o carpeta seleccionado no es compatible.<br/><br/>Por favor, selecciona una de las siguientes opciones para continuar:<br/><br/>• 📁 Una <b>carpeta vacía</b> (para crear la configuración inicial)<br/><br/>• 📋 Un archivo de <b>Registro inicial de grupos</b><br/><br/>• 📊 Un archivo de <b>Calificaciones, asistencias y reportes</b>");
-
-    const mainSection = CardService.newCardSection()
-        .addWidget(explanation);
-
-    return CardService.newCardBuilder()
-        .addSection(mainSection)
-        .build();
 }
