@@ -1,8 +1,19 @@
 {
   "devDependencies": {
+    "@biomejs/biome": "^2.4.11",
+    "@gas-plugin/unplugin": "^0.1.2",
     "@types/google-apps-script": "^2.0.8",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.5.2",
-    "jest": "^30.3.0"
+    "esbuild": "^0.28.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "typescript": "^6.0.2"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "push": "npm run build && clasp push",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   }
 }
