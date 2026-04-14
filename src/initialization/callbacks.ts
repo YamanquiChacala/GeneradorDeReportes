@@ -1,17 +1,8 @@
 import { onPopCardStack } from "../common/callbacks";
 import { headerImage } from "../common/cardParts";
 import { flattenFormInputs, sanitizeFileName } from "../common/utils";
-
-interface InitFileData {
-    folderId: string;
-    groupName: string;
-    attendancePerClass: boolean;
-    averagePerField: boolean;
-    dateStart: number;
-    dateEndTrimester1: number;
-    dateEndTrimester2: number;
-    dateEnd: number;
-}
+import type { InitFileData } from "./code";
+import { createInitializationFile, generateCalendar } from "./code";
 
 /**
  * Callback to the button to create a new Initialization Group File.
@@ -19,9 +10,15 @@ interface InitFileData {
 export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const { destinationFolder: folderId } = e.commonEventObject.parameters;
 
-    const { groupName, attendancePerClass, averagePerField, dateStart, dateEndTrimester1, dateEndTrimester2, dateEnd } = flattenFormInputs<InitFileData>(
-        e.commonEventObject.formInputs,
-    );
+    const {
+        groupName,
+        attendancePerClass = false,
+        averagePerField = false,
+        dateStart,
+        dateEndTrimester1,
+        dateEndTrimester2,
+        dateEnd,
+    } = flattenFormInputs<InitFileData>(e.commonEventObject.formInputs);
 
     if (!folderId) {
         return CardService.newActionResponseBuilder()
@@ -50,8 +47,8 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
     const initData: InitFileData = {
         folderId,
         groupName: groupNameSanitized,
-        attendancePerClass: attendancePerClass ?? false,
-        averagePerField: averagePerField ?? false,
+        attendancePerClass,
+        averagePerField,
         dateStart,
         dateEndTrimester1,
         dateEndTrimester2,
@@ -59,7 +56,7 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
     };
 
     try {
-        Initialization.createInitializationFile(initData);
+        createInitializationFile(initData);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(errorMessage);
@@ -67,15 +64,6 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
             .setNotification(CardService.newNotification().setText(`❌ Error creando Registro de Grupo: ${errorMessage}`))
             .build();
     }
-
-    // Trigger creation example
-    // const trigger = ScriptApp.newTrigger(fireCreateInitializationFile.name)
-    //     .timeBased()
-    //     .after(1)
-    //     .create();
-
-    // const triggerId = trigger.getUniqueId();
-    // PropertiesService.getUserProperties().setProperty(triggerId, JSON.stringify(initData));
 
     const successCard = CardService.newCardBuilder()
         .setHeader(headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }))
@@ -91,4 +79,29 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
         .build();
 
     return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().pushCard(successCard)).build();
+}
+
+/**
+ *
+ */
+export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const { fileId } = e.commonEventObject.parameters;
+
+    if (!fileId) {
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`❌ Error generando calendario: No se encuentra el archivo.`))
+            .build();
+    }
+
+    try {
+        generateCalendar(fileId);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(errorMessage);
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`❌ Error generando calendario: ${errorMessage}`))
+            .build();
+    }
+
+    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("✅ Calendario creado.")).build();
 }

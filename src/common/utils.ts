@@ -81,33 +81,39 @@ export function sanitizeSheetName(input: string): string {
     return sanitized;
 }
 
+// Define the exact shapes we expect from Google Apps Script payloads
+interface GasInput {
+    stringInputs?: { value: string[] };
+    dateInput?: { msSinceEpoch: string | number };
+    dateTimeInput?: { msSinceEpoch: string | number };
+    [key: string]: unknown;
+}
+
 /**
  * Flattens the nested GAS formInputs object into a clean dictionary.
  * Uses a generic <T> so you can strongly type the returned object!
  */
-export function flattenFormInputs<T = Record<string, any>>(inputs: Record<string, any> | undefined): Partial<T> {
-    const flat: Record<string, any> = {};
+export function flattenFormInputs<T = Record<string, unknown>>(inputs: Record<string, GasInput> | undefined): Partial<T> {
+    const flat: Record<string, unknown> = {};
 
-    // If the entire form was empty/omitted, return an empty object safely
     if (!inputs) return flat as Partial<T>;
 
-    // Object.entries avoids the "noPropertyAccessFromIndexSignature" error!
     for (const [key, obj] of Object.entries(inputs)) {
         if (!obj) continue;
 
         if (obj.stringInputs?.value !== undefined) {
             const values = obj.stringInputs.value;
-            // If it's a single input (text/radio), return the string.
-            // If it's a multiselect checkbox, return the array of strings.
-            flat[key] = values.length === 1 ? values[0] : values;
+            if (values.length === 1) {
+                const val = values[0];
+                flat[key] = val === "true" ? true : val;
+            } else {
+                flat[key] = values;
+            }
         } else if (obj.dateInput?.msSinceEpoch !== undefined) {
-            // Extract the timestamp for dates
-            flat[key] = parseInt(obj.dateInput.msSinceEpoch, 10);
+            flat[key] = Number(obj.dateInput.msSinceEpoch);
         } else if (obj.dateTimeInput?.msSinceEpoch !== undefined) {
-            // Extract the timestamp for DateTimes
-            flat[key] = parseInt(obj.dateTimeInput.msSinceEpoch, 10);
+            flat[key] = Number(obj.dateTimeInput.msSinceEpoch);
         } else {
-            // Fallback for anything unexpected
             flat[key] = obj;
         }
     }

@@ -1,6 +1,6 @@
 import type { FileType } from "./enums";
 
-const key = "fileType";
+export const key = "fileType";
 
 export function setFileType(fileId: string, fileType: FileType) {
     Drive?.Files.update(

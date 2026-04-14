@@ -1,4 +1,6 @@
-import { headerImage } from "../common/cardParts";
+import { headerIcon, headerImage } from "../common/cardParts";
+import { Icon } from "../common/enums";
+import { onCreateInitializationFile, onGenerateCalendar } from "./callbacks";
 
 /**
  * Presents the user with a form to fill and a button to create the initialization file.
@@ -13,13 +15,13 @@ export function buildCreateInitializationFileCard(folderId: string): GoogleAppsS
     section.addWidget(
         CardService.newDecoratedText()
             .setText("Asistencia individual por materia")
-            .setSwitchControl(CardService.newSwitch().setFieldName("attendancePerClass").setValue("attendancePerClass").setSelected(false)),
+            .setSwitchControl(CardService.newSwitch().setFieldName("attendancePerClass").setValue("true").setSelected(false)),
     );
 
     section.addWidget(
         CardService.newDecoratedText()
             .setText("Promedios por Campo Formativo")
-            .setSwitchControl(CardService.newSwitch().setFieldName("averagePerField").setValue("averagePerField").setSelected(false)),
+            .setSwitchControl(CardService.newSwitch().setFieldName("averagePerField").setValue("true").setSelected(false)),
     );
 
     section.addWidget(CardService.newDatePicker().setValueInMsSinceEpoch(1787961600000).setFieldName("dateStart").setTitle("Primer dia de clases"));
@@ -39,7 +41,26 @@ export function buildCreateInitializationFileCard(folderId: string): GoogleAppsS
         .addRequiredWidget("dateEndTrimester2")
         .addRequiredWidget("dateEnd");
 
-    section.addWidget(CardService.newTextButton().setText("📋 Crear Registro Inicial del Grupo").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(createAction));
+    section.addWidget(
+        CardService.newTextButton().setText("📋 Crear Registro Inicial del Grupo").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(createAction),
+    );
+
+    return card.addSection(section).build();
+}
+
+/**
+ *
+ */
+export function buildInitializationFileEditCard(fileId: string): GoogleAppsScript.Card_Service.Card {
+    const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", iconName: Icon.CLIPBOARD }));
+
+    const section = CardService.newCardSection();
+
+    const calendarAction = CardService.newAction().setFunctionName(onGenerateCalendar.name).setParameters({ fileId });
+
+    section.addWidget(
+        CardService.newTextButton().setText("Regenerar Calendario").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(calendarAction),
+    );
 
     return card.addSection(section).build();
 }

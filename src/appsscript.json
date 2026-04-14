@@ -34,7 +34,7 @@
     },
     "drive": {
       "onItemsSelectedTrigger": {
-        "runFunction": "buildDriveTestPdfCreationCard"
+        "runFunction": "buildDriveCard"
       },
       "homepageTrigger": {
         "runFunction": "buildDriveCard"

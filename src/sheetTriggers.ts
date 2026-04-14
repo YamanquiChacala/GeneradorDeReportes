@@ -2,6 +2,7 @@ import * as CardParts from "./common/cardParts";
 import { FileType, Icon } from "./common/enums";
 import { getFileType } from "./common/fileValidation";
 import { buildWrongSelectionCard } from "./common/premadeCards";
+import { buildInitializationFileEditCard } from "./initialization/cards";
 
 /**
  *
@@ -19,8 +20,7 @@ export function buildSheetsCard(e: GoogleAppsScript.Addons.EventObject): GoogleA
 
     switch (sheetFileType) {
         case FileType.SETUP:
-        //TODO: Activate this
-        // return InitializationCards.buildInitializationFileEditCard(sheetId);
+            return buildInitializationFileEditCard(sheetId);
         case FileType.REPORT:
         // TODO: Return Card "Report options"
     }
