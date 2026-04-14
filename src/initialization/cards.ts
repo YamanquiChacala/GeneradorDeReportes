@@ -52,15 +52,22 @@ export function buildCreateInitializationFileCard(folderId: string): GoogleAppsS
  *
  */
 export function buildInitializationFileEditCard(fileId: string): GoogleAppsScript.Card_Service.Card {
-    const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", iconName: Icon.CLIPBOARD }));
-
-    const section = CardService.newCardSection();
-
     const calendarAction = CardService.newAction().setFunctionName(onGenerateCalendar.name).setParameters({ fileId });
 
-    section.addWidget(
-        CardService.newTextButton().setText("Regenerar Calendario").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(calendarAction),
-    );
+    const calendarButton = CardService.newTextButton()
+        .setText("Regenerar Calendario")
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setOnClickAction(calendarAction);
 
-    return card.addSection(section).build();
+    const initializeAction = CardService.newAction().setFunctionName("onInitializaReport").setParameters({ fileId });
+
+    const initializeButton = CardService.newTextButton()
+        .setText("Crear archivo de Registro del grupo")
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setOnClickAction(initializeAction);
+
+    return CardService.newCardBuilder()
+        .setHeader(headerIcon({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", iconName: Icon.CLIPBOARD }))
+        .addSection(CardService.newCardSection().addWidget(calendarButton).addWidget(initializeButton))
+        .build();
 }
