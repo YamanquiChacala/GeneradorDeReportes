@@ -1,3 +1,5 @@
+import { CSS_COLOR_MAP } from "../enums";
+
 /**
  * Normalizes unicode, collapses multiple spaces, and trims edges.
  */
@@ -39,4 +41,35 @@ export function sanitizeSheetName(input: string): string {
     }
 
     return sanitized;
+}
+
+/**
+ * Validates a web color string and normalizes it to a 6-digit hex format.
+ * Translates standard CSS color names into their hex equivalents.
+ */
+export function webColor(input?: string): string | null {
+    const trimmedInput = input?.trim();
+    if (!trimmedInput) return null;
+
+    // 1. Check for Hex Format (#RGB or #RRGGBB)
+    const hexRegex = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/;
+    if (hexRegex.test(trimmedInput)) {
+        let hex = trimmedInput.toUpperCase();
+
+        // Convert 3-digit hex (#FA0) to 6-digit hex (#FFAA00)
+        if (hex.length === 4) {
+            hex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+        }
+
+        return hex;
+    }
+
+    // 2. Check for Named Colors and map to Hex
+    const lowerInput = trimmedInput.toLowerCase();
+    if (Object.hasOwn(CSS_COLOR_MAP, lowerInput)) {
+        return CSS_COLOR_MAP[lowerInput] ?? null;
+    }
+
+    // 3. Fallback: Invalid color
+    return null;
 }

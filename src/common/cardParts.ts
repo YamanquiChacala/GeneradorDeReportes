@@ -1,5 +1,6 @@
 import { type Icon, Urls } from "./enums";
 import { type IconifyParams, iconifyUrl } from "./utils/image";
+import { webColor } from "./utils/text";
 
 interface BaseHeaderParams {
     title: string;
@@ -25,6 +26,13 @@ interface HeaderIconParams {
     width?: number;
     height?: number;
     box?: boolean;
+}
+
+interface TextButtonParams {
+    text: string;
+    action: GoogleAppsScript.Card_Service.Action;
+    style?: GoogleAppsScript.Card_Service.TextButtonStyle;
+    backgroundColor?: string;
 }
 
 /**
@@ -64,4 +72,12 @@ export function icon({ iconName, color, width, height, box }: IconifyParams): Go
     const { url, name: displayName } = iconifyUrl({ iconName, color, width, height, box });
 
     return CardService.newIconImage().setIconUrl(url).setAltText(displayName);
+}
+
+export function textButton({ text, action, style, backgroundColor }: TextButtonParams): GoogleAppsScript.Card_Service.TextButton {
+    const button = CardService.newTextButton().setText(text).setOnClickAction(action);
+    if (style) button.setTextButtonStyle(style);
+    const goodColor = webColor(backgroundColor);
+    if (goodColor) button.setBackgroundColor(goodColor);
+    return button;
 }
