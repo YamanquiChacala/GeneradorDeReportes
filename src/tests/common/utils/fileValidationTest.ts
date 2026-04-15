@@ -1,5 +1,5 @@
-import * as fileValidation from '../common/fileValidation'
-import { FileType } from '../common/enums';
+import { FileType } from "../../../common/enums";
+import * as fileValidation from "../../../common/utils/fileValidation";
 
 export function testFileValidation() {
     let passed = 0;
@@ -27,19 +27,13 @@ export function testFileValidation() {
 
         // 1. Setup: Create a temporary file in Drive using DriveApp
         // (DriveApp is easier for quick creation/teardown than the Advanced Drive Service)
-        const tempFile = DriveApp.createFile('Test_Montessori_Report.txt', 'Temporary test file');
+        const tempFile = DriveApp.createFile("Test_Montessori_Report.txt", "Temporary test file");
         tempFileId = tempFile.getId();
         log(`Created temp file: ${tempFileId}`);
 
         // 2. Test Initial State
-        assert(
-            fileValidation.getFileType(tempFileId) === undefined,
-            "File should initially have an undefined FileType"
-        );
-        assert(
-            fileValidation.isFileType(tempFileId, FileType.SETUP) === false,
-            "isFileType should return false for an unmarked file"
-        );
+        assert(fileValidation.getFileType(tempFileId) === undefined, "File should initially have an undefined FileType");
+        assert(fileValidation.isFileType(tempFileId, FileType.SETUP) === false, "isFileType should return false for an unmarked file");
 
         // 3. Test Setting the File Type
         fileValidation.setFileType(tempFileId, FileType.SETUP);
@@ -47,18 +41,9 @@ export function testFileValidation() {
         // Wait briefly to ensure Drive API propagates the property (sometimes it's not strictly synchronous)
         Utilities.sleep(500);
 
-        assert(
-            fileValidation.getFileType(tempFileId) === FileType.SETUP,
-            "getFileType should return INIT after setting it"
-        );
-        assert(
-            fileValidation.isFileType(tempFileId, FileType.SETUP) === true,
-            "isFileType should return true for INIT after setting it"
-        );
-        assert(
-            fileValidation.isFileType(tempFileId, FileType.REPORT) === false,
-            "isFileType should still return false for REPORT"
-        );
+        assert(fileValidation.getFileType(tempFileId) === FileType.SETUP, "getFileType should return INIT after setting it");
+        assert(fileValidation.isFileType(tempFileId, FileType.SETUP) === true, "isFileType should return true for INIT after setting it");
+        assert(fileValidation.isFileType(tempFileId, FileType.REPORT) === false, "isFileType should still return false for REPORT");
 
         // 4. Test Setting the File Type
         fileValidation.setFileType(tempFileId, FileType.REPORT);
@@ -66,18 +51,9 @@ export function testFileValidation() {
         // Wait briefly to ensure Drive API propagates the property (sometimes it's not strictly synchronous)
         Utilities.sleep(500);
 
-        assert(
-            fileValidation.getFileType(tempFileId) === FileType.REPORT,
-            "getFileType should return REPORT after setting it"
-        );
-        assert(
-            fileValidation.isFileType(tempFileId, FileType.SETUP) === false,
-            "isFileType should return false for INIT after setting it"
-        );
-        assert(
-            fileValidation.isFileType(tempFileId, FileType.REPORT) === true,
-            "isFileType should return true for REPORT"
-        );
+        assert(fileValidation.getFileType(tempFileId) === FileType.REPORT, "getFileType should return REPORT after setting it");
+        assert(fileValidation.isFileType(tempFileId, FileType.SETUP) === false, "isFileType should return false for INIT after setting it");
+        assert(fileValidation.isFileType(tempFileId, FileType.REPORT) === true, "isFileType should return true for REPORT");
 
         // 5. Test Removing the File Type
         fileValidation.removeFileType(tempFileId);
@@ -85,16 +61,9 @@ export function testFileValidation() {
 
         // Note: Setting an appProperty to null in the Drive API deletes the key.
         // Therefore, retrieving it should yield undefined again.
-        assert(
-            fileValidation.getFileType(tempFileId) === undefined,
-            "getFileType should return undefined after removal"
-        );
+        assert(fileValidation.getFileType(tempFileId) === undefined, "getFileType should return undefined after removal");
 
-        assert(
-            fileValidation.getFileType("") === undefined,
-            "getFileType should run silently on invalid ID"
-        );
-
+        assert(fileValidation.getFileType("") === undefined, "getFileType should run silently on invalid ID");
     } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e);
         log(`🚨 CRITICAL ERROR: ${errorMessage}`);
@@ -114,13 +83,13 @@ export function testFileValidation() {
 
     // Print summary and return for clasp
     log(`--- Test Complete: ${passed} Passed, ${failed} Failed ---`);
-    const finalOutput = logs.join('\n');
+    const finalOutput = logs.join("\n");
     console.log(finalOutput);
 
     return {
         success: failed === 0,
         passed,
         failed,
-        logs
+        logs,
     };
 }

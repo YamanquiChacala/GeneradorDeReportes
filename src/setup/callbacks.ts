@@ -1,6 +1,7 @@
 import { onPopCardStack } from "../common/callbacks";
 import { headerImage } from "../common/cardParts";
-import { flattenFormInputs, sanitizeFileName } from "../common/utils";
+import { flattenFormInputs } from "../common/utils/googleAPI";
+import { sanitizeFileName } from "../common/utils/text";
 import type { InitFileData } from "./code";
 import { createInitializationFile, generateCalendar } from "./code";
 

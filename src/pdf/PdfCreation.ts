@@ -1,4 +1,5 @@
 import { Base64Fonts, Base64Images } from "../common/base64Constants";
+import { Tempates } from "../common/enums";
 
 interface StudentData {
     start_year: string;
@@ -88,19 +89,6 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
         }
     }
 
-    const pdfBlob = createPdf();
-
-    targetFolder.createFile("Reporte_debug.html", pdfBlob[0], MimeType.HTML);
-    targetFolder.createFile(pdfBlob[1]);
-
-    return CardService.newActionResponseBuilder()
-        .setNotification(CardService.newNotification().setText(`PDF saved successfully to: ${targetFolder.getName()}`))
-        .build();
-}
-
-function createPdf(): [string, GoogleAppsScript.Base.Blob] {
-    const htmlTemplate = HtmlService.createTemplateFromFile("PdfPrintTemplate") as MyTemplate;
-
     const data: StudentData = {
         start_year: "2025",
         end_year: "2026",
@@ -175,6 +163,22 @@ function createPdf(): [string, GoogleAppsScript.Base.Blob] {
             italic: Base64Fonts.MONTSERRAT_ITALIC,
         },
     };
+
+    const pdfBlob = createPdf(data);
+
+    targetFolder.createFile("Reporte_debug.html", pdfBlob[0], MimeType.HTML);
+    targetFolder.createFile(pdfBlob[1]);
+
+    return CardService.newActionResponseBuilder()
+        .setNotification(CardService.newNotification().setText(`PDF saved successfully to: ${targetFolder.getName()}`))
+        .build();
+}
+
+/**
+ * Creates a PDF of the given data based on the given html format;
+ */
+export function createPdf(data: StudentData): [string, GoogleAppsScript.Base.Blob] {
+    const htmlTemplate = HtmlService.createTemplateFromFile(Tempates.HTML_TO_PDF_TEMPLATE) as MyTemplate;
 
     htmlTemplate.data = data;
 

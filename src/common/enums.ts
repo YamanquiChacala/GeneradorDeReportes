@@ -14,6 +14,14 @@ export enum DriveFiles {
     INITIALIZATION_TEMPLATE_ID = "19WMef0XLfSNkK48IQDQ1WUxeLa4Ir1LfvHZ4W5xEiIk",
 }
 
+export enum Urls {
+    MEDIA_SERVER = "https://media.githubusercontent.com/media/YamanquiChacala/GeneradorDeReportes/refs/heads/main/",
+}
+
+export enum Tempates {
+    HTML_TO_PDF_TEMPLATE = "PdfPrintTemplate",
+}
+
 export enum UserRoles {
     ADMIN,
 }

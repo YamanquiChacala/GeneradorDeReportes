@@ -1,5 +1,5 @@
-import type { Icon } from "./enums";
-import { type IconifyParams, iconifyUrl } from "./utils";
+import { type Icon, Urls } from "./enums";
+import { type IconifyParams, iconifyUrl } from "./utils/image";
 
 interface BaseHeaderParams {
     title: string;
@@ -43,7 +43,7 @@ function baseHeader({ title, subtitle, imageUrl, imageAltText, cropCircle }: Bas
  * Header with a local hosted image.
  */
 export function headerImage({ title, subtitle, image = "school", cropCircle = false }: HeaderImageParams): GoogleAppsScript.Card_Service.CardHeader {
-    const imageUrl = `https://media.githubusercontent.com/media/YamanquiChacala/GeneradorDeReportes/refs/heads/main/images/${image}_64.png`;
+    const imageUrl = `${Urls.MEDIA_SERVER}images/${image}_64.png`;
 
     return baseHeader({ title, subtitle, imageUrl, imageAltText: image, cropCircle });
 }
@@ -64,14 +64,4 @@ export function icon({ iconName, color, width, height, box }: IconifyParams): Go
     const { url, name: displayName } = iconifyUrl({ iconName, color, width, height, box });
 
     return CardService.newIconImage().setIconUrl(url).setAltText(displayName);
-}
-
-/**
- * Build a Card with a header and text.
- */
-export function buildParagraphCard(header: GoogleAppsScript.Card_Service.CardHeader, htmlText: string): GoogleAppsScript.Card_Service.Card {
-    return CardService.newCardBuilder()
-        .setHeader(header)
-        .addSection(CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(htmlText)))
-        .build();
 }

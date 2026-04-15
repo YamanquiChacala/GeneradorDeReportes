@@ -1,8 +1,8 @@
 import * as CardParts from "./common/cardParts";
 import { FileType, Icon } from "./common/enums";
-import { getFileType } from "./common/fileValidation";
 import { buildWrongSelectionCard } from "./common/premadeCards";
-import { buildInitializationFileEditCard } from "./initialization/cards";
+import { getFileType } from "./common/utils/fileValidation";
+import { buildInitializationFileEditCard } from "./setup/cards";
 
 /**
  *

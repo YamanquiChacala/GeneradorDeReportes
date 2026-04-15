@@ -1,4 +1,4 @@
-import type { FileType } from "./enums";
+import type { FileType } from "../enums";
 
 export const key = "fileType";
 

@@ -1,7 +1,7 @@
 import { FileType } from "./common/enums";
-import { getFileType } from "./common/fileValidation";
 import { buildWrongSelectionCard } from "./common/premadeCards";
-import { buildCreateInitializationFileCard } from "./initialization/cards";
+import { getFileType } from "./common/utils/fileValidation";
+import { buildCreateInitializationFileCard } from "./setup/cards";
 
 /**
  *

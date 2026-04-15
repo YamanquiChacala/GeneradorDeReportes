@@ -4,10 +4,7 @@ import { Icon } from "./enums";
 /**
  * A card indicating the user has selected an invalid file or folder.
  * Reminds them of the specific files/folders the add-on can manage.
- *
- * @returns {GoogleAppsScript.Card_Service.Card}
  */
-
 export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
     const warning = CardService.newDecoratedText()
         .setStartIcon(icon({ iconName: Icon.FOLDER_QUESTION, color: "orange", height: 64 }))
@@ -22,5 +19,15 @@ export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
     return CardService.newCardBuilder()
         .setHeader(headerImage({ title: "Montessori Chacala", subtitle: "Archivo no reconocido" }))
         .addSection(mainSection)
+        .build();
+}
+
+/**
+ * Build a Card with a header and text.
+ */
+export function buildParagraphCard(header: GoogleAppsScript.Card_Service.CardHeader, htmlText: string): GoogleAppsScript.Card_Service.Card {
+    return CardService.newCardBuilder()
+        .setHeader(header)
+        .addSection(CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(htmlText)))
         .build();
 }

@@ -9,5 +9,23 @@
     "source.organizeImports.biome": "explicit"
   },
   "html.validate.styles": false,
-  "js/ts.tsserver.experimental.enableProjectDiagnostics": true
+  "js/ts.tsserver.experimental.enableProjectDiagnostics": true,
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": ["string", "string.quoted.single", "string.quoted.double"],
+        "settings": {
+          "foreground": "#ff8686",
+          "fontStyle": "underline"
+        }
+      },
+      {
+        "scope": ["constant.numeric"],
+        "settings": {
+          "foreground": "#51de51",
+          "fontStyle": "bold"
+        }
+      }
+    ]
+  }
 }
