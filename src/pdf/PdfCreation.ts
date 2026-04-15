@@ -166,8 +166,8 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
 
     const pdfBlob = createPdf(data);
 
-    targetFolder.createFile("Reporte_debug.html", pdfBlob[0], MimeType.HTML);
-    targetFolder.createFile(pdfBlob[1]);
+    targetFolder.createFile(`Reporte_${data.first_names}.html`, pdfBlob[0], MimeType.HTML);
+    targetFolder.createFile(pdfBlob[1].setName(`Reporte_${data.first_names}.pdf`));
 
     return CardService.newActionResponseBuilder()
         .setNotification(CardService.newNotification().setText(`PDF saved successfully to: ${targetFolder.getName()}`))
@@ -184,7 +184,7 @@ export function createPdf(data: StudentData): [string, GoogleAppsScript.Base.Blo
 
     const htmlOutput = htmlTemplate.evaluate();
 
-    return [htmlOutput.getContent(), htmlOutput.getAs(MimeType.PDF).setName(`Reporte_${htmlTemplate.data.first_names}.pdf`)];
+    return [htmlOutput.getContent(), htmlOutput.getAs(MimeType.PDF)];
 
     //return htmlOutput.getAs(MimeType.PDF).setName(`Reporte_${htmlTemplate.data.first_names}.pdf`);
 }
