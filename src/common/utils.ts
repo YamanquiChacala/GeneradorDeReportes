@@ -120,3 +120,19 @@ export function flattenFormInputs<T = Record<string, unknown>>(inputs: Record<st
 
     return flat as Partial<T>;
 }
+
+/**
+ *
+ */
+export function getDateMs(range?: GoogleAppsScript.Sheets.Schema.GridRange, sheet?: GoogleAppsScript.Sheets.Schema.Sheet): number | null {
+    if (!range?.startRowIndex || !range.startColumnIndex) return null;
+
+    const cell = sheet?.data?.[0]?.rowData?.[range.startRowIndex]?.values?.[range.startColumnIndex];
+    const rawNumber = cell?.effectiveValue?.numberValue;
+
+    if (!rawNumber) return null;
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
+    return sheetsEpoch + rawNumber * msPerDay;
+}
