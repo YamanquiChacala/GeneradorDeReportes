@@ -1,4 +1,5 @@
 import type { Icon } from "../enums";
+import { webColor } from "./text";
 
 export interface IconifyParams {
     iconName: Icon | string;
@@ -13,7 +14,7 @@ export interface IconifyParams {
  */
 export function iconifyUrl({ iconName, color, width, height, box }: IconifyParams): { name: string; url: string } {
     // Sanitize the color (replace # with %23 for the URL)
-    const safeColor = color?.startsWith("#") ? `%23${color.substring(1)}` : color;
+    const safeColor = webColor(color)?.replace(/^#/, "%23");
 
     // Collect provided options into a parameters array
     const params = [];

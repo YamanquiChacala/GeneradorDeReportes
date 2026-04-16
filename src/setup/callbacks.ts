@@ -1,6 +1,6 @@
 import { onPopCardStack } from "../common/callbacks";
 import { headerImage, textButton } from "../common/cardParts";
-import { Numbers } from "../common/enums";
+import { Colors, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premadeCards";
 import { flattenFormInputs } from "../common/utils/googleAPI";
 import { sanitizeFileName } from "../common/utils/text";
@@ -13,7 +13,7 @@ import { createInitializationFile, generateCalendar } from "./code";
 export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando Registro de Grupo: ";
 
-    const { destinationFolder: folderId } = e.commonEventObject.parameters;
+    const { folderId } = e.commonEventObject.parameters;
 
     const {
         groupName,
@@ -72,9 +72,10 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
     }
 
     const successCard = buildUtilityCard({
-        header: headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessory Chacala", image: "school" }),
-        title: `✅ Creación del Registro Inicial para "<b>${groupName}</b>" listo.`,
-        points: ["El archivo aparecerá la carpeta de Drive en un momento.", "Puedes seguir generando otros Registros."],
+        header: headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala" }),
+        title: `<font color="${Colors.LOGO_OSCURO}"><b>✅ ¡Registro creado con éxito!</b></font>`,
+        message: `El archivo de configuración para el grupo "<b>${groupName}</b>" ya está listo.`,
+        points: ["El archivo aparecerá en la carpeta de Drive en un momento.", "Puedes seguir generando otros Registros."],
         button: textButton({ text: "Regresar al inicio", action: CardService.newAction().setFunctionName(onPopCardStack.name) }),
     });
 
@@ -85,11 +86,12 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
  *
  */
 export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const mainErrorMessage = "❌ Error generando calendario: ";
     const { fileId } = e.commonEventObject.parameters;
 
     if (!fileId) {
         return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`❌ Error generando calendario: No se encuentra el archivo.`))
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}No se encuentra el archivo.`))
             .build();
     }
 
@@ -99,7 +101,7 @@ export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): Goog
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(errorMessage);
         return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`❌ Error generando calendario: ${errorMessage}`))
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${errorMessage}`))
             .build();
     }
 

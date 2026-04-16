@@ -66,10 +66,5 @@ export function webColor(input?: string): string | null {
 
     // 2. Check for Named Colors and map to Hex
     const lowerInput = trimmedInput.toLowerCase();
-    if (Object.hasOwn(CSS_COLOR_MAP, lowerInput)) {
-        return CSS_COLOR_MAP[lowerInput] ?? null;
-    }
-
-    // 3. Fallback: Invalid color
-    return null;
+    return CSS_COLOR_MAP[lowerInput] ?? null;
 }

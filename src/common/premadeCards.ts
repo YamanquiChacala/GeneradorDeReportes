@@ -1,5 +1,5 @@
 import { headerImage, icon } from "./cardParts";
-import { Icon } from "./enums";
+import { Colors, Icon } from "./enums";
 
 interface UtilityCardParams {
     header: GoogleAppsScript.Card_Service.CardHeader;
@@ -16,8 +16,8 @@ interface UtilityCardParams {
 export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
     // 1. Highlight the warning clearly
     const warning = CardService.newDecoratedText()
-        .setStartIcon(icon({ iconName: Icon.FOLDER_QUESTION, color: "#EA4335", height: 48 })) // Switched to a slightly smaller red icon for error state
-        .setText("<font color='#EA4335'><b>Selección no válida</b></font>");
+        .setStartIcon(icon({ iconName: Icon.FOLDER_QUESTION, color: Colors.ORANGE, height: 48 }))
+        .setText(`<font color="${Colors.ORANGE}"><b>Selección no válida</b></font>`);
 
     const explanation = CardService.newTextParagraph().setText(
         "El elemento actual no es compatible. Para continuar, por favor abre o selecciona una de las siguientes opciones:",
@@ -52,7 +52,7 @@ export function buildUtilityCard({ header, title, message, points, button }: Uti
     if (title) {
         section.addWidget(
             // Using a slightly larger, bold font to establish hierarchy
-            CardService.newTextParagraph().setText(`<font size="large"><b>${title}</b></font>`),
+            CardService.newTextParagraph().setText(title),
         );
     }
 

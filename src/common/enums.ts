@@ -10,10 +10,6 @@ export enum Icon {
     CHART = "noto/bar-chart",
 }
 
-export enum DriveFiles {
-    INITIALIZATION_TEMPLATE_ID = "19WMef0XLfSNkK48IQDQ1WUxeLa4Ir1LfvHZ4W5xEiIk",
-}
-
 export enum Urls {
     MEDIA_SERVER = "https://media.githubusercontent.com/media/YamanquiChacala/GeneradorDeReportes/refs/heads/main/",
 }
@@ -24,6 +20,16 @@ export enum Tempates {
 
 export enum Numbers {
     MORE_THAN_A_YEAR = 400 * 24 * 60 * 60 * 1000,
+}
+
+export enum Colors {
+    LOGO_OSCURO = "#34666A",
+    LOGO_CLARO = "#159A5E",
+    ORANGE = "#EA4335",
+    LANGUAGE = "#c9daf8",
+    SCIENCE = "#fce5cd",
+    NATURE = "#d9ead3",
+    HUMANITIES = "#ead1dc",
 }
 
 export enum UserRoles {

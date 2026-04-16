@@ -1,16 +1,17 @@
-import { DriveFiles, FileType } from "../common/enums";
+import { FileType, Numbers } from "../common/enums";
+import { SetupSheet } from "../common/sheetSchema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/fileValidation";
 import { getDateMs } from "../common/utils/googleAPI";
 
 export interface InitFileData {
     folderId: string;
-    groupName: string;
-    attendancePerClass: boolean;
-    averagePerField: boolean;
-    dateStart: number;
-    dateEndTrimester1: number;
-    dateEndTrimester2: number;
-    dateEnd: number;
+    [SetupSheet.namedRanges.groupName]: string;
+    [SetupSheet.namedRanges.attendancePerClass]: boolean;
+    [SetupSheet.namedRanges.averagePerField]: boolean;
+    [SetupSheet.namedRanges.dateStart]: number;
+    [SetupSheet.namedRanges.dateEndTrimester1]: number;
+    [SetupSheet.namedRanges.dateEndTrimester2]: number;
+    [SetupSheet.namedRanges.dateEnd]: number;
 }
 
 /**
@@ -29,7 +30,7 @@ export function createInitializationFile(initData: InitFileData) {
                 [FILE_VALIDATION_KEY]: FileType.SETUP,
             },
         },
-        DriveFiles.INITIALIZATION_TEMPLATE_ID,
+        SetupSheet.templateId,
         {
             supportsAllDrives: true,
         },
@@ -37,18 +38,18 @@ export function createInitializationFile(initData: InitFileData) {
 
     const newFileId = newFile?.id;
 
-    if (!newFileId) throw new Error("Error al copiar el Regirsto Inicial");
+    if (!newFileId) throw new Error("Error al crear copia del Regirsto Inicial");
 
     // ======== Update namedRanges ==========
 
     const namedRanges: Array<keyof InitFileData> = [
-        "groupName",
-        "attendancePerClass",
-        "averagePerField",
-        "dateStart",
-        "dateEndTrimester1",
-        "dateEndTrimester2",
-        "dateEnd",
+        SetupSheet.namedRanges.groupName,
+        SetupSheet.namedRanges.attendancePerClass,
+        SetupSheet.namedRanges.averagePerField,
+        SetupSheet.namedRanges.dateStart,
+        SetupSheet.namedRanges.dateEndTrimester1,
+        SetupSheet.namedRanges.dateEndTrimester2,
+        SetupSheet.namedRanges.dateEnd,
     ];
 
     const updateData: GoogleAppsScript.Sheets.Schema.ValueRange[] = namedRanges.map((name) => {
@@ -84,13 +85,13 @@ export function generateCalendar(fileId: string) {
         fields: "sheets(properties(sheetId,title),data(rowMetadata/pixelSize,columnMetadata/pixelSize,rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges(name,range)",
     });
 
-    const dataSheet = registroSpreadsheet?.sheets?.find((s) => s.properties?.title === "Registro Inicial");
-    const calendarTemplateSheet = registroSpreadsheet?.sheets?.find((s) => s.properties?.title === "CalendarioTemplate");
-    const calendarSheet = registroSpreadsheet?.sheets?.find((s) => s.properties?.title === "Calendario");
+    const dataSheet = registroSpreadsheet?.sheets?.find((s) => s.properties?.title === SetupSheet.sheetNames.groupData);
+    const calendarTemplateSheet = registroSpreadsheet?.sheets?.find((s) => s.properties?.title === SetupSheet.sheetNames.calendarTemplate);
+    const calendarSheet = registroSpreadsheet?.sheets?.find((s) => s.properties?.title === SetupSheet.sheetNames.calendar);
 
     const templateSheetId = calendarTemplateSheet?.properties?.sheetId;
 
-    if (!dataSheet || !calendarTemplateSheet || !registroSpreadsheet?.namedRanges) throw new Error("Error al crear calendario: Faltan hojas de datos o formato.");
+    if (!dataSheet || !calendarTemplateSheet || !registroSpreadsheet?.namedRanges) throw new Error("Faltan hojas de datos o formato.");
 
     const namedRanges = registroSpreadsheet.namedRanges.reduce(
         (acc, namedRange) => {
@@ -102,15 +103,14 @@ export function generateCalendar(fileId: string) {
         {} as Record<string, GoogleAppsScript.Sheets.Schema.NamedRange>,
     );
 
-    const dateStart = getDateMs(namedRanges["dateStart"]?.range, dataSheet);
-    const dateEndTrimester1 = getDateMs(namedRanges["dateEndTrimester1"]?.range, dataSheet);
-    const dateEndTrimester2 = getDateMs(namedRanges["dateEndTrimester2"]?.range, dataSheet);
-    const dateEnd = getDateMs(namedRanges["dateEnd"]?.range, dataSheet);
+    const dateStart = getDateMs(namedRanges[SetupSheet.namedRanges.dateStart]?.range, dataSheet);
+    const dateEndTrimester1 = getDateMs(namedRanges[SetupSheet.namedRanges.dateEndTrimester1]?.range, dataSheet);
+    const dateEndTrimester2 = getDateMs(namedRanges[SetupSheet.namedRanges.dateEndTrimester2]?.range, dataSheet);
+    const dateEnd = getDateMs(namedRanges[SetupSheet.namedRanges.dateEnd]?.range, dataSheet);
 
-    if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) throw new Error("Error al crear calendario: Faltan las fechas.");
-    if (dateStart >= dateEndTrimester1 || dateEndTrimester1 >= dateEndTrimester2 || dateEndTrimester2 >= dateEnd)
-        throw new Error("Error al crear calendario: Fechas en desorden.");
-    if (dateEnd - dateStart > 365 * 24 * 60 * 60 * 1000) throw new Error("Error al crear calendario: Calendario demasiado grande.");
+    if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
+    if (dateStart >= dateEndTrimester1 || dateEndTrimester1 >= dateEndTrimester2 || dateEndTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
+    if (dateEnd - dateStart > Numbers.MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
 
     const columnWidths = {
         month: calendarTemplateSheet.data?.[0]?.columnMetadata?.[0]?.pixelSize ?? 100,
@@ -123,14 +123,20 @@ export function generateCalendar(fileId: string) {
         day: calendarTemplateSheet.data?.[0]?.rowMetadata?.[1]?.pixelSize ?? 21,
     };
 
+    const monthNamesRowStart = namedRanges[SetupSheet.namedRanges.monthNames3]?.range?.startRowIndex ?? 0;
+    const monthNamesRowEnd = namedRanges[SetupSheet.namedRanges.monthNames3]?.range?.endRowIndex ?? 0;
+    const monthNamesColHigh3 = namedRanges[SetupSheet.namedRanges.monthNames3]?.range?.startColumnIndex ?? 0;
+    const monthNamesColHigh2 = namedRanges[SetupSheet.namedRanges.monthNames2]?.range?.startColumnIndex ?? 0;
+    const monthNamesColHigh1 = namedRanges[SetupSheet.namedRanges.monthNames1]?.range?.startColumnIndex ?? 0;
+
     const monthNamesHigh3: string[] = [];
     const monthNamesHigh2: string[] = [];
     const monthNamesHigh1: string[] = [];
-    for (let i = 7; i < 19; i++) {
+    for (let i = monthNamesRowStart; i <= monthNamesRowEnd; i++) {
         const row = calendarTemplateSheet.data?.[0]?.rowData?.[i];
-        const cellHigh3 = row?.values?.[0];
-        const cellHigh2 = row?.values?.[2];
-        const cellHigh1 = row?.values?.[4];
+        const cellHigh3 = row?.values?.[monthNamesColHigh3];
+        const cellHigh2 = row?.values?.[monthNamesColHigh2];
+        const cellHigh1 = row?.values?.[monthNamesColHigh1];
         monthNamesHigh3.push(cellHigh3?.formattedValue ?? "");
         monthNamesHigh2.push(cellHigh2?.formattedValue ?? "");
         monthNamesHigh1.push(cellHigh1?.formattedValue ?? "");
@@ -167,7 +173,7 @@ export function generateCalendar(fileId: string) {
         addSheet: {
             properties: {
                 sheetId: calendarSheetId,
-                title: "Calendario",
+                title: SetupSheet.sheetNames.calendar,
                 gridProperties: {
                     rowCount: totalRows,
                     columnCount: 15,
@@ -223,6 +229,13 @@ export function generateCalendar(fileId: string) {
 
     // Do every day of the calendar
 
+    const formatTrimester1Row = namedRanges[SetupSheet.namedRanges.trimester1Day]?.range?.startRowIndex ?? 0;
+    const formatTrimester2Row = namedRanges[SetupSheet.namedRanges.trimester2Day]?.range?.startRowIndex ?? 0;
+    const formatTrimester3Row = namedRanges[SetupSheet.namedRanges.trimester3Day]?.range?.startRowIndex ?? 0;
+
+    const formatTrimesterCol = namedRanges[SetupSheet.namedRanges.trimester1Day]?.range?.startColumnIndex ?? 0;
+    const formatFreeDayCol = namedRanges[SetupSheet.namedRanges.restDay]?.range?.startColumnIndex ?? 0;
+
     let currentMs = calStart;
     let currentRowNumber = 1;
 
@@ -250,7 +263,7 @@ export function generateCalendar(fileId: string) {
             monthStartRow = currentRowNumber;
         }
 
-        const rowCells: GoogleAppsScript.Sheets.Schema.CellData[] = [{}]; // Column A is empty for now.
+        const rowCells: GoogleAppsScript.Sheets.Schema.CellData[] = [{}]; // Column A is empty for now, later we'll inject the month.
 
         // Handle each day of the week
         for (let i = 0; i < 7; i++) {
@@ -265,13 +278,12 @@ export function generateCalendar(fileId: string) {
                 dataValidation: { condition: { type: "BOOLEAN" }, strict: true, showCustomUi: true },
             });
 
-            // TODO: Some magic numbers here, it would be best to have them elsewhere.
             // Format the cells
-            let formatRowIndex = 2; // Default to trimester 1;
-            if (currentMs > dateEndTrimester2) formatRowIndex = 4;
-            else if (currentMs > dateEndTrimester1) formatRowIndex = 3;
+            let formatRowIndex = formatTrimester1Row; // Default to trimester 1;
+            if (currentMs > dateEndTrimester2) formatRowIndex = formatTrimester3Row;
+            else if (currentMs > dateEndTrimester1) formatRowIndex = formatTrimester2Row;
 
-            const formatColumnIndex = isWeekday && inBounds ? 3 : 7; // Column D and H
+            const formatColumnIndex = isWeekday && inBounds ? formatTrimesterCol : formatFreeDayCol; // Column D and H
 
             apiRequests.push({
                 copyPaste: {
@@ -303,16 +315,15 @@ export function generateCalendar(fileId: string) {
     // Handle month and year labels
     monthBlocks.forEach((block) => {
         const rowSpan = block.endRow - block.startRow;
-        const monthLabelRow = 7;
-        let monthLabelColumn = 0;
+        let monthLabelColumn = monthNamesColHigh3;
 
         let monthName = monthNamesHigh3[block.monthIndex];
 
         if (rowSpan === 2) {
-            monthLabelColumn = 2;
+            monthLabelColumn = monthNamesColHigh2;
             monthName = monthNamesHigh2[block.monthIndex];
         } else if (rowSpan === 1) {
-            monthLabelColumn = 4;
+            monthLabelColumn = monthNamesColHigh1;
             monthName = monthNamesHigh1[block.monthIndex];
         }
 
@@ -336,8 +347,8 @@ export function generateCalendar(fileId: string) {
             copyPaste: {
                 source: {
                     sheetId: templateSheetId,
-                    startRowIndex: monthLabelRow + block.monthIndex,
-                    endRowIndex: monthLabelRow + block.monthIndex + 1,
+                    startRowIndex: monthNamesRowStart + block.monthIndex,
+                    endRowIndex: monthNamesRowStart + block.monthIndex + 1,
                     startColumnIndex: monthLabelColumn,
                     endColumnIndex: monthLabelColumn + 1,
                 },
@@ -375,6 +386,8 @@ export function generateCalendar(fileId: string) {
             pasteType: "PASTE_NORMAL",
         },
     });
+
+    // TODO: Add startdate in cell A1
 
     // Protect the Calendar Sheet
     const unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];

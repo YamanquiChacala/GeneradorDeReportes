@@ -1,5 +1,5 @@
 import { Base64Fonts, Base64Images } from "../common/base64Constants";
-import { Tempates } from "../common/enums";
+import { Colors, Tempates } from "../common/enums";
 
 interface StudentData {
     start_year: string;
@@ -107,7 +107,7 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
         groups: [
             {
                 name: "Lenguajes",
-                color: "#c9daf8",
+                color: Colors.LANGUAGE,
                 courses: [
                     { name: "Español", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
                     { name: "Inglés", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
@@ -116,7 +116,7 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
             },
             {
                 name: "Pensamiento científico",
-                color: "#fce5cd",
+                color: Colors.SCIENCE,
                 courses: [
                     { name: "Matemáticas", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
                     { name: "Física", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
@@ -125,7 +125,7 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
             },
             {
                 name: "Ética, naturaleza y sociedad",
-                color: "#d9ead3",
+                color: Colors.NATURE,
                 courses: [
                     { name: "Historia", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
                     { name: "Desarrollo Socioemocional", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
@@ -133,7 +133,7 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
             },
             {
                 name: "Humano y Comunitario",
-                color: "#ead1dc",
+                color: Colors.HUMANITIES,
                 courses: [
                     { name: "Proyecto comunitario", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
                     { name: "Deportes", p1: 10, p2: 8, p3: 5, final: 8, h1: "E", h2: "B", h3: "S", h4: "R" },
