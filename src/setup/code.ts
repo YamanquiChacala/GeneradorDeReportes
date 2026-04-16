@@ -388,6 +388,19 @@ export function generateCalendar(fileId: string) {
     });
 
     // TODO: Add startdate in cell A1
+    apiRequests.push({
+        createDeveloperMetadata: {
+            developerMetadata: {
+                metadataKey: "calStart",
+                metadataValue: calStart.toString(),
+                location: {
+                    locationType: "SHEET",
+                    sheetId: calendarSheetId,
+                },
+                visibility: "PROJECT",
+            },
+        },
+    });
 
     // Protect the Calendar Sheet
     const unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
