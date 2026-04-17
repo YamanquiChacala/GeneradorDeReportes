@@ -387,14 +387,13 @@ export function generateCalendar(fileId: string) {
         },
     });
 
-    // TODO: Add startdate in cell A1
+    // Store the start of the calendar in the metadata
     apiRequests.push({
         createDeveloperMetadata: {
             developerMetadata: {
                 metadataKey: "calStart",
                 metadataValue: calStart.toString(),
                 location: {
-                    locationType: "SHEET",
                     sheetId: calendarSheetId,
                 },
                 visibility: "PROJECT",

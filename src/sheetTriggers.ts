@@ -1,6 +1,5 @@
-import * as CardParts from "./common/cardParts";
-import { FileType, Icon } from "./common/enums";
-import { buildWrongSelectionCard } from "./common/premadeCards";
+import { FileType } from "./common/enums";
+import { buildRequestAuthorizationCard, buildWrongSelectionCard } from "./common/premadeCards";
 import { getFileType } from "./common/utils/fileValidation";
 import { buildInitializationFileEditCard } from "./setup/cards";
 
@@ -26,31 +25,4 @@ export function buildSheetsCard(e: GoogleAppsScript.Addons.EventObject): GoogleA
     }
 
     return buildWrongSelectionCard();
-}
-
-/**
- * A card asking the user to give authorization for the current file.
- */
-function buildRequestAuthorizationCard(): GoogleAppsScript.Card_Service.Card {
-    const warning = CardService.newDecoratedText()
-        .setStartIcon(CardParts.icon({ iconName: Icon.WARNING, color: "red", height: 64 }))
-        .setText("Verifica antes de continuar");
-    const explanation = CardService.newTextParagraph().setText(
-        "Confirma que estás en la hoja correcta:<br/><br/>• 📋 <b>Registro inicial de grupos</b><br/><br/>• 📊 <b>Calificaciones, asistencias y reportes</b><br/><br/>🔒 Autorizar permitirá <b>editar</b> esta hoja.",
-    );
-    const askPermissionAction = CardService.newAction().setFunctionName(onAskPermission.name);
-    const askPermissionButton = CardService.newTextButton().setText("🔑 Dar permiso").setOnClickAction(askPermissionAction);
-
-    const mainSection = CardService.newCardSection().addWidget(warning).addWidget(explanation).addWidget(askPermissionButton);
-    return CardService.newCardBuilder()
-        .setHeader(CardParts.headerImage({ title: "Montessori Chacala", subtitle: "Permiso de edición", image: "school" }))
-        .addSection(mainSection)
-        .build();
-}
-
-/**
- * Callback to request authorization for the current file.
- */
-function onAskPermission(): GoogleAppsScript.Card_Service.EditorFileScopeActionResponse {
-    return CardService.newEditorFileScopeActionResponseBuilder().requestFileScopeForActiveDocument().build();
 }

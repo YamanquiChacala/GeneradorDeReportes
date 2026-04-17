@@ -6,6 +6,7 @@ export enum FileType {
 export enum Icon {
     WARNING = "material-symbols/warning-rounded",
     FOLDER_QUESTION = "mdi/folder-question",
+    FOLDER = "noto/file-folder",
     CLIPBOARD = "noto/clipboard",
     CHART = "noto/bar-chart",
 }
@@ -189,4 +190,4 @@ export const CSS_COLOR_MAP: Record<string, string> = {
     whitesmoke: "#F5F5F5",
     yellow: "#FFFF00",
     yellowgreen: "#9ACD32",
-};
+} as const;

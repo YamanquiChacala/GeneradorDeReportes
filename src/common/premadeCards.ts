@@ -1,3 +1,4 @@
+import { onAskPermission } from "./callbacks";
 import { headerImage, icon } from "./cardParts";
 import { Colors, Icon } from "./enums";
 
@@ -7,38 +8,6 @@ interface UtilityCardParams {
     message?: string;
     points?: string[];
     button?: GoogleAppsScript.Card_Service.Button;
-}
-
-/**
- * A card indicating the user has selected an invalid file or folder.
- * Reminds them of the specific files/folders the add-on can manage.
- */
-export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
-    // 1. Highlight the warning clearly
-    const warning = CardService.newDecoratedText()
-        .setStartIcon(icon({ iconName: Icon.FOLDER_QUESTION, color: Colors.ORANGE, height: 48 }))
-        .setText(`<font color="${Colors.ORANGE}"><b>Selección no válida</b></font>`);
-
-    const explanation = CardService.newTextParagraph().setText(
-        "El elemento actual no es compatible. Para continuar, por favor abre o selecciona una de las siguientes opciones:",
-    );
-
-    const mainSection = CardService.newCardSection().addWidget(warning).addWidget(explanation);
-
-    // 2. Use distinct widgets for the list. This creates a native, scannable layout.
-    const optionsSection = CardService.newCardSection()
-        .addWidget(CardService.newDecoratedText().setText("📁 <b>Carpeta de Drive</b>").setBottomLabel("Para crear la configuración inicial"))
-        .addWidget(CardService.newDecoratedText().setText("📋 <b>Registro inicial de grupos</b>").setBottomLabel("Archivo de configuración base"))
-        .addWidget(
-            CardService.newDecoratedText().setText("📊 <b>Calificaciones, asistencias y reportes</b>").setBottomLabel("Archivo principal de gestión").setWrapText(true), // Ensures the longer title doesn't get cut off
-        );
-
-    // 3. Build and return the card
-    return CardService.newCardBuilder()
-        .setHeader(headerImage({ title: "Montessori Chacala", subtitle: "Archivo no reconocido" }))
-        .addSection(mainSection)
-        .addSection(optionsSection)
-        .build();
 }
 
 /**
@@ -79,4 +48,100 @@ export function buildUtilityCard({ header, title, message, points, button }: Uti
     }
 
     return CardService.newCardBuilder().setHeader(header).addSection(section).build();
+}
+
+/**
+ * A card indicating the user has selected an invalid file or folder.
+ * Reminds them of the specific files/folders the add-on can manage.
+ */
+export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
+    // 1. Highlight the warning clearly
+    const warning = CardService.newDecoratedText()
+        .setStartIcon(icon({ iconName: Icon.FOLDER_QUESTION, color: Colors.ORANGE, height: 48 }))
+        .setText(`<font color="${Colors.ORANGE}"><b>Selección no válida</b></font>`);
+
+    const explanation = CardService.newTextParagraph().setText(
+        "El elemento actual no es compatible. Para continuar, por favor abre o selecciona una de las siguientes opciones:",
+    );
+
+    const mainSection = CardService.newCardSection().addWidget(warning).addWidget(explanation);
+
+    // 2. Use distinct widgets for the list with matching IconImages
+    const optionsSection = CardService.newCardSection()
+        .addWidget(
+            CardService.newDecoratedText()
+                .setStartIcon(icon({ iconName: Icon.FOLDER }))
+                .setText("<b>Carpeta de Drive</b>")
+                .setBottomLabel("Para crear la configuración inicial"),
+        )
+        .addWidget(
+            CardService.newDecoratedText()
+                .setStartIcon(icon({ iconName: Icon.CLIPBOARD }))
+                .setText("<b>Registro inicial de grupos</b>")
+                .setBottomLabel("Archivo de configuración base"),
+        )
+        .addWidget(
+            CardService.newDecoratedText()
+                .setStartIcon(icon({ iconName: Icon.CHART }))
+                .setText("<b>Calificaciones, asistencias y reportes</b>")
+                .setBottomLabel("Archivo principal de gestión")
+                .setWrapText(true), // Ensures the longer title doesn't get cut off
+        );
+
+    // 3. Build and return the card
+    return CardService.newCardBuilder()
+        .setHeader(headerImage({ title: "Archivo no reconocido", subtitle: "Montessori Chacala" }))
+        .addSection(mainSection)
+        .addSection(optionsSection)
+        .build();
+}
+
+/**
+ * A card asking the user to give authorization for the current file.
+ * Acts as a gatekeeper to prevent users from authorizing the wrong sheets.
+ */
+export function buildRequestAuthorizationCard(): GoogleAppsScript.Card_Service.Card {
+    const card = CardService.newCardBuilder().setHeader(headerImage({ title: "Permiso de edición", subtitle: "Montessori Chacala" }));
+
+    const section = CardService.newCardSection();
+
+    // 1. Prominent Warning Header (Now using the Enum)
+    section.addWidget(
+        CardService.newDecoratedText()
+            .setStartIcon(icon({ iconName: Icon.WARNING, color: Colors.ORANGE, height: 48 }))
+            // Using template literals to inject the Enum color directly into the HTML
+            .setText(`<font color='${Colors.ORANGE}'><b>Verifica antes de continuar</b></font>`),
+    );
+
+    // 2. Clear Context
+    section.addWidget(
+        CardService.newTextParagraph().setText("El complemento necesita permiso para interactuar con este archivo. Confirma que estás en la hoja correcta:"),
+    );
+
+    // 3. The Valid Files (Now using IconImages for consistent rendering)
+    section.addWidget(
+        CardService.newDecoratedText()
+            .setStartIcon(icon({ iconName: Icon.CLIPBOARD }))
+            .setText("<b>Registro inicial de grupos</b>"),
+    );
+    section.addWidget(
+        CardService.newDecoratedText()
+            .setStartIcon(icon({ iconName: Icon.CHART }))
+            .setText("<b>Calificaciones, asistencias y reportes</b>")
+            .setWrapText(true),
+    );
+
+    // 4. Consequence/Security message
+    section.addWidget(CardService.newTextParagraph().setText("🔒 <i>Al autorizar, el complemento podrá <b>editar</b> este documento.</i>"));
+
+    // 5. Action Button
+    const askPermissionAction = CardService.newAction().setFunctionName(onAskPermission.name);
+    const askPermissionButton = CardService.newTextButton()
+        .setText("🔑 Dar permiso")
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setOnClickAction(askPermissionAction);
+
+    section.addWidget(CardService.newButtonSet().addButton(askPermissionButton));
+
+    return card.addSection(section).build();
 }
