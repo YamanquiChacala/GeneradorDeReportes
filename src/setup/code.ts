@@ -95,9 +95,13 @@ export function generateCalendar(fileId: string) {
     if (!dataSheet || !calendarTemplateSheet) throw new Error("Faltan hojas de datos o formato.");
 
     const dateStart = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateStart]);
-    const dateEndTrimester1 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEndTrimester1]);
-    const dateEndTrimester2 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEndTrimester2]);
-    const dateEnd = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEnd]);
+    const dateEndTrimester1 = 1793491200000;
+    const dateEndTrimester2 = 1797292800000;
+    const dateEnd = 1812326400000;
+
+    // const dateEndTrimester1 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEndTrimester1]);
+    // const dateEndTrimester2 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEndTrimester2]);
+    // const dateEnd = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEnd]);
 
     if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
     if (dateStart >= dateEndTrimester1 || dateEndTrimester1 >= dateEndTrimester2 || dateEndTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
@@ -423,6 +427,52 @@ export function generateCalendar(fileId: string) {
             fields: "hidden",
         },
     });
+
+    // Execute them all!
+    Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, fileId);
+}
+
+/**
+ * Generates a Calendar in the given Spreadsheet
+ * The spreadsheet must be a Setup Group.
+ */
+export function generateCalendar2(fileId: string) {
+    const SetupSpreadsheet = Sheets?.Spreadsheets.get(fileId, {
+        fields: "sheets(properties(sheetId,title),data(rowMetadata/pixelSize,columnMetadata/pixelSize,rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges(name,range)",
+    });
+
+    const { sheets, namedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+
+    const calendarTemplateSheet = sheets[SetupSheetSchema.sheetNames.calendarTemplate];
+    const calendarSheet = sheets[SetupSheetSchema.sheetNames.calendar];
+
+    if (!calendarTemplateSheet) throw new Error("Faltan hojas o formato.");
+
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    // Remove the old calendar, if it exists.
+    if (calendarSheet) {
+        apiRequests.push({
+            deleteSheet: {
+                sheetId: calendarSheet.properties?.sheetId,
+            },
+        });
+    }
+
+    // Duplicate the template
+    const calendarSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
+
+    apiRequests.push({
+        duplicateSheet: {
+            sourceSheetId: calendarTemplateSheet.properties?.sheetId,
+            newSheetId: calendarSheetId,
+            newSheetName: SetupSheetSchema.sheetNames.calendar,
+        },
+    });
+
+    // Adjust sheet size
+
+    // Adjust column and row size of the newly generated
 
     // Execute them all!
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, fileId);

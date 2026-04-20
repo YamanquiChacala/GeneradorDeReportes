@@ -203,7 +203,6 @@ export function parseSpreadsheet<S extends Record<string, string>, R extends Rec
     if (spreadsheet.namedRanges) {
         for (const namedRange of spreadsheet.namedRanges) {
             if (namedRange.name == null || namedRange.range?.sheetId == null) continue;
-
             const linkedSheet = sheetIdLookup[namedRange.range.sheetId];
 
             if (linkedSheet && allowedRangeNames.has(namedRange.name)) {
