@@ -47,7 +47,7 @@ export function onCreateSetupFile(e: GoogleAppsScript.Addons.EventObject): Googl
     }
 
     const initData: SetupFileData = {
-        folderId: folderId,
+        folderId,
         groupName: groupNameSanitized,
         attendancePerClass,
         averagePerField,

@@ -1,4 +1,4 @@
-export const SetupSheet = {
+export const SetupSheetSchema = {
     templateId: "19WMef0XLfSNkK48IQDQ1WUxeLa4Ir1LfvHZ4W5xEiIk",
     sheetNames: {
         groupData: "Registro Inicial",

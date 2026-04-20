@@ -1,6 +1,6 @@
 type InputType = "string" | "number" | "boolean" | "date" | "time" | "array";
 
-type MappedInput<T extends InputType> = T extends "string"
+export type MappedInput<T extends InputType> = T extends "string"
     ? string
     : T extends "number"
       ? number
@@ -20,9 +20,35 @@ type MappedParam<T extends ParamType> = T extends "string" ? string : T extends 
 
 type GASFormInputs = GoogleAppsScript.Addons.CommonEventObject["formInputs"];
 
-interface MappedNamedRange {
+export interface MappedNamedRange {
     range: GoogleAppsScript.Sheets.Schema.GridRange;
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
+}
+
+export const MappedNamedRange = {
+    getFirstCellData(mapped?: MappedNamedRange): GoogleAppsScript.Sheets.Schema.CellData | undefined {
+        if (mapped?.range.startRowIndex == null || mapped.range.startColumnIndex == null) return undefined;
+
+        return mapped.sheet.data?.[0]?.rowData?.[mapped.range.startRowIndex]?.values?.[mapped.range.startColumnIndex];
+    },
+
+    getFirstCellNumber(mapped?: MappedNamedRange): number | undefined {
+        const cell = MappedNamedRange.getFirstCellData(mapped);
+
+        return cell?.effectiveValue?.numberValue;
+    },
+
+    getFirstCellUnixEpoch(mapped?: MappedNamedRange): number | undefined {
+        const GASDate = MappedNamedRange.getFirstCellNumber(mapped);
+        if (GASDate == null) return undefined;
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
+        return sheetsEpoch + GASDate * msPerDay;
+    },
+} as const;
+
+export function defineRangesDataConfig<T extends Record<string, { range: string; type: InputType }>>(fields: T) {
+    return fields;
 }
 
 /**
@@ -148,52 +174,46 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
 }
 
 /**
- *
+ * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.
  */
-export function getDateMs(range?: GoogleAppsScript.Sheets.Schema.GridRange, sheet?: GoogleAppsScript.Sheets.Schema.Sheet): number | null {
-    if (range?.startRowIndex == null || range?.startColumnIndex == null) return null;
+export function parseSpreadsheet<S extends Record<string, string>, R extends Record<string, string>>(
+    spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet | undefined,
+    schema: { readonly sheetNames: S; readonly namedRanges: R },
+) {
+    const mappedSheets: Partial<Record<S[keyof S], GoogleAppsScript.Sheets.Schema.Sheet>> = {};
+    const mappedRanges: Partial<Record<R[keyof R], MappedNamedRange>> = {};
 
-    const cell = sheet?.data?.[0]?.rowData?.[range.startRowIndex]?.values?.[range.startColumnIndex];
-    const rawNumber = cell?.effectiveValue?.numberValue;
+    if (!spreadsheet?.sheets) return { sheets: mappedSheets, namedRanges: mappedRanges };
 
-    if (rawNumber == null) return null;
+    const allowedSheetNames = new Set<string>(Object.values(schema.sheetNames));
+    const allowedRangeNames = new Set<string>(Object.values(schema.namedRanges));
 
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
-    return sheetsEpoch + rawNumber * msPerDay;
-}
+    const sheetIdLookup: Record<number, GoogleAppsScript.Sheets.Schema.Sheet> = {};
 
-/**
- * Maps the namedRanges of a Spreadsheet to a dictionary with the sheet data and the range for ease of use.
- */
-export function mapNamedRages<T extends Record<string, string>>(
-    spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet,
-    allowedRangesConfig: T,
-): Partial<Record<T[keyof T], MappedNamedRange>> {
-    const dictionary: Partial<Record<T[keyof T], MappedNamedRange>> = {};
-
-    if (!spreadsheet.namedRanges || !spreadsheet.sheets) return dictionary;
-
-    const sheetLookup: Record<number, GoogleAppsScript.Sheets.Schema.Sheet> = {};
     for (const sheet of spreadsheet.sheets) {
         if (sheet.properties?.sheetId != null) {
-            sheetLookup[sheet.properties.sheetId] = sheet;
+            sheetIdLookup[sheet.properties.sheetId] = sheet;
+        }
+        const sheetTitle = sheet.properties?.title;
+        if (sheetTitle != null && allowedSheetNames.has(sheetTitle)) {
+            mappedSheets[sheetTitle as S[keyof S]] = sheet;
         }
     }
 
-    const allowedValues = new Set<string>(Object.values(allowedRangesConfig));
+    if (spreadsheet.namedRanges) {
+        for (const namedRange of spreadsheet.namedRanges) {
+            if (namedRange.name == null || namedRange.range?.sheetId == null) continue;
 
-    for (const namedRange of spreadsheet.namedRanges) {
-        if (!namedRange.name || namedRange.range?.sheetId == null) continue;
-        const linkedSheet = sheetLookup[namedRange.range.sheetId];
-        if (linkedSheet && allowedValues.has(namedRange.name)) {
-            const key = namedRange.name as T[keyof T];
-            dictionary[key] = {
-                range: namedRange.range,
-                sheet: linkedSheet,
-            };
+            const linkedSheet = sheetIdLookup[namedRange.range.sheetId];
+
+            if (linkedSheet && allowedRangeNames.has(namedRange.name)) {
+                mappedRanges[namedRange.name as R[keyof R]] = {
+                    range: namedRange.range,
+                    sheet: linkedSheet,
+                };
+            }
         }
     }
 
-    return dictionary;
+    return { sheets: mappedSheets, namedRanges: mappedRanges };
 }
