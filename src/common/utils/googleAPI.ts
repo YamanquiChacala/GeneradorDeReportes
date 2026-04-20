@@ -47,6 +47,9 @@ export const MappedNamedRange = {
     },
 } as const;
 
+/**
+ * Helper function to define a type configuration linking a string to a {string, type}
+ */
 export function defineRangesDataConfig<T extends Record<string, { range: string; type: InputType }>>(fields: T) {
     return fields;
 }
@@ -158,7 +161,7 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
 
         switch (expectedType) {
             case "string":
-                result[key] = stringVals[0];
+                result[key] = stringVals[0] ?? "";
                 break;
             case "number": {
                 const parsedNum = Number(stringVals[0]);
@@ -166,7 +169,7 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
                 break;
             }
             case "array":
-                result[key] = stringVals;
+                result[key] = stringVals ?? [];
                 break;
         }
     }
@@ -191,9 +194,7 @@ export function parseSpreadsheet<S extends Record<string, string>, R extends Rec
     const sheetIdLookup: Record<number, GoogleAppsScript.Sheets.Schema.Sheet> = {};
 
     for (const sheet of spreadsheet.sheets) {
-        if (sheet.properties?.sheetId != null) {
-            sheetIdLookup[sheet.properties.sheetId] = sheet;
-        }
+        sheetIdLookup[sheet.properties?.sheetId ?? 0] = sheet;
         const sheetTitle = sheet.properties?.title;
         if (sheetTitle != null && allowedSheetNames.has(sheetTitle)) {
             mappedSheets[sheetTitle as S[keyof S]] = sheet;
@@ -202,8 +203,8 @@ export function parseSpreadsheet<S extends Record<string, string>, R extends Rec
 
     if (spreadsheet.namedRanges) {
         for (const namedRange of spreadsheet.namedRanges) {
-            if (namedRange.name == null || namedRange.range?.sheetId == null) continue;
-            const linkedSheet = sheetIdLookup[namedRange.range.sheetId];
+            if (namedRange.name == null || namedRange.range == null) continue;
+            const linkedSheet = sheetIdLookup[namedRange.range.sheetId ?? 0];
 
             if (linkedSheet && allowedRangeNames.has(namedRange.name)) {
                 mappedRanges[namedRange.name as R[keyof R]] = {

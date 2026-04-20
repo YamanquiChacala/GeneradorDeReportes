@@ -8,8 +8,8 @@ const SetupFileDataConfig = defineRangesDataConfig({
     attendancePerClass: { range: SetupSheetSchema.namedRanges.attendancePerClass, type: "boolean" },
     averagePerField: { range: SetupSheetSchema.namedRanges.averagePerField, type: "boolean" },
     dateStart: { range: SetupSheetSchema.namedRanges.dateStart, type: "date" },
-    dateEndTrimester1: { range: SetupSheetSchema.namedRanges.dateEndTrimester1, type: "date" },
-    dateEndTrimester2: { range: SetupSheetSchema.namedRanges.dateEndTrimester2, type: "date" },
+    dateEndTrimester1: { range: SetupSheetSchema.namedRanges.dateTrimester1, type: "date" },
+    dateEndTrimester2: { range: SetupSheetSchema.namedRanges.dateTrimester2, type: "date" },
     dateEnd: { range: SetupSheetSchema.namedRanges.dateEnd, type: "date" },
 } as const);
 
@@ -95,13 +95,9 @@ export function generateCalendar(fileId: string) {
     if (!dataSheet || !calendarTemplateSheet) throw new Error("Faltan hojas de datos o formato.");
 
     const dateStart = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateStart]);
-    const dateEndTrimester1 = 1793491200000;
-    const dateEndTrimester2 = 1797292800000;
-    const dateEnd = 1812326400000;
-
-    // const dateEndTrimester1 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEndTrimester1]);
-    // const dateEndTrimester2 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEndTrimester2]);
-    // const dateEnd = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEnd]);
+    const dateEndTrimester1 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateTrimester1]);
+    const dateEndTrimester2 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateTrimester2]);
+    const dateEnd = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEnd]);
 
     if (!dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
     if (dateStart >= dateEndTrimester1 || dateEndTrimester1 >= dateEndTrimester2 || dateEndTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
@@ -448,6 +444,106 @@ export function generateCalendar2(fileId: string) {
 
     if (!calendarTemplateSheet) throw new Error("Faltan hojas o formato.");
 
+    const dateStart = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateStart]);
+    const dateTrimester1 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateTrimester1]);
+    const dateTrimester2 = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateTrimester2]);
+    const dateEnd = MappedNamedRange.getFirstCellUnixEpoch(namedRanges[SetupSheetSchema.namedRanges.dateEnd]);
+
+    if (!dateStart || !dateTrimester1 || !dateTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
+    if (dateStart >= dateTrimester1 || dateTrimester1 >= dateTrimester2 || dateTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
+    if (dateEnd - dateStart > Numbers.MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
+
+    // ========= Date calculations ===========
+    const msPerDay = 24 * 60 * 60 * 1000;
+
+    // Snap to first Sunday
+    const dateStartDayOfWeek = new Date(dateStart).getUTCDay();
+    const calStart = dateStart - dateStartDayOfWeek * msPerDay;
+
+    // Snap to last Saturday
+    const dateEndDayOfWeek = new Date(dateEnd).getUTCDay();
+    const calEnd = dateEnd + (6 - dateEndDayOfWeek) * msPerDay;
+
+    const totalDays = (calEnd - calStart) / msPerDay + 1;
+    const totalRows = 1 + Math.ceil(totalDays / 7);
+
+    // ========== Build each day =============
+    let currentMs = calStart;
+    let currentRowNumber = 1;
+
+    let currentMonthIndex = -1;
+    let currentYear = -1;
+    let monthStartRow = 1;
+
+    const monthBlocks: { startRow: number; endRow: number; monthIndex: number; year: number }[] = [];
+
+    const rowDataArray: GoogleAppsScript.Sheets.Schema.RowData[] = [];
+
+    while (currentMs <= calEnd) {
+        // Handle change of month, this happens on wednesday.
+        const wednesdayMs = currentMs + 3 * msPerDay;
+        const wednesdaydate = new Date(wednesdayMs);
+        const monthIndex = wednesdaydate.getUTCMonth();
+        const year = wednesdaydate.getUTCFullYear();
+
+        if (currentMonthIndex !== monthIndex) {
+            if (currentMonthIndex !== -1) {
+                monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
+            }
+            currentMonthIndex = monthIndex;
+            currentYear = year;
+            monthStartRow = currentRowNumber;
+        }
+
+        const rowCells: GoogleAppsScript.Sheets.Schema.CellData[] = [{}]; // Column A is empty for now, later we'll inject the month.
+
+        // Handle each day of the week
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(currentMs);
+            const dayOfWeek = dayDate.getUTCDay();
+            const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6;
+            const inBounds = currentMs >= dateStart && currentMs <= dateEnd;
+
+            rowCells.push({ userEnteredValue: { numberValue: dayDate.getUTCDate() } });
+            rowCells.push({
+                userEnteredValue: { boolValue: inBounds && isWeekday },
+                dataValidation: { condition: { type: "BOOLEAN" }, strict: true, showCustomUi: true },
+            });
+
+            // Format the cells
+            let formatRowIndex = formatTrimester1Row; // Default to trimester 1;
+            if (currentMs > dateEndTrimester2) formatRowIndex = formatTrimester3Row;
+            else if (currentMs > dateEndTrimester1) formatRowIndex = formatTrimester2Row;
+
+            const formatColumnIndex = isWeekday && inBounds ? formatTrimesterCol : formatFreeDayCol; // Column D and H
+
+            apiRequests.push({
+                copyPaste: {
+                    source: {
+                        sheetId: templateSheetId,
+                        startRowIndex: formatRowIndex,
+                        endRowIndex: formatRowIndex + 1,
+                        startColumnIndex: formatColumnIndex,
+                        endColumnIndex: formatColumnIndex + 2,
+                    },
+                    destination: {
+                        sheetId: calendarSheetId,
+                        startRowIndex: currentRowNumber,
+                        endRowIndex: currentRowNumber + 1,
+                        startColumnIndex: i * 2 + 1,
+                        endColumnIndex: i * 2 + 3,
+                    },
+                    pasteType: "PASTE_FORMAT",
+                },
+            });
+            currentMs += msPerDay;
+        }
+        rowDataArray.push({ values: rowCells });
+        currentRowNumber++;
+    }
+
+    monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
+
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     // Remove the old calendar, if it exists.
@@ -471,8 +567,20 @@ export function generateCalendar2(fileId: string) {
     });
 
     // Adjust sheet size
-
-    // Adjust column and row size of the newly generated
+    apiRequests.push({
+        updateSheetProperties: {
+            properties: {
+                sheetId: calendarSheetId,
+                index: 2,
+                hidden: false,
+                // tabColorStyle: {rgbColor: {red: 1.0, green: 1.0, blue: 1.0}}, // TODO: Add to "@types/google-apps-script
+                gridProperties: {
+                    rowCount: totalRows,
+                },
+            },
+            fields: "index,hidden,gridProperties(rowCount)",
+        },
+    });
 
     // Execute them all!
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, fileId);
