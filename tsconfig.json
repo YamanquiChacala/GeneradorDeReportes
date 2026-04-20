@@ -14,7 +14,7 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
+    "exactOptionalPropertyTypes": false,
     "noPropertyAccessFromIndexSignature": true
   },
   "include": ["src/**/*.ts"]

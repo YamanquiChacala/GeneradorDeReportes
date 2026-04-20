@@ -1,7 +1,7 @@
 import { FileType } from "./common/enums";
 import { buildRequestAuthorizationCard, buildWrongSelectionCard } from "./common/premadeCards";
 import { getFileType } from "./common/utils/fileValidation";
-import { buildInitializationFileEditCard } from "./setup/cards";
+import { buildEditSetupFileCard } from "./setup/cards";
 
 /**
  *
@@ -19,7 +19,7 @@ export function buildSheetsCard(e: GoogleAppsScript.Addons.EventObject): GoogleA
 
     switch (sheetFileType) {
         case FileType.SETUP:
-            return buildInitializationFileEditCard(sheetId);
+            return buildEditSetupFileCard(sheetId);
         case FileType.REPORT:
         // TODO: Return Card "Report options"
     }

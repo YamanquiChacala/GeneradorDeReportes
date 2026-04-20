@@ -1,51 +1,82 @@
 import { headerIcon, headerImage, textButton } from "../common/cardParts";
 import { Colors, Icon } from "../common/enums";
-import { onCreateInitializationFile, onGenerateCalendar } from "./callbacks";
+import { defineActionParameters, defineInputsSchema } from "../common/utils/googleAPI";
+import { onCopySetup, onCreateSetupFile, onGenerateCalendar } from "./callbacks";
+
+export const CreateSetupFileInputs = defineInputsSchema({
+    groupName: "string",
+    attendancePerClass: "boolean",
+    averagePerField: "boolean",
+    dateStart: "date",
+    dateEndTrimester1: "date",
+    dateEndTrimester2: "date",
+    dateEnd: "date",
+} as const);
+
+export const CreateSetupFileParams = defineActionParameters({
+    folderId: "string",
+} as const);
 
 /**
  * Presents the user with a form to fill and a button to create the initialization file.
  */
-export function buildCreateInitializationFileCard(folderId: string): GoogleAppsScript.Card_Service.Card {
+export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Card_Service.Card {
     const card = CardService.newCardBuilder().setHeader(headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala" }));
 
     const generalSection = CardService.newCardSection().setHeader("Configuración General:");
 
-    generalSection.addWidget(CardService.newTextInput().setValue("Secundaria").setFieldName("groupName").setTitle("Nombre del Grupo").setHint("Ejemplo: 5to y 6to"));
+    generalSection.addWidget(
+        CardService.newTextInput()
+            .setValue("Secundaria")
+            .setFieldName(CreateSetupFileInputs.nameOf("groupName"))
+            .setTitle("Nombre del Grupo")
+            .setHint("Ejemplo: 5to y 6to"),
+    );
 
     generalSection.addWidget(
         CardService.newDecoratedText()
             .setText("Asistencia individual por materia")
-            .setSwitchControl(CardService.newSwitch().setFieldName("attendancePerClass").setValue("true").setSelected(false)),
+            .setSwitchControl(CardService.newSwitch().setFieldName(CreateSetupFileInputs.nameOf("attendancePerClass")).setValue("true").setSelected(false)),
     );
 
     generalSection.addWidget(
         CardService.newDecoratedText()
             .setText("Promedios por Campo Formativo")
-            .setSwitchControl(CardService.newSwitch().setFieldName("averagePerField").setValue("true").setSelected(false)),
+            .setSwitchControl(CardService.newSwitch().setFieldName(CreateSetupFileInputs.nameOf("averagePerField")).setValue("true").setSelected(false)),
     );
 
     const datesSection = CardService.newCardSection().setHeader("Calendario Escolar");
 
-    datesSection.addWidget(CardService.newDatePicker().setValueInMsSinceEpoch(1787961600000).setFieldName("dateStart").setTitle("Primer dia de clases"));
-
     datesSection.addWidget(
-        CardService.newDatePicker().setValueInMsSinceEpoch(1793491200000).setFieldName("dateEndTrimester1").setTitle("Último día del primer trimestre"),
+        CardService.newDatePicker().setValueInMsSinceEpoch(1787961600000).setFieldName(CreateSetupFileInputs.nameOf("dateStart")).setTitle("Primer dia de clases"),
     );
 
     datesSection.addWidget(
-        CardService.newDatePicker().setValueInMsSinceEpoch(1797292800000).setFieldName("dateEndTrimester2").setTitle("Último día del segundo trimestre"),
+        CardService.newDatePicker()
+            .setValueInMsSinceEpoch(1793491200000)
+            .setFieldName(CreateSetupFileInputs.nameOf("dateEndTrimester1"))
+            .setTitle("Último día del primer trimestre"),
     );
 
-    datesSection.addWidget(CardService.newDatePicker().setValueInMsSinceEpoch(1812326400000).setFieldName("dateEnd").setTitle("Último día de clases"));
+    datesSection.addWidget(
+        CardService.newDatePicker()
+            .setValueInMsSinceEpoch(1797292800000)
+            .setFieldName(CreateSetupFileInputs.nameOf("dateEndTrimester2"))
+            .setTitle("Último día del segundo trimestre"),
+    );
+
+    datesSection.addWidget(
+        CardService.newDatePicker().setValueInMsSinceEpoch(1812326400000).setFieldName(CreateSetupFileInputs.nameOf("dateEnd")).setTitle("Último día de clases"),
+    );
 
     const createAction = CardService.newAction()
-        .setFunctionName(onCreateInitializationFile.name)
-        .setParameters({ folderId })
-        .addRequiredWidget("groupName")
-        .addRequiredWidget("dateStart")
-        .addRequiredWidget("dateEndTrimester1")
-        .addRequiredWidget("dateEndTrimester2")
-        .addRequiredWidget("dateEnd");
+        .setFunctionName(onCreateSetupFile.name)
+        .setParameters(CreateSetupFileParams.build({ folderId }))
+        .addRequiredWidget(CreateSetupFileInputs.nameOf("groupName"))
+        .addRequiredWidget(CreateSetupFileInputs.nameOf("dateStart"))
+        .addRequiredWidget(CreateSetupFileInputs.nameOf("dateEndTrimester1"))
+        .addRequiredWidget(CreateSetupFileInputs.nameOf("dateEndTrimester2"))
+        .addRequiredWidget(CreateSetupFileInputs.nameOf("dateEnd"));
 
     const submitButton = textButton({ text: "📋 Crear Registro Inicial del Grupo", action: createAction, style: CardService.TextButtonStyle.FILLED });
 
@@ -54,10 +85,15 @@ export function buildCreateInitializationFileCard(folderId: string): GoogleAppsS
     return card.addSection(generalSection).addSection(datesSection).setFixedFooter(footer).build();
 }
 
+export const EditSetupFileInputs = defineInputsSchema({
+    groupName: "string",
+    folderId: "string",
+} as const);
+
 /**
- *
+ * Builds the Sheets card to show when the Setup file is open.
  */
-export function buildInitializationFileEditCard(fileId: string): GoogleAppsScript.Card_Service.Card {
+export function buildEditSetupFileCard(fileId: string): GoogleAppsScript.Card_Service.Card {
     const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala", iconName: Icon.CLIPBOARD }));
 
     // --- Step 1: Manage the Calendar ---
@@ -72,7 +108,7 @@ export function buildInitializationFileEditCard(fileId: string): GoogleAppsScrip
 
     const calendarAction = CardService.newAction().setFunctionName(onGenerateCalendar.name).setParameters({ fileId });
     calendarSection.addWidget(
-        CardService.newTextButton().setText("Regenerar Calendario").setTextButtonStyle(CardService.TextButtonStyle.TEXT).setOnClickAction(calendarAction),
+        CardService.newTextButton().setText("Regenerar Calendario").setTextButtonStyle(CardService.TextButtonStyle.OUTLINED).setOnClickAction(calendarAction),
     );
 
     // --- Step 2: Re-use / Copy ---
@@ -80,12 +116,52 @@ export function buildInitializationFileEditCard(fileId: string): GoogleAppsScrip
 
     copySection.addWidget(CardService.newTextParagraph().setText("¿Tienes otro grupo con el mismo calendario? Haz una copia de este registro para ahorrar tiempo."));
 
-    copySection.addWidget(CardService.newTextInput().setFieldName("groupName").setTitle("Nombre del nuevo grupo").setHint("Ejemplo: 5to y 6to"));
+    copySection.addWidget(
+        CardService.newTextInput().setFieldName(EditSetupFileInputs.nameOf("groupName")).setTitle("Nombre del nuevo grupo").setHint("Ejemplo: 5to y 6to"),
+    );
 
-    const copyAction = CardService.newAction().setFunctionName("onCopySetup").setParameters({ fileId }).addRequiredWidget("groupName");
+    const folderDropDown = CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.DROPDOWN)
+        .setTitle("Ubicación de la copia")
+        .setFieldName(EditSetupFileInputs.nameOf("folderId"))
+        .addItem("", "", false);
+
+    try {
+        const fileData = Drive?.Files.get(fileId, { fields: "parents", supportsAllDrives: true });
+        if (!fileData?.parents?.length || !fileData.parents[0]) throw new Error("No parent for the Setup file");
+        const parentData = Drive?.Files.get(fileData.parents[0], { fields: "parents", supportsAllDrives: true });
+        if (!parentData?.parents?.length || !parentData.parents[0]) throw new Error("No grandparent for the Setup file");
+        const searchFolder = parentData.parents[0];
+
+        const query = `'${searchFolder}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+        const folderList = Drive?.Files.list({
+            corpora: "allDrives",
+            q: query,
+            fields: "files(id,name)",
+            orderBy: "name",
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true,
+        });
+        if (!folderList?.files) throw new Error("No list of folders.");
+        folderList.files.forEach((folder) => {
+            folderDropDown.addItem(`📁 ${folder.name}`, folder.id, false);
+        });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(errorMessage);
+        folderDropDown.addItem("📁 Carpeta actual", "null", false);
+    }
+
+    copySection.addWidget(folderDropDown);
+
+    const copyAction = CardService.newAction()
+        .setFunctionName(onCopySetup.name)
+        .setParameters({ fileId })
+        .addRequiredWidget(EditSetupFileInputs.nameOf("groupName"))
+        .addRequiredWidget(EditSetupFileInputs.nameOf("folderId"));
 
     copySection.addWidget(
-        CardService.newTextButton().setText("Copiar Registro Inicial").setTextButtonStyle(CardService.TextButtonStyle.TEXT).setOnClickAction(copyAction),
+        CardService.newTextButton().setText("Copiar Registro Inicial").setTextButtonStyle(CardService.TextButtonStyle.OUTLINED).setOnClickAction(copyAction),
     );
 
     // --- Step 3: Finalize (Context Only) ---
@@ -99,6 +175,7 @@ export function buildInitializationFileEditCard(fileId: string): GoogleAppsScrip
     );
 
     // --- Fixed Footer (The Primary Action) ---
+    // TODO: Create the action
     const initializeAction = CardService.newAction().setFunctionName("onInitializeReport").setParameters({ fileId });
     const footerButton = CardService.newTextButton()
         .setText("📊 Crear Archivo de Calificaciones")

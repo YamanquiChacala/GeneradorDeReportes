@@ -2,35 +2,31 @@ import { onPopCardStack } from "../common/callbacks";
 import { headerImage, textButton } from "../common/cardParts";
 import { Colors, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premadeCards";
-import { flattenFormInputs } from "../common/utils/googleAPI";
+import { getInputs } from "../common/utils/googleAPI";
 import { sanitizeFileName } from "../common/utils/text";
-import type { InitFileData } from "./code";
-import { createInitializationFile, generateCalendar } from "./code";
+import { CreateSetupFileInputs, CreateSetupFileParams, EditSetupFileInputs } from "./cards";
+import type { SetupFileData } from "./code";
+import { createSetupFile, generateCalendar } from "./code";
 
 /**
  * Callback to the button to create a new Initialization Group File.
  */
-export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+export function onCreateSetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando Registro de Grupo: ";
 
-    const { folderId } = e.commonEventObject.parameters;
+    const { folderId } = CreateSetupFileParams.parse(e.commonEventObject.parameters);
 
-    const {
-        groupName,
-        attendancePerClass = false,
-        averagePerField = false,
-        dateStart,
-        dateEndTrimester1,
-        dateEndTrimester2,
-        dateEnd,
-    } = flattenFormInputs<InitFileData>(e.commonEventObject.formInputs);
+    const { groupName, attendancePerClass, averagePerField, dateStart, dateEndTrimester1, dateEndTrimester2, dateEnd } = getInputs(
+        e.commonEventObject.formInputs,
+        CreateSetupFileInputs.schema,
+    );
 
     if (!folderId) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Falta carpeta de destino.`))
             .build();
     }
-    if (!groupName || !dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd) {
+    if (!groupName || !dateStart || !dateEndTrimester1 || !dateEndTrimester2 || !dateEnd || attendancePerClass == null || averagePerField == null) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Faltan datos.`))
             .build();
@@ -50,8 +46,8 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
             .build();
     }
 
-    const initData: InitFileData = {
-        folderId,
+    const initData: SetupFileData = {
+        folderId: folderId,
         groupName: groupNameSanitized,
         attendancePerClass,
         averagePerField,
@@ -62,7 +58,7 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
     };
 
     try {
-        createInitializationFile(initData);
+        createSetupFile(initData);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(errorMessage);
@@ -83,7 +79,7 @@ export function onCreateInitializationFile(e: GoogleAppsScript.Addons.EventObjec
 }
 
 /**
- *
+ * Callback to regenerate the calendar in a Setup file.
  */
 export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error generando calendario: ";
@@ -106,4 +102,22 @@ export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): Goog
     }
 
     return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("✅ Calendario creado.")).build();
+}
+
+/**
+ * Callback to make a copy of the current Setup file.
+ */
+export function onCopySetup(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const mainErrorMessage = "❌ Error copiando archivo: ";
+    const { fileId } = e.commonEventObject.parameters;
+
+    const { groupName, folderId } = getInputs(e.commonEventObject.formInputs, EditSetupFileInputs.schema);
+
+    if (!fileId || !groupName || !folderId) {
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Fantan parámetros`))
+            .build();
+    }
+
+    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("✅ Copia creada.")).build();
 }

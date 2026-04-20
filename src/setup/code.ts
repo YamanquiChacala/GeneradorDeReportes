@@ -3,7 +3,7 @@ import { SetupSheet } from "../common/sheetSchema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/fileValidation";
 import { getDateMs } from "../common/utils/googleAPI";
 
-export interface InitFileData {
+export interface SetupFileData {
     folderId: string;
     [SetupSheet.namedRanges.groupName]: string;
     [SetupSheet.namedRanges.attendancePerClass]: boolean;
@@ -17,7 +17,7 @@ export interface InitFileData {
 /**
  * Creates a new Group Initialization file with the given data.
  */
-export function createInitializationFile(initData: InitFileData) {
+export function createSetupFile(initData: SetupFileData) {
     // ========== Create File ============
 
     const fileName = `__Registro ${initData.groupName}`;
@@ -42,7 +42,7 @@ export function createInitializationFile(initData: InitFileData) {
 
     // ======== Update namedRanges ==========
 
-    const namedRanges: Array<keyof InitFileData> = [
+    const namedRanges: Array<keyof SetupFileData> = [
         SetupSheet.namedRanges.groupName,
         SetupSheet.namedRanges.attendancePerClass,
         SetupSheet.namedRanges.averagePerField,
