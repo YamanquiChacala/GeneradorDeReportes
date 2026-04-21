@@ -20,9 +20,31 @@ type MappedParam<T extends ParamType> = T extends "string" ? string : T extends 
 
 type GASFormInputs = GoogleAppsScript.Addons.CommonEventObject["formInputs"];
 
+export enum PasteType {
+    PASTE_NORMAL = "PASTE_NORMAL",
+    PASTE_VALUES = "PASTE_VALUES",
+    PASTE_FORMAT = "PASTE_FORMAT",
+    PASTE_NO_BORDERS = "PASTE_NO_BORDERS",
+    PASTE_FORMULA = "PASTE_FORMULA",
+    PASTE_DATA_VALIDATION = "PASTE_DATA_VALIDATION",
+    PASTE_CONDITIONAL_FORMATTING = "PASTE_CONDITIONAL_FORMATTING",
+}
+
 export interface MappedNamedRange {
     range: GoogleAppsScript.Sheets.Schema.GridRange;
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
+}
+
+interface CopyPasteParams {
+    mappedRange: MappedNamedRange;
+    destinationSheetId: number;
+    destinationStartRow: number;
+    destinationStartColumn: number;
+    pasteType: PasteType;
+    offsetRow?: number;
+    offsetColumn?: number;
+    height?: number;
+    width?: number;
 }
 
 export const MappedNamedRange = {
@@ -44,6 +66,53 @@ export const MappedNamedRange = {
         const msPerDay = 24 * 60 * 60 * 1000;
         const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
         return sheetsEpoch + GASDate * msPerDay;
+    },
+
+    buildCopyPasteRequest({
+        mappedRange,
+        destinationSheetId,
+        destinationStartRow,
+        destinationStartColumn,
+        pasteType,
+        offsetRow,
+        offsetColumn,
+        height,
+        width,
+    }: CopyPasteParams): GoogleAppsScript.Sheets.Schema.Request {
+        const srcStartRow = (mappedRange.range.startRowIndex ?? 0) + (offsetRow ?? 0);
+        const srcStartColumn = (mappedRange.range.startColumnIndex ?? 0) + (offsetColumn ?? 0);
+
+        const endRow = mappedRange.range.endRowIndex;
+        const endColumn = mappedRange.range.endColumnIndex;
+
+        const finalHeight = height ?? (endRow != null ? endRow - srcStartRow : undefined);
+        const finalWidth = width ?? (endColumn != null ? endColumn - srcStartColumn : undefined);
+
+        if (!finalHeight || !finalWidth) throw new Error("Can't work with unbound ranges");
+
+        if ((endRow != null && endRow < srcStartRow + finalHeight) || (endColumn != null && endColumn < srcStartColumn + finalWidth))
+            throw new Error("Out of bounds of range.");
+
+        return {
+            copyPaste: {
+                source: {
+                    sheetId: mappedRange.range.sheetId ?? 0,
+                    startRowIndex: srcStartRow,
+                    endRowIndex: srcStartRow + finalHeight,
+                    startColumnIndex: srcStartColumn,
+                    endColumnIndex: srcStartColumn + finalWidth,
+                },
+                destination: {
+                    sheetId: destinationSheetId,
+                    startRowIndex: destinationStartRow,
+                    endRowIndex: destinationStartRow + finalHeight,
+                    startColumnIndex: destinationStartColumn,
+                    endColumnIndex: destinationStartColumn + finalWidth,
+                },
+                pasteType: pasteType,
+                pasteOrientation: "NORMAL",
+            },
+        };
     },
 } as const;
 

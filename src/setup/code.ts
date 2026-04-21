@@ -1,7 +1,7 @@
 import { FileType, Numbers } from "../common/enums";
 import { SetupSheetSchema } from "../common/sheetSchema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/fileValidation";
-import { defineRangesDataConfig, type MappedInput, MappedNamedRange, parseSpreadsheet } from "../common/utils/googleAPI";
+import { defineRangesDataConfig, type MappedInput, MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/googleAPI";
 
 const SetupFileDataConfig = defineRangesDataConfig({
     groupName: { range: SetupSheetSchema.namedRanges.groupName, type: "string" },
@@ -467,6 +467,45 @@ export function generateCalendar2(fileId: string) {
     const totalDays = (calEnd - calStart) / msPerDay + 1;
     const totalRows = 1 + Math.ceil(totalDays / 7);
 
+    // ========= Prepara the new sheet =========
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    // Remove the old calendar, if it exists.
+    if (calendarSheet) {
+        apiRequests.push({
+            deleteSheet: {
+                sheetId: calendarSheet.properties?.sheetId,
+            },
+        });
+    }
+
+    // Duplicate the template
+    const calendarSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
+
+    apiRequests.push({
+        duplicateSheet: {
+            sourceSheetId: calendarTemplateSheet.properties?.sheetId,
+            newSheetId: calendarSheetId,
+            newSheetName: SetupSheetSchema.sheetNames.calendar,
+        },
+    });
+
+    // Adjust sheet size
+    apiRequests.push({
+        updateSheetProperties: {
+            properties: {
+                sheetId: calendarSheetId,
+                index: 2,
+                hidden: false,
+                // tabColorStyle: {rgbColor: {red: 1.0, green: 1.0, blue: 1.0}}, // TODO: Add to "@types/google-apps-script
+                gridProperties: {
+                    rowCount: totalRows,
+                },
+            },
+            fields: "index,hidden,gridProperties(rowCount)",
+        },
+    });
+
     // ========== Build each day =============
     let currentMs = calStart;
     let currentRowNumber = 1;
@@ -511,75 +550,93 @@ export function generateCalendar2(fileId: string) {
             });
 
             // Format the cells
-            let formatRowIndex = formatTrimester1Row; // Default to trimester 1;
-            if (currentMs > dateEndTrimester2) formatRowIndex = formatTrimester3Row;
-            else if (currentMs > dateEndTrimester1) formatRowIndex = formatTrimester2Row;
+            let formatSource: MappedNamedRange | undefined;
+            if (isWeekday && inBounds) {
+                formatSource = namedRanges[SetupSheetSchema.namedRanges.trimester1Day]; // Default to trimester 1;
+                if (currentMs > dateTrimester2) formatSource = namedRanges[SetupSheetSchema.namedRanges.trimester3Day];
+                else if (currentMs > dateTrimester1) formatSource = namedRanges[SetupSheetSchema.namedRanges.trimester2Day];
+            } else {
+                formatSource = namedRanges[SetupSheetSchema.namedRanges.restDay];
+            }
 
-            const formatColumnIndex = isWeekday && inBounds ? formatTrimesterCol : formatFreeDayCol; // Column D and H
+            if (formatSource)
+                apiRequests.push(
+                    MappedNamedRange.buildCopyPasteRequest({
+                        mappedRange: formatSource,
+                        destinationSheetId: calendarSheetId,
+                        destinationStartRow: currentRowNumber,
+                        destinationStartColumn: 2 * i + 1,
+                        pasteType: PasteType.PASTE_FORMAT,
+                    }),
+                );
 
-            apiRequests.push({
-                copyPaste: {
-                    source: {
-                        sheetId: templateSheetId,
-                        startRowIndex: formatRowIndex,
-                        endRowIndex: formatRowIndex + 1,
-                        startColumnIndex: formatColumnIndex,
-                        endColumnIndex: formatColumnIndex + 2,
-                    },
-                    destination: {
-                        sheetId: calendarSheetId,
-                        startRowIndex: currentRowNumber,
-                        endRowIndex: currentRowNumber + 1,
-                        startColumnIndex: i * 2 + 1,
-                        endColumnIndex: i * 2 + 3,
-                    },
-                    pasteType: "PASTE_FORMAT",
-                },
-            });
             currentMs += msPerDay;
         }
         rowDataArray.push({ values: rowCells });
         currentRowNumber++;
     }
-
+    // Close last month block.
     monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
 
-    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-
-    // Remove the old calendar, if it exists.
-    if (calendarSheet) {
-        apiRequests.push({
-            deleteSheet: {
-                sheetId: calendarSheet.properties?.sheetId,
-            },
-        });
-    }
-
-    // Duplicate the template
-    const calendarSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
-
+    // ============= Update all the cell values. =============
     apiRequests.push({
-        duplicateSheet: {
-            sourceSheetId: calendarTemplateSheet.properties?.sheetId,
-            newSheetId: calendarSheetId,
-            newSheetName: SetupSheetSchema.sheetNames.calendar,
+        updateCells: {
+            rows: rowDataArray,
+            fields: "userEnteredValue,dataValidation",
+            start: { sheetId: calendarSheetId, rowIndex: 1, columnIndex: 0 },
         },
     });
 
-    // Adjust sheet size
-    apiRequests.push({
-        updateSheetProperties: {
-            properties: {
-                sheetId: calendarSheetId,
-                index: 2,
-                hidden: false,
-                // tabColorStyle: {rgbColor: {red: 1.0, green: 1.0, blue: 1.0}}, // TODO: Add to "@types/google-apps-script
-                gridProperties: {
-                    rowCount: totalRows,
+    // ============ Handle month and year labels ============
+    monthBlocks.forEach((block) => {
+        const rowSpan = block.endRow - block.startRow;
+        let monthLabelColumn = monthNamesColHigh3;
+
+        let monthName = monthNamesHigh3[block.monthIndex];
+
+        if (rowSpan === 2) {
+            monthLabelColumn = monthNamesColHigh2;
+            monthName = monthNamesHigh2[block.monthIndex];
+        } else if (rowSpan === 1) {
+            monthLabelColumn = monthNamesColHigh1;
+            monthName = monthNamesHigh1[block.monthIndex];
+        }
+
+        const monthYearText = `${monthName}\n${block.year}`;
+
+        // Merge
+        apiRequests.push({
+            mergeCells: {
+                range: {
+                    sheetId: calendarSheetId,
+                    startRowIndex: block.startRow,
+                    endRowIndex: block.endRow,
+                    startColumnIndex: 0,
+                    endColumnIndex: 1,
                 },
+                mergeType: "MERGE_ALL",
             },
-            fields: "index,hidden,gridProperties(rowCount)",
-        },
+        });
+        //Format
+        apiRequests.push({
+            copyPaste: {
+                source: {
+                    sheetId: templateSheetId,
+                    startRowIndex: monthNamesRowStart + block.monthIndex,
+                    endRowIndex: monthNamesRowStart + block.monthIndex + 1,
+                    startColumnIndex: monthLabelColumn,
+                    endColumnIndex: monthLabelColumn + 1,
+                },
+                destination: {
+                    sheetId: calendarSheetId,
+                    startRowIndex: block.startRow,
+                    endRowIndex: block.endRow,
+                    startColumnIndex: 0,
+                    endColumnIndex: 1,
+                },
+                pasteType: "PASTE_FORMAT",
+            },
+        });
     });
 
     // Execute them all!

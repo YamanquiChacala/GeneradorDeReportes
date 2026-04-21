@@ -15,7 +15,6 @@ export const SetupSheetSchema = {
         dateEnd: "datos_fechaFin",
         subjects: "datos_asignaturas",
         students: "datos_estudiantes",
-        calendarTemplateEnd: "cal_finTemplate",
         monthNames1: "cal_mesAltura1",
         monthNames2: "cal_mesAltura2",
         monthNames3: "cal_mesAltura3",
