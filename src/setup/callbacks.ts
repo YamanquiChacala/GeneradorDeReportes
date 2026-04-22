@@ -4,9 +4,9 @@ import { Colors, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premadeCards";
 import { getInputs } from "../common/utils/googleAPI";
 import { sanitizeFileName } from "../common/utils/text";
-import { CreateSetupFileInputs, CreateSetupFileParams, EditSetupFileInputs } from "./cards";
+import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams } from "./cards";
 import type { SetupFileData } from "./code";
-import { createSetupFile, generateCalendar } from "./code";
+import { copySetupFile, createSetupFile, generateCalendar } from "./code";
 
 /**
  * Callback to the button to create a new Initialization Group File.
@@ -107,15 +107,24 @@ export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): Goog
 /**
  * Callback to make a copy of the current Setup file.
  */
-export function onCopySetup(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+export function onCopySetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error copiando archivo: ";
-    const { fileId } = e.commonEventObject.parameters;
+    const { fileId } = CopySetupFileParams.parse(e.commonEventObject.parameters);
 
-    const { groupName, folderId } = getInputs(e.commonEventObject.formInputs, EditSetupFileInputs.schema);
+    const { groupName, folderId } = getInputs(e.commonEventObject.formInputs, CopySetupFileInputs.schema);
 
     if (!fileId || !groupName || !folderId) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Fantan parámetros`))
+            .build();
+    }
+
+    try {
+        copySetupFile(fileId, folderId, groupName);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${errorMessage}`))
             .build();
     }
 

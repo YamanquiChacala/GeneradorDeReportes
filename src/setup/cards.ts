@@ -1,7 +1,7 @@
 import { headerIcon, headerImage, textButton } from "../common/cardParts";
 import { Colors, Icon } from "../common/enums";
 import { defineActionParameters, defineInputsSchema } from "../common/utils/googleAPI";
-import { onCopySetup, onCreateSetupFile, onGenerateCalendar } from "./callbacks";
+import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({
     groupName: "string",
@@ -85,9 +85,13 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
     return card.addSection(generalSection).addSection(datesSection).setFixedFooter(footer).build();
 }
 
-export const EditSetupFileInputs = defineInputsSchema({
+export const CopySetupFileInputs = defineInputsSchema({
     groupName: "string",
     folderId: "string",
+} as const);
+
+export const CopySetupFileParams = defineActionParameters({
+    fileId: "string",
 } as const);
 
 /**
@@ -117,13 +121,13 @@ export function buildEditSetupFileCard(fileId: string): GoogleAppsScript.Card_Se
     copySection.addWidget(CardService.newTextParagraph().setText("¿Tienes otro grupo con el mismo calendario? Haz una copia de este registro para ahorrar tiempo."));
 
     copySection.addWidget(
-        CardService.newTextInput().setFieldName(EditSetupFileInputs.nameOf("groupName")).setTitle("Nombre del nuevo grupo").setHint("Ejemplo: 5to y 6to"),
+        CardService.newTextInput().setFieldName(CopySetupFileInputs.nameOf("groupName")).setTitle("Nombre del nuevo grupo").setHint("Ejemplo: 5to y 6to"),
     );
 
     const folderDropDown = CardService.newSelectionInput()
         .setType(CardService.SelectionInputType.DROPDOWN)
         .setTitle("Ubicación de la copia")
-        .setFieldName(EditSetupFileInputs.nameOf("folderId"))
+        .setFieldName(CopySetupFileInputs.nameOf("folderId"))
         .addItem("", "", false);
 
     try {
@@ -155,10 +159,10 @@ export function buildEditSetupFileCard(fileId: string): GoogleAppsScript.Card_Se
     copySection.addWidget(folderDropDown);
 
     const copyAction = CardService.newAction()
-        .setFunctionName(onCopySetup.name)
-        .setParameters({ fileId })
-        .addRequiredWidget(EditSetupFileInputs.nameOf("groupName"))
-        .addRequiredWidget(EditSetupFileInputs.nameOf("folderId"));
+        .setFunctionName(onCopySetupFile.name)
+        .setParameters(CopySetupFileParams.build({ fileId }))
+        .addRequiredWidget(CopySetupFileInputs.nameOf("groupName"))
+        .addRequiredWidget(CopySetupFileInputs.nameOf("folderId"));
 
     copySection.addWidget(
         CardService.newTextButton().setText("Copiar Registro Inicial").setTextButtonStyle(CardService.TextButtonStyle.OUTLINED).setOnClickAction(copyAction),

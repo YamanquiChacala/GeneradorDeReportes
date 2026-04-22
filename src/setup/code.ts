@@ -318,3 +318,29 @@ export function generateCalendar(fileId: string) {
     // Execute them all!
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, fileId);
 }
+
+/**
+ * Copies the SetupFile `fileId` changing the group name and saves it into `folderId`.
+ */
+export function copySetupFile(fileId: string, folderId: string, groupName: string) {
+    const filename = `__Registro ${groupName}`;
+    const newFile = Drive?.Files.copy(
+        {
+            name: filename,
+            parents: [folderId],
+            appProperties: {
+                [FILE_VALIDATION_KEY]: FileType.SETUP,
+            },
+        },
+        fileId,
+        {
+            supportsAllDrives: true,
+        },
+    );
+
+    const newFileId = newFile?.id;
+
+    if (!newFileId) throw new Error("Error al crear copia del Regirsto Inicial");
+
+    Sheets?.Spreadsheets.Values.update({ range: SetupSheetSchema.namedRanges.groupName, values: [[groupName]] }, newFileId, SetupSheetSchema.namedRanges.groupName);
+}
