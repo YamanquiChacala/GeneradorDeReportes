@@ -240,16 +240,14 @@ export function generateCalendar(fileId: string) {
                 formatSource = namedRanges[SetupSheetSchema.namedRanges.restDay];
             }
 
-            if (formatSource)
-                apiRequests.push(
-                    MappedNamedRange.buildCopyPasteRequest({
-                        mappedRange: formatSource,
-                        destinationSheetId: calendarSheetId,
-                        destinationStartRow: currentRowNumber,
-                        destinationStartColumn: 2 * i + 1,
-                        pasteType: PasteType.PASTE_FORMAT,
-                    }),
-                );
+            const formatRequest = MappedNamedRange.buildCopyPasteRequest({
+                mappedRange: formatSource,
+                destinationSheetId: calendarSheetId,
+                destinationStartRow: currentRowNumber,
+                destinationStartColumn: 2 * i + 1,
+                pasteType: PasteType.PASTE_FORMAT,
+            });
+            if (formatRequest) apiRequests.push(formatRequest);
 
             currentMs += msPerDay;
         }
@@ -275,18 +273,17 @@ export function generateCalendar(fileId: string) {
         const monthName = MappedNamedRange.getCellDisplay({ mappedRange: monthLabelRange, row: block.monthIndex });
         const monthYearText = `${monthName ?? ""}\n${block.year}`;
 
-        apiRequests.push(
-            MappedNamedRange.buildCopyPasteRequest({
-                mappedRange: monthLabelRange,
-                destinationSheetId: calendarSheetId,
-                destinationStartRow: block.startRow,
-                destinationStartColumn: 0,
-                offsetRow: block.monthIndex,
-                height: 1,
-                width: 1,
-                pasteType: PasteType.PASTE_FORMAT,
-            }),
-        );
+        const formatRequest = MappedNamedRange.buildCopyPasteRequest({
+            mappedRange: monthLabelRange,
+            destinationSheetId: calendarSheetId,
+            destinationStartRow: block.startRow,
+            destinationStartColumn: 0,
+            offsetRow: block.monthIndex,
+            height: 1,
+            width: 1,
+            pasteType: PasteType.PASTE_FORMAT,
+        });
+        if (formatRequest) apiRequests.push(formatRequest);
 
         // Merge
         apiRequests.push({

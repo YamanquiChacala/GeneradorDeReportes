@@ -98,25 +98,25 @@ export const MappedNamedRange = {
         offsetColumn,
         height,
         width,
-    }: CopyPasteParams): GoogleAppsScript.Sheets.Schema.Request {
-        const srcStartRow = (mappedRange?.range.startRowIndex ?? 0) + (offsetRow ?? 0);
-        const srcStartColumn = (mappedRange?.range.startColumnIndex ?? 0) + (offsetColumn ?? 0);
+    }: CopyPasteParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
+        if (!mappedRange) return undefined;
+        const srcStartRow = (mappedRange.range.startRowIndex ?? 0) + (offsetRow ?? 0);
+        const srcStartColumn = (mappedRange.range.startColumnIndex ?? 0) + (offsetColumn ?? 0);
 
-        const endRow = mappedRange?.range.endRowIndex;
-        const endColumn = mappedRange?.range.endColumnIndex;
+        const endRow = mappedRange.range.endRowIndex;
+        const endColumn = mappedRange.range.endColumnIndex;
 
         const finalHeight = height ?? (endRow != null ? endRow - srcStartRow : undefined);
         const finalWidth = width ?? (endColumn != null ? endColumn - srcStartColumn : undefined);
 
-        if (!finalHeight || !finalWidth) throw new Error("Can't work with unbound ranges");
+        if (!finalHeight || !finalWidth) return undefined;
 
-        if ((endRow != null && endRow < srcStartRow + finalHeight) || (endColumn != null && endColumn < srcStartColumn + finalWidth))
-            throw new Error("Out of bounds of range.");
+        if ((endRow != null && endRow < srcStartRow + finalHeight) || (endColumn != null && endColumn < srcStartColumn + finalWidth)) return undefined;
 
         return {
             copyPaste: {
                 source: {
-                    sheetId: mappedRange?.range.sheetId ?? 0,
+                    sheetId: mappedRange.range.sheetId ?? 0,
                     startRowIndex: srcStartRow,
                     endRowIndex: srcStartRow + finalHeight,
                     startColumnIndex: srcStartColumn,
@@ -226,7 +226,9 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
             const fallbackStr = rawField.stringInputs?.value[0];
             if (fallbackStr) {
                 const num = Number(fallbackStr);
-                result[key] = Number.isNaN(num) ? new Date(fallbackStr).getTime() : num;
+                const num2 = Number.isNaN(num) ? new Date(fallbackStr).getTime() : num;
+                if (Number.isNaN(num2)) continue;
+                result[key] = num2;
             }
             // Neither DatePicker, DateTimePicker or Text Input, so we ignore it.
             continue;

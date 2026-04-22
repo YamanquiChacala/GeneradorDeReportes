@@ -1,4 +1,4 @@
-import { CSS_COLOR_MAP } from "../enums";
+import { CssColorMap, isColorKey } from "../enums";
 
 /**
  * Normalizes unicode, collapses multiple spaces, and trims edges.
@@ -66,5 +66,8 @@ export function webColor(input?: string): string | null {
 
     // 2. Check for Named Colors and map to Hex
     const lowerInput = trimmedInput.toLowerCase();
-    return CSS_COLOR_MAP[lowerInput] ?? null;
+    if (isColorKey(lowerInput)) {
+        return CssColorMap[lowerInput];
+    }
+    return null;
 }
