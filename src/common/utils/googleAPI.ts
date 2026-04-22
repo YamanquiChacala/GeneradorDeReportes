@@ -35,8 +35,14 @@ export interface MappedNamedRange {
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
+interface GetCellParams {
+    mappedRange: MappedNamedRange | undefined;
+    row?: number;
+    column?: number;
+}
+
 interface CopyPasteParams {
-    mappedRange: MappedNamedRange;
+    mappedRange: MappedNamedRange | undefined;
     destinationSheetId: number;
     destinationStartRow: number;
     destinationStartColumn: number;
@@ -48,24 +54,38 @@ interface CopyPasteParams {
 }
 
 export const MappedNamedRange = {
-    getFirstCellData(mapped?: MappedNamedRange): GoogleAppsScript.Sheets.Schema.CellData | undefined {
-        if (mapped?.range.startRowIndex == null || mapped.range.startColumnIndex == null) return undefined;
+    getCellData({ mappedRange, row, column }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData | undefined {
+        const rowIndex = (mappedRange?.range.startRowIndex ?? 0) + (row ?? 0);
+        const colIndex = (mappedRange?.range.startColumnIndex ?? 0) + (column ?? 0);
 
-        return mapped.sheet.data?.[0]?.rowData?.[mapped.range.startRowIndex]?.values?.[mapped.range.startColumnIndex];
+        const endRow = mappedRange?.range.endRowIndex;
+        const endColumn = mappedRange?.range.endColumnIndex;
+
+        if ((endRow && rowIndex >= endRow) || (endColumn && colIndex >= endColumn)) return undefined;
+
+        return mappedRange?.sheet.data?.[0]?.rowData?.[rowIndex]?.values?.[colIndex];
     },
 
-    getFirstCellNumber(mapped?: MappedNamedRange): number | undefined {
-        const cell = MappedNamedRange.getFirstCellData(mapped);
+    getCellDisplay({ mappedRange, row, column }: GetCellParams): string | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, row, column });
 
-        return cell?.effectiveValue?.numberValue;
+        return cellData?.formattedValue;
     },
 
-    getFirstCellUnixEpoch(mapped?: MappedNamedRange): number | undefined {
-        const GASDate = MappedNamedRange.getFirstCellNumber(mapped);
-        if (GASDate == null) return undefined;
+    getCellNumber({ mappedRange, row, column }: GetCellParams): number | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, row, column });
+
+        return cellData?.effectiveValue?.numberValue;
+    },
+
+    getCellUnixEpoch({ mappedRange, row, column }: GetCellParams): number | undefined {
+        const cellNumber = MappedNamedRange.getCellNumber({ mappedRange, row, column });
+
+        if (cellNumber == null) return undefined;
+
         const msPerDay = 24 * 60 * 60 * 1000;
         const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
-        return sheetsEpoch + GASDate * msPerDay;
+        return sheetsEpoch + cellNumber * msPerDay;
     },
 
     buildCopyPasteRequest({
@@ -79,11 +99,11 @@ export const MappedNamedRange = {
         height,
         width,
     }: CopyPasteParams): GoogleAppsScript.Sheets.Schema.Request {
-        const srcStartRow = (mappedRange.range.startRowIndex ?? 0) + (offsetRow ?? 0);
-        const srcStartColumn = (mappedRange.range.startColumnIndex ?? 0) + (offsetColumn ?? 0);
+        const srcStartRow = (mappedRange?.range.startRowIndex ?? 0) + (offsetRow ?? 0);
+        const srcStartColumn = (mappedRange?.range.startColumnIndex ?? 0) + (offsetColumn ?? 0);
 
-        const endRow = mappedRange.range.endRowIndex;
-        const endColumn = mappedRange.range.endColumnIndex;
+        const endRow = mappedRange?.range.endRowIndex;
+        const endColumn = mappedRange?.range.endColumnIndex;
 
         const finalHeight = height ?? (endRow != null ? endRow - srcStartRow : undefined);
         const finalWidth = width ?? (endColumn != null ? endColumn - srcStartColumn : undefined);
@@ -96,7 +116,7 @@ export const MappedNamedRange = {
         return {
             copyPaste: {
                 source: {
-                    sheetId: mappedRange.range.sheetId ?? 0,
+                    sheetId: mappedRange?.range.sheetId ?? 0,
                     startRowIndex: srcStartRow,
                     endRowIndex: srcStartRow + finalHeight,
                     startColumnIndex: srcStartColumn,
