@@ -4,7 +4,7 @@
 <script>
   const cv = document.getElementById('c');
   const ctx = cv.getContext('2d');
-  const cx = 512/2-15, cy = 512/2-15;
+  const cx = 512/2-25, cy = 512/2-15;
 
   function spiralPoints(startR, endR, startAngle, endAngle, steps) {
     const pts = [];
@@ -97,25 +97,25 @@
   ctx.shadowOffsetX = 3;
   ctx.shadowOffsetY = 4;
   ctx.strokeStyle = checkGrad;
-  ctx.lineWidth = 46;
+  ctx.lineWidth = 60;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(cx - 80, cy + 60);
-  ctx.lineTo(cx - 10, cy + 130);
-  ctx.lineTo(cx + 150, cy - 60);
+  ctx.moveTo(cx - 150, cy + 60);
+  ctx.lineTo(cx - 10, cy + 180);
+  ctx.lineTo(cx + 190, cy - 60);
   ctx.stroke();
   ctx.restore();
 
   ctx.save();
   ctx.strokeStyle = 'rgba(255,255,255,0.38)';
-  ctx.lineWidth = 13;
+  ctx.lineWidth = 15;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(cx - 80, cy + 60);
-  ctx.lineTo(cx - 10, cy + 130);
-  ctx.lineTo(cx + 150, cy - 60);
+  ctx.moveTo(cx - 150, cy + 60);
+  ctx.lineTo(cx - 10, cy + 180);
+  ctx.lineTo(cx + 190, cy - 60);
   ctx.stroke();
   ctx.restore();
 </script>
