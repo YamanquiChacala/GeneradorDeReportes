@@ -11,7 +11,8 @@
     "typescript": "^6.0.2"
   },
   "scripts": {
-    "build": "node build.mjs",
+    "test": "jest",
+    "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
