@@ -14,6 +14,20 @@ describe("Text Utils Module", () => {
         test("should use custom fallback if provided", () => {
             expect(Utils.sanitizeFileName("", "DefaultFile")).toBe("DefaultFile");
         });
+
+        test("should handle undefined or whitespace-only inputs", () => {
+            expect(Utils.sanitizeFileName(undefined)).toBe("Grupo");
+            expect(Utils.sanitizeFileName("   ")).toBe("Grupo");
+            expect(Utils.sanitizeFileName(undefined, "Fallback")).toBe("Fallback");
+        });
+
+        test("should normalize unicode characters (NFKC) and keep Spanish accents intact", () => {
+            // \uFB01 is the ligature "ﬁ"
+            // \u0065\u0301 is a decomposed "e" + "´"
+            // NFKC should convert the ligature to "fi" and compose the accent to "é"
+            const input = "file\uFB01name \u0065\u0301";
+            expect(Utils.sanitizeFileName(input)).toBe("filefiname é");
+        });
     });
 
     describe("sanitizeSheetName()", () => {
@@ -30,10 +44,26 @@ describe("Text Utils Module", () => {
         });
 
         test("should enforce 31 character limit for Excel compatibility", () => {
-            const longName = "This Is A Very Long Sheet Name That Exceeds Thirty One Characters";
+            const longName = "This Is A Very Long Spreadsheet Name That Exceeds Thirty One Characters";
             const result = Utils.sanitizeSheetName(longName);
             expect(result.length).toBeLessThanOrEqual(31);
-            expect(result).toBe("This Is A Very Long Sheet Name"); // Truncated and trimmed
+            expect(result).toBe("This Is A Very Long Spreadsheet");
+        });
+
+        test("should trim properly if truncation leaves a trailing space at character 31", () => {
+            // A 30-character string, followed by a space, followed by an X.
+            // "123456789012345678901234567890 X"
+            // Substring to 31 grabs the trailing space, so the final .trim() must remove it.
+            const input = "123456789012345678901234567890 X";
+            const result = Utils.sanitizeSheetName(input);
+            expect(result.length).toBe(30);
+            expect(result).toBe("123456789012345678901234567890");
+        });
+
+        test("should return an empty string if all characters are stripped", () => {
+            // Note: Google Sheets requires tab names to be >= 1 character.
+            // It's good to know this returns an empty string so upstream logic can handle it if needed.
+            expect(Utils.sanitizeSheetName("[:*?/\\|]")).toBe("");
         });
     });
 
