@@ -21,7 +21,7 @@ describe("Image Utils Module", () => {
                 height: 24,
                 box: true,
             });
-            expect(result.url).toBe("https://api.iconify.design/logos/google.svg?color=blue&width=24&height=24&box=1");
+            expect(result.url).toBe("https://api.iconify.design/logos/google.svg?color=%230000FF&width=24&height=24&box=1");
             expect(result.name).toBe("google");
         });
     });
