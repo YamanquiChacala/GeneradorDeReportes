@@ -1,10 +1,10 @@
 <div style="display:flex;justify-content:center;align-items:center;padding:20px 0">
-  <canvas id="c" width="600" height="600"></canvas>
+  <canvas id="c" width="512" height="512"></canvas>
 </div>
 <script>
   const cv = document.getElementById('c');
   const ctx = cv.getContext('2d');
-  const cx = 300, cy = 300;
+  const cx = 512/2-15, cy = 512/2-15;
 
   function spiralPoints(startR, endR, startAngle, endAngle, steps) {
     const pts = [];
@@ -12,13 +12,17 @@
       const t = i / steps;
       const angle = startAngle + t * (endAngle - startAngle);
       const r = startR + t * (endR - startR);
-      pts.push([cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
+      const p = 2.3;
+      pts.push([
+        cx + r * Math.sign(Math.cos(angle)) * Math.abs(Math.cos(angle))**(2/p), 
+        cy + r * Math.sign(Math.sin(angle)) * Math.abs(Math.sin(angle))**(2/p) 
+      ]);
     }
     return pts;
   }
 
   const turns = 3.5;
-  const startAngle = Math.PI / 2;
+  const startAngle = Math.PI;
   const endAngle = startAngle - turns * 2 * Math.PI;
   const innerR = 18;
   const outerR = 240;
@@ -82,7 +86,7 @@
   ctx.stroke();
   ctx.restore();
 
-  const checkGrad = ctx.createLinearGradient(cx - 60, cy + 60, cx + 120, cy - 30);
+  const checkGrad = ctx.createLinearGradient(cx - 80, cy + 60, cx + 190, cy - 90);
   checkGrad.addColorStop(0, '#b89000');
   checkGrad.addColorStop(0.4, '#f0e060');
   checkGrad.addColorStop(1, '#ffffff');
@@ -97,9 +101,9 @@
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(cx - 60, cy + 60);
-  ctx.lineTo(cx - 10, cy + 115);
-  ctx.lineTo(cx + 110, cy - 40);
+  ctx.moveTo(cx - 80, cy + 60);
+  ctx.lineTo(cx - 10, cy + 130);
+  ctx.lineTo(cx + 150, cy - 60);
   ctx.stroke();
   ctx.restore();
 
@@ -109,9 +113,9 @@
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(cx - 60, cy + 60);
-  ctx.lineTo(cx - 10, cy + 115);
-  ctx.lineTo(cx + 110, cy - 40);
+  ctx.moveTo(cx - 80, cy + 60);
+  ctx.lineTo(cx - 10, cy + 130);
+  ctx.lineTo(cx + 150, cy - 60);
   ctx.stroke();
   ctx.restore();
 </script>
