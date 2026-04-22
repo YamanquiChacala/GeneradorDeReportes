@@ -1,5 +1,5 @@
 import { Base64Fonts, Base64Images } from "../common/base64Constants";
-import { Colors, Tempates } from "../common/enums";
+import { Colors, Templates } from "../common/enums";
 
 interface StudentData {
     start_year: string;
@@ -178,7 +178,7 @@ function onTestSavePdf(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript
  * Creates a PDF of the given data based on the given html format;
  */
 export function createPdf(data: StudentData): [string, GoogleAppsScript.Base.Blob] {
-    const htmlTemplate = HtmlService.createTemplateFromFile(Tempates.HTML_TO_PDF_TEMPLATE) as MyTemplate;
+    const htmlTemplate = HtmlService.createTemplateFromFile(Templates.HTML_TO_PDF_TEMPLATE) as MyTemplate;
 
     htmlTemplate.data = data;
 

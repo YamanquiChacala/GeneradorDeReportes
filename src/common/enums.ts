@@ -15,7 +15,7 @@ export enum Urls {
     MEDIA_SERVER = "https://media.githubusercontent.com/media/YamanquiChacala/GeneradorDeReportes/refs/heads/main/",
 }
 
-export enum Tempates {
+export enum Templates {
     HTML_TO_PDF_TEMPLATE = "PdfPrintTemplate",
 }
 
