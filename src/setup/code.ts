@@ -342,5 +342,5 @@ export function copySetupFile(fileId: string, folderId: string, groupName: strin
 
     if (!newFileId) throw new Error("Error al crear copia del Regirsto Inicial");
 
-    Sheets?.Spreadsheets.Values.update({ range: SetupSheetSchema.namedRanges.groupName, values: [[groupName]] }, newFileId, SetupSheetSchema.namedRanges.groupName);
+    Sheets?.Spreadsheets.Values.update({ values: [[groupName]] }, newFileId, SetupSheetSchema.namedRanges.groupName, { valueInputOption: "USER_ENTERED" });
 }

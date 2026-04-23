@@ -119,8 +119,10 @@ export function onCopySetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleA
             .build();
     }
 
+    const validGroupName = sanitizeFileName(groupName);
+
     try {
-        copySetupFile(fileId, folderId, groupName);
+        copySetupFile(fileId, folderId, validGroupName);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return CardService.newActionResponseBuilder()
