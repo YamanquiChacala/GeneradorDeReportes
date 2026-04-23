@@ -308,3 +308,17 @@ export function parseSpreadsheet<S extends Record<string, string>, R extends Rec
 
     return { sheets: mappedSheets, namedRanges: mappedRanges };
 }
+
+/**
+ * Transforms a column number into it's corresponding column letter, using 0-based index.
+ */
+export function getColumnLetter(column: number): string {
+    let temp: number,
+        letter = "";
+    while (column >= 0) {
+        temp = column % 26;
+        letter = String.fromCharCode(temp + 65) + letter;
+        column = Math.floor(column / 26) - 1;
+    }
+    return letter;
+}
