@@ -270,7 +270,7 @@ export function generateCalendar(fileId: string) {
             monthLabelRange = namedRanges[SetupSheetSchema.namedRanges.monthNames1];
         }
 
-        const monthName = MappedNamedRange.getCellDisplay({ mappedRange: monthLabelRange, row: block.monthIndex });
+        const monthName = MappedNamedRange.getCellDisplay({ mappedRange: monthLabelRange, rowOffset: block.monthIndex });
         const monthYearText = `${monthName ?? ""}\n${block.year}`;
 
         const formatRequest = MappedNamedRange.buildCopyPasteRequest({

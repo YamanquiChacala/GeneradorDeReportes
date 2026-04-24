@@ -37,8 +37,8 @@ export interface MappedNamedRange {
 
 interface GetCellParams {
     mappedRange: MappedNamedRange | undefined;
-    row?: number;
-    column?: number;
+    rowOffset?: number;
+    columnOffset?: number;
 }
 
 interface CopyPasteParams {
@@ -54,32 +54,100 @@ interface CopyPasteParams {
 }
 
 export const MappedNamedRange = {
-    getCellData({ mappedRange, row, column }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData | undefined {
-        const rowIndex = (mappedRange?.range.startRowIndex ?? 0) + (row ?? 0);
-        const colIndex = (mappedRange?.range.startColumnIndex ?? 0) + (column ?? 0);
+    getFormattedValues(mappedRange: MappedNamedRange): string[][] {
+        const { range, sheet } = mappedRange;
+
+        const startRow = range.startRowIndex ?? 0;
+        const startCol = range.startColumnIndex ?? 0;
+        const endRow = range.endRowIndex ?? sheet.properties?.gridProperties?.rowCount ?? startRow;
+        const endCol = range.endColumnIndex ?? sheet.properties?.gridProperties?.columnCount ?? startCol;
+
+        const numRows = Math.max(0, endRow - startRow);
+        const numCols = Math.max(0, endCol - startCol);
+
+        const result: string[][] = Array.from({ length: numRows }, () => Array(numCols).fill(""));
+
+        if (!sheet.data || numRows === 0 || numCols === 0) return result;
+
+        for (const gridData of sheet.data) {
+            const gridStartRow = gridData.startRow ?? 0;
+            const gridStartCol = gridData.startColumn ?? 0;
+            const rowDataArray = gridData.rowData ?? [];
+
+            for (let r = 0; r < rowDataArray.length; r++) {
+                const absoluteRow = gridStartRow + r;
+
+                // Skip if this row is outside the named range bounds.
+                if (absoluteRow < startRow || absoluteRow >= endRow) continue;
+
+                const values = rowDataArray[r]?.values ?? [];
+                const targetRow = result[absoluteRow - startRow];
+
+                if (!targetRow) continue;
+
+                for (let c = 0; c < values.length; c++) {
+                    const absoluteCol = gridStartCol + c;
+
+                    // Skip is this colum is outside the named range bounds.
+                    if (absoluteCol < startCol || absoluteCol >= endCol) continue;
+
+                    const resultColIndex = absoluteCol - startCol; // Where in the result this will end.
+                    const cellData = values[c];
+
+                    if (cellData?.formattedValue != null) {
+                        targetRow[resultColIndex] = cellData.formattedValue;
+                    }
+                }
+            }
+        }
+        return result;
+    },
+
+    getCellData({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData | undefined {
+        const absoluteRowIndex = (mappedRange?.range.startRowIndex ?? 0) + (rowOffset ?? 0);
+        const absoluteColIndex = (mappedRange?.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
 
         const endRow = mappedRange?.range.endRowIndex;
         const endColumn = mappedRange?.range.endColumnIndex;
 
-        if ((endRow && rowIndex >= endRow) || (endColumn && colIndex >= endColumn)) return undefined;
+        if ((endRow && absoluteRowIndex >= endRow) || (endColumn && absoluteColIndex >= endColumn)) return undefined;
 
-        return mappedRange?.sheet.data?.[0]?.rowData?.[rowIndex]?.values?.[colIndex];
+        const sheetData = mappedRange?.sheet.data;
+        if (!sheetData) return undefined;
+
+        for (const gridData of sheetData) {
+            const startRow = gridData.startRow ?? 0;
+            const startColumn = gridData.startColumn ?? 0;
+
+            const relativeRow = absoluteRowIndex - startRow;
+            const relativeCol = absoluteColIndex - startColumn;
+
+            if (relativeRow >= 0 && gridData.rowData && relativeRow < gridData.rowData.length) {
+                const rowData = gridData.rowData[relativeRow];
+
+                if (relativeCol >= 0 && rowData?.values && relativeCol < rowData.values.length) {
+                    return rowData.values[relativeCol];
+                }
+            }
+        }
+
+        return undefined;
     },
 
-    getCellDisplay({ mappedRange, row, column }: GetCellParams): string | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, row, column });
+    getCellDisplay({ mappedRange, rowOffset: row, columnOffset: column }: GetCellParams): string | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset: row, columnOffset: column });
 
         return cellData?.formattedValue;
     },
 
-    getCellNumber({ mappedRange, row, column }: GetCellParams): number | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, row, column });
+    getCellNumber({ mappedRange, rowOffset: row, columnOffset: column }: GetCellParams): number | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset: row, columnOffset: column });
 
         return cellData?.effectiveValue?.numberValue;
     },
 
-    getCellUnixEpoch({ mappedRange, row, column }: GetCellParams): number | undefined {
-        const cellNumber = MappedNamedRange.getCellNumber({ mappedRange, row, column });
+    getCellUnixEpoch({ mappedRange, rowOffset: row, columnOffset: column }: GetCellParams): number | undefined {
+        const cellNumber = MappedNamedRange.getCellNumber({ mappedRange, rowOffset: row, columnOffset: column });
 
         if (cellNumber == null) return undefined;
 
