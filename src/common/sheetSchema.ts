@@ -24,3 +24,32 @@ export const SetupSheetSchema = {
         restDay: "cal_diaDescanso",
     },
 } as const;
+
+export const ReportSheetSchema = {
+    templateId: "1XVPjUP8Kw6TS9MuHt6TE2z09woqUg5Pp_WLZxW3NblY",
+    sheetNames: {
+        persistentData: "_Persistente",
+        attendanceTemplate: "_AsistenciaTemplate",
+        studentTemplate: "_EstudianteTemplate",
+        attendance: "Asistencia",
+        summary: "Concentrado",
+        status: "Estado",
+    },
+    namedRanges: {
+        attendancePerClass: "persAsistenciaPorAsignatura",
+        averagePerField: "persPromedioPorCampo",
+        protectData: "persProtDatos",
+        protectSkills: "persProtHabilidades",
+        protectComments: "persProtObservaciones",
+        protectPeriod1: "persProtPeriodo1",
+        protectPeriod2: "persProtPeriodo2",
+        protectPeriod3: "persProtPeriodo3",
+        dateStart: "persFechaInicio",
+        dateTrim1: "persFechaTrim1",
+        dateTrim2: "persFechaTrim2",
+        dateEnd: "persFechaFin",
+        subjects: "persAsignaturas",
+        students: "persEstudiantes",
+        calendarDates: "persCalendario",
+    },
+} as const;
