@@ -1,6 +1,6 @@
 import { headerIcon, headerImage, textButton } from "../common/cardParts";
 import { Colors, Icon } from "../common/enums";
-import { defineActionParameters, defineInputsSchema } from "../common/utils/googleAPI";
+import { defineActionParameters, defineInputsSchema } from "../common/utils/apiTypes";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({

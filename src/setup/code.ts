@@ -1,7 +1,8 @@
 import { FileType, Numbers } from "../common/enums";
 import { SetupSheetSchema } from "../common/sheetSchema";
+import { defineRangesDataConfig, type MappedInput } from "../common/utils/apiTypes";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/fileValidation";
-import { defineRangesDataConfig, type MappedInput, MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/googleAPI";
+import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mappedNameRange";
 
 const SetupFileDataConfig = defineRangesDataConfig({
     groupName: { range: SetupSheetSchema.namedRanges.groupName, type: "string" },

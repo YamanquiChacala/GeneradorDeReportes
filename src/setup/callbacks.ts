@@ -2,7 +2,7 @@ import { onPopCardStack } from "../common/callbacks";
 import { headerImage, textButton } from "../common/cardParts";
 import { Colors, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premadeCards";
-import { getInputs } from "../common/utils/googleAPI";
+import { getInputs } from "../common/utils/apiTypes";
 import { sanitizeFileName } from "../common/utils/text";
 import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams } from "./cards";
 import type { SetupFileData } from "./code";

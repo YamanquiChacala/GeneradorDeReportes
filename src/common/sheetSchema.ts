@@ -36,6 +36,7 @@ export const ReportSheetSchema = {
         status: "Estado",
     },
     namedRanges: {
+        // Persistent Data Sheet
         attendancePerClass: "persAsistenciaPorAsignatura",
         averagePerField: "persPromedioPorCampo",
         protectData: "persProtDatos",
@@ -51,5 +52,16 @@ export const ReportSheetSchema = {
         subjects: "persAsignaturas",
         students: "persEstudiantes",
         calendarDates: "persCalendario",
+        // Attendance Template Sheet
+        subjectRow: "faltasMateria",
+        attendanceStudentRow: "faltasEstudiante",
+        monthNames1: "faltasMes1",
+        monthNames2: "faltasMes2",
+        monthNames5: "faltasMes5",
+        dayNames: "faltasDias",
+        formatAttendanceCell: "faltasValidFormCond",
+        formatPeriod1: "faltasFormPer1",
+        formatPeriod2: "faltasFormPer2",
+        formatPeriod3: "faltasFormPer3",
     },
 } as const;
