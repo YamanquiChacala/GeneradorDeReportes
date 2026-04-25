@@ -1,74 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <title>Aligned Pentagon Flower</title>
-    <style>
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #1a1a1a; }
-        canvas { background-color: #222; border: 2px solid #444; border-radius: 8px; }
-    </style>
-</head>
-<body>
+    <head>
+        <title>Aligned Pentagon Flower</title>
+        <style>
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background-color: #1a1a1a;
+            }
+            canvas {
+                background-color: #222;
+                border: 2px solid #444;
+                border-radius: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="flowerCanvas" width="600" height="600"></canvas>
 
-<canvas id="flowerCanvas" width="600" height="600"></canvas>
+        <script>
+            const canvas = document.getElementById("flowerCanvas");
+            const ctx = canvas.getContext("2d");
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 110;
 
-<script>
-    const canvas = document.getElementById('flowerCanvas');
-    const ctx = canvas.getContext('2d');
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = 110; 
+            function drawPentagon(x, y, r, rotation, color, strokeColor) {
+                const sides = 5;
+                const step = (2 * Math.PI) / sides;
 
-    function drawPentagon(x, y, r, rotation, color, strokeColor) {
-        const sides = 5;
-        const step = (2 * Math.PI) / sides;
-        
-        ctx.beginPath();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = strokeColor;
-        ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = strokeColor;
+                ctx.fillStyle = color;
 
-        for (let i = 0; i <= sides; i++) {
-            const angle = rotation + i * step;
-            const vx = x + r * Math.cos(angle);
-            const vy = y + r * Math.sin(angle);
-            if (i === 0) ctx.moveTo(vx, vy);
-            else ctx.lineTo(vx, vy);
-        }
+                for (let i = 0; i <= sides; i++) {
+                    const angle = rotation + i * step;
+                    const vx = x + r * Math.cos(angle);
+                    const vy = y + r * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(vx, vy);
+                    else ctx.lineTo(vx, vy);
+                }
 
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-    }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
 
-    function drawFlower() {
-        // 1. The Central Pentagon
-        // startAngle at PI/2 points the first vertex DOWN
-        const centerStartAngle = Math.PI / 2;
-        drawPentagon(centerX, centerY, radius, centerStartAngle, '#e74c3c', '#ffffff');
+            function drawFlower() {
+                // 1. The Central Pentagon
+                // startAngle at PI/2 points the first vertex DOWN
+                const centerStartAngle = Math.PI / 2;
+                drawPentagon(centerX, centerY, radius, centerStartAngle, "#e74c3c", "#ffffff");
 
-        // 2. The Geometry Math
-        const apothem = radius * Math.cos(Math.PI / 5);
-        const distanceToOuterCenter = apothem * 2;
+                // 2. The Geometry Math
+                const apothem = radius * Math.cos(Math.PI / 5);
+                const distanceToOuterCenter = apothem * 2;
 
-        for (let i = 0; i < 5; i++) {
-            // Find the angle pointing toward the middle of the current side
-            // We shift by PI/5 to get between vertices
-            const sideAngle = centerStartAngle + (i * (2 * Math.PI / 5)) + (Math.PI / 5);
-            
-            const outerX = centerX + distanceToOuterCenter * Math.cos(sideAngle);
-            const outerY = centerY + distanceToOuterCenter * Math.sin(sideAngle);
+                for (let i = 0; i < 5; i++) {
+                    // Find the angle pointing toward the middle of the current side
+                    // We shift by PI/5 to get between vertices
+                    const sideAngle = centerStartAngle + i * ((2 * Math.PI) / 5) + Math.PI / 5;
 
-            // 3. Rotation is the key!
-            // We rotate the outer pentagon by 'sideAngle' to align it with the center.
-            // Then we add PI (180 degrees) so it faces inward toward the center pentagon.
-            const petalRotation = sideAngle;
+                    const outerX = centerX + distanceToOuterCenter * Math.cos(sideAngle);
+                    const outerY = centerY + distanceToOuterCenter * Math.sin(sideAngle);
 
-            drawPentagon(outerX, outerY, radius, petalRotation, '#f1c40f', '#ffffff');
-        }
-    }
+                    // 3. Rotation is the key!
+                    // We rotate the outer pentagon by 'sideAngle' to align it with the center.
+                    // Then we add PI (180 degrees) so it faces inward toward the center pentagon.
+                    const petalRotation = sideAngle;
 
-    drawFlower();
-</script>
+                    drawPentagon(outerX, outerY, radius, petalRotation, "#f1c40f", "#ffffff");
+                }
+            }
 
-</body>
+            drawFlower();
+        </script>
+    </body>
 </html>

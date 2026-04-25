@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!!**/dist"]
+    "includes": ["**", "!!**/dist", "!!src/templates/**/*", "!!**/*base64*"]
   },
   "formatter": {
     "enabled": true,
@@ -28,17 +28,23 @@
       "quoteStyle": "double"
     }
   },
+  "html": {
+    "formatter": {
+      "enabled": true,
+      "indentScriptAndStyle": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "indentWidth": 2
+    }
+  },
   "assist": {
     "enabled": true,
     "actions": {
       "source": {
         "organizeImports": "on"
       }
-    }
-  },
-  "json": {
-    "formatter": {
-      "indentWidth": 2
     }
   }
 }
