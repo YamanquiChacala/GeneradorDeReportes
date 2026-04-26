@@ -58,7 +58,7 @@ export const ReportSheetSchema = {
             },
         },
         attendance: {
-            sheetName: "Asistencia",
+            sheetName: "_AsistenciaTemplate",
             ranges: {
                 subjectRow: "faltas_Materia",
                 attendanceStudentRow: "faltas_Estudiante",
@@ -69,7 +69,7 @@ export const ReportSheetSchema = {
                 formatAttendanceCell: "faltas_ValidacionFormatoGeneral",
                 formatPeriod1: "faltas_FormatoPeriodo1",
                 formatPeriod2: "faltas_FormatoPeriodo2",
-                formatPeriod3: "faltas_FormatoPeriddo3",
+                formatPeriod3: "faltas_FormatoPeriodo3",
             },
         },
     },

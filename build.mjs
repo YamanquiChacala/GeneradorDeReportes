@@ -6,7 +6,7 @@ build({
     bundle: true,
     outfile: "dist/Code.js",
     format: "esm",
-    target: "es2022",
+    target: "es2019",
     plugins: [
         gasPlugin({
             manifest: "src/appsscript.json",

@@ -13,7 +13,7 @@ export interface MappedNamedRange {
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
-interface NestedSheetSchema {
+export interface NestedSheetSchema {
     readonly sheets: Record<
         string,
         {
@@ -196,10 +196,11 @@ export const MappedNamedRange = {
             },
         };
     },
-} as const; /**
+} as const;
+
+/**
  * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.
  */
-
 export function parseSpreadsheet<T extends NestedSheetSchema>(
     spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet | undefined,
     schema: T,

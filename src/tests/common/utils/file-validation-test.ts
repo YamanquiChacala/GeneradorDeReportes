@@ -53,5 +53,5 @@ export function testFileValidation() {
         });
     });
 
-    return runner.execute;
+    return runner.execute();
 }
