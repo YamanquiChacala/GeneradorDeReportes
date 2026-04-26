@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "@biomejs/biome": "^2.4.11",
+    "@biomejs/biome": "^2.4.13",
     "@gas-plugin/unplugin": "^0.1.2",
     "@types/google-apps-script": "^2.0.8",
     "@types/jest": "^30.0.0",
