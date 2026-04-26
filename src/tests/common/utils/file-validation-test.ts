@@ -1,6 +1,6 @@
 import { FileType } from "../../../common/enums";
-import * as fileValidation from "../../../common/utils/fileValidation";
-import { GasTestRunner } from "../../gasTestRunner";
+import * as fileValidation from "../../../common/utils/file-validation";
+import { GasTestRunner } from "../../gas-test-runner";
 
 export function testFileValidation() {
     const runner = new GasTestRunner();

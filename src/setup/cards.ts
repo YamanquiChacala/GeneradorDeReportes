@@ -1,6 +1,6 @@
-import { headerIcon, headerImage, textButton } from "../common/cardParts";
+import { headerIcon, headerImage, textButton } from "../common/card-parts";
 import { Colors, Icon } from "../common/enums";
-import { defineActionParameters, defineInputsSchema } from "../common/utils/apiTypes";
+import { defineActionParameters, defineInputsSchema } from "../common/utils/api-types";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({

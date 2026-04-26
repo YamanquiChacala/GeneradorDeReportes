@@ -1,5 +1,5 @@
 import { onAskPermission } from "./callbacks";
-import { headerImage, icon } from "./cardParts";
+import { headerImage, icon } from "./card-parts";
 import { Colors, Icon } from "./enums";
 
 interface UtilityCardParams {

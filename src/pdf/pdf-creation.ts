@@ -1,4 +1,4 @@
-import { Base64Fonts, Base64Images } from "../common/base64Constants";
+import { Base64Fonts, Base64Images } from "../common/base64-constants";
 import { Colors, Templates } from "../common/enums";
 
 interface StudentData {

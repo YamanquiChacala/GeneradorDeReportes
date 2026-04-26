@@ -1,5 +1,5 @@
-import { defineActionParameters, getInputs } from "../../../common/utils/apiTypes";
-import { getColumnLetter, parseSpreadsheet } from "../../../common/utils/mappedNameRange";
+import { defineActionParameters, getInputs } from "../../../common/utils/api-types";
+import { getColumnLetter, parseSpreadsheet } from "../../../common/utils/mapped-name-range";
 
 describe("googleAPI Utilities", () => {
     describe("defineActionParameters", () => {

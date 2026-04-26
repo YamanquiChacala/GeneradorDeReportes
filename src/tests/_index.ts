@@ -1,1 +1,1 @@
-export * from "./common/utils/fileValidationTest";
+export * from "./common/utils/file-validation-test";
