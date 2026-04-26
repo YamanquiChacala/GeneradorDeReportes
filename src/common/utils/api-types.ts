@@ -35,7 +35,7 @@ export function defineInputsSchema<T extends Record<string, InputType>>(schema: 
         schema,
         // This function does nothing at runtime but return the string you pass it.
         // But at compile time, TS forces you to only pass valid keys from your schema!
-        nameOf: (key: keyof T & string) => key,
+        fieldName: (key: keyof T & string) => key,
     };
 }
 

@@ -81,8 +81,8 @@ export function createSetupFile(initData: SetupFileData) {
  * Generates a Calendar in the given Spreadsheet
  * The spreadsheet must be a Setup Group.
  */
-export function generateCalendar(fileId: string) {
-    const SetupSpreadsheet = Sheets?.Spreadsheets.get(fileId, {
+export function generateCalendar(setupFileId: string) {
+    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, {
         fields: "sheets(properties(sheetId,title),data(rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges",
     });
 
@@ -317,13 +317,13 @@ export function generateCalendar(fileId: string) {
     });
 
     // Execute them all!
-    Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, fileId);
+    Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, setupFileId);
 }
 
 /**
  * Copies the SetupFile `fileId` changing the group name and saves it into `folderId`.
  */
-export function copySetupFile(fileId: string, folderId: string, groupName: string) {
+export function copySetupFile(setupFileId: string, folderId: string, groupName: string) {
     const filename = `__Registro ${groupName}`;
     const newFile = Drive?.Files.copy(
         {
@@ -333,7 +333,7 @@ export function copySetupFile(fileId: string, folderId: string, groupName: strin
                 [FILE_VALIDATION_KEY]: FileType.SETUP,
             },
         },
-        fileId,
+        setupFileId,
         {
             supportsAllDrives: true,
         },
@@ -345,3 +345,8 @@ export function copySetupFile(fileId: string, folderId: string, groupName: strin
 
     Sheets?.Spreadsheets.Values.update({ values: [[groupName]] }, newFileId, SetupSheetSchema.sheets.groupData.ranges.groupName, { valueInputOption: "USER_ENTERED" });
 }
+
+/**
+ * Initializes a Report spreadsheet in the same folder as the setupFile, with the information from the Setup file.
+ */
+export function initializeReport(setupFileId: string) {}

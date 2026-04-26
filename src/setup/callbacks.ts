@@ -4,9 +4,9 @@ import { Colors, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premade-cards";
 import { getInputs } from "../common/utils/api-types";
 import { sanitizeFileName } from "../common/utils/text";
-import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams } from "./cards";
+import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams, GenerateCalendarParams, InitializeReportParams } from "./cards";
 import type { SetupFileData } from "./code";
-import { copySetupFile, createSetupFile, generateCalendar } from "./code";
+import { copySetupFile, createSetupFile, generateCalendar, initializeReport } from "./code";
 
 /**
  * Callback to the button to create a new Initialization Group File.
@@ -83,16 +83,16 @@ export function onCreateSetupFile(e: GoogleAppsScript.Addons.EventObject): Googl
  */
 export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error generando calendario: ";
-    const { fileId } = e.commonEventObject.parameters;
+    const { setupFileId } = GenerateCalendarParams.parse(e.commonEventObject.parameters);
 
-    if (!fileId) {
+    if (!setupFileId) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}No se encuentra el archivo.`))
             .build();
     }
 
     try {
-        generateCalendar(fileId);
+        generateCalendar(setupFileId);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(errorMessage);
@@ -109,7 +109,7 @@ export function onGenerateCalendar(e: GoogleAppsScript.Addons.EventObject): Goog
  */
 export function onCopySetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error copiando archivo: ";
-    const { fileId } = CopySetupFileParams.parse(e.commonEventObject.parameters);
+    const { setupFileId: fileId } = CopySetupFileParams.parse(e.commonEventObject.parameters);
 
     const { groupName, folderId } = getInputs(e.commonEventObject.formInputs, CopySetupFileInputs.schema);
 
@@ -131,4 +131,29 @@ export function onCopySetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleA
     }
 
     return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("✅ Copia creada.")).build();
+}
+
+/**
+ * Callback to initializa a brand new Report based on a Setup file.
+ */
+export function onInitializeReport(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const mainErrorMessage = "❌ Error creando archivo de reportes: ";
+    const { setupFileId } = InitializeReportParams.parse(e.commonEventObject.parameters);
+
+    if (!setupFileId) {
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}No se encuentra el Registro Inicial de grupo.`))
+            .build();
+    }
+
+    try {
+        initializeReport(setupFileId);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${errorMessage}`))
+            .build();
+    }
+
+    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("✅ Archivo de Reportes creado.")).build();
 }
