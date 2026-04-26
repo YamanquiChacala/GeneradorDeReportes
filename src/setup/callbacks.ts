@@ -1,6 +1,6 @@
 import { onPopCardStack } from "../common/callbacks";
-import { headerImage, textButton } from "../common/card-parts";
-import { Colors, Numbers } from "../common/enums";
+import { headerIcon, headerImage, textButton } from "../common/card-parts";
+import { Colors, Icon, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premade-cards";
 import { getInputs } from "../common/utils/api-types";
 import { sanitizeFileName } from "../common/utils/text";
@@ -120,9 +120,10 @@ export function onCopySetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleA
     }
 
     const validGroupName = sanitizeFileName(groupName);
+    const realFolderId = folderId === "null" ? undefined : folderId;
 
     try {
-        copySetupFile(fileId, folderId, validGroupName);
+        copySetupFile(fileId, realFolderId, validGroupName);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return CardService.newActionResponseBuilder()
@@ -138,16 +139,21 @@ export function onCopySetupFile(e: GoogleAppsScript.Addons.EventObject): GoogleA
  */
 export function onInitializeReport(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando archivo de reportes: ";
-    const { setupFileId } = InitializeReportParams.parse(e.commonEventObject.parameters);
+    const { setupFileId, parentId } = InitializeReportParams.parse(e.commonEventObject.parameters);
 
     if (!setupFileId) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}No se encuentra el Registro Inicial de grupo.`))
             .build();
     }
+    if (!parentId) {
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Carpeta no valida para crear Reporte.`))
+            .build();
+    }
 
     try {
-        initializeReport(setupFileId);
+        initializeReport(setupFileId, parentId);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return CardService.newActionResponseBuilder()
@@ -155,5 +161,16 @@ export function onInitializeReport(e: GoogleAppsScript.Addons.EventObject): Goog
             .build();
     }
 
-    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText("✅ Archivo de Reportes creado.")).build();
+    const successCard = buildUtilityCard({
+        header: headerIcon({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala", iconName: Icon.CLIPBOARD }),
+        title: `<font color="${Colors.LOGO_OSCURO}"><b>✅ ¡Archivo de reportes del grupo creado con éxito!</b></font>`,
+        message: `📊 El archivo de asistencias, calificaciones y reportes para el grupo ya está listo.`,
+        points: [
+            "El archivo aparecerá en la carpeta de Drive en un momento.",
+            "Ya puedes cerrar este archivo",
+            "Una vez que revises que el archivo de calificaciones, asistencias y reportes es correcto, puedes borrar este archivo",
+        ],
+    });
+
+    return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().pushCard(successCard)).build();
 }

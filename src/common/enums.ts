@@ -6,9 +6,9 @@ export enum FileType {
 export enum Icon {
     WARNING = "material-symbols/warning-rounded",
     FOLDER_QUESTION = "mdi/folder-question",
-    FOLDER = "noto/file-folder",
-    CLIPBOARD = "noto/clipboard",
-    CHART = "noto/bar-chart",
+    FOLDER = "noto/file-folder", // 📁
+    CLIPBOARD = "noto/clipboard", // 📋
+    CHART = "noto/bar-chart", // 📊
 }
 
 export enum Urls {

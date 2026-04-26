@@ -57,7 +57,7 @@ export const ReportSheetSchema = {
                 calendarDates: "pers_Calendario",
             },
         },
-        attendance: {
+        attendanceTemplate: {
             sheetName: "_AsistenciaTemplate",
             ranges: {
                 subjectRow: "faltas_Materia",

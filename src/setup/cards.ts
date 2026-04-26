@@ -100,6 +100,7 @@ export const CopySetupFileParams = defineActionParameters({
 
 export const InitializeReportParams = defineActionParameters({
     setupFileId: "string",
+    parentId: "string",
 } as const);
 
 /**
@@ -138,9 +139,12 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
         .setFieldName(CopySetupFileInputs.fieldName("folderId"))
         .addItem("", "", false);
 
+    let parentId: string;
+
     try {
         const fileData = Drive?.Files.get(setupFileId, { fields: "parents", supportsAllDrives: true });
         if (!fileData?.parents?.length || !fileData.parents[0]) throw new Error("No parent for the Setup file");
+        parentId = fileData.parents[0];
         const parentData = Drive?.Files.get(fileData.parents[0], { fields: "parents", supportsAllDrives: true });
         if (!parentData?.parents?.length || !parentData.parents[0]) throw new Error("No grandparent for the Setup file");
         const searchFolder = parentData.parents[0];
@@ -160,6 +164,7 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
         });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
+        parentId = "root";
         console.error(errorMessage);
         folderDropDown.addItem("📁 Carpeta actual", "null", false);
     }
@@ -187,8 +192,7 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
     );
 
     // --- Fixed Footer (The Primary Action) ---
-    // TODO: Create the action
-    const initializeAction = CardService.newAction().setFunctionName(onInitializeReport.name).setParameters(InitializeReportParams.build({ setupFileId }));
+    const initializeAction = CardService.newAction().setFunctionName(onInitializeReport.name).setParameters(InitializeReportParams.build({ setupFileId, parentId }));
     const footerButton = CardService.newTextButton()
         .setText("📊 Crear Archivo de Calificaciones")
         .setTextButtonStyle(CardService.TextButtonStyle.FILLED)

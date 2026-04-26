@@ -1,8 +1,9 @@
 import { FileType, Numbers } from "../common/enums";
-import { SetupSheetSchema } from "../common/sheet-schema";
+import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
 import { defineRangesDataConfig, type MappedInput } from "../common/utils/api-types";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
 import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mapped-name-range";
+import { sanitizeFileName } from "../common/utils/text";
 
 const SetupFileDataConfig = defineRangesDataConfig({
     groupName: { range: SetupSheetSchema.sheets.groupData.ranges.groupName, type: "string" },
@@ -323,21 +324,22 @@ export function generateCalendar(setupFileId: string) {
 /**
  * Copies the SetupFile `fileId` changing the group name and saves it into `folderId`.
  */
-export function copySetupFile(setupFileId: string, folderId: string, groupName: string) {
+export function copySetupFile(setupFileId: string, folderId: string | undefined, groupName: string) {
     const filename = `__Registro ${groupName}`;
-    const newFile = Drive?.Files.copy(
-        {
-            name: filename,
-            parents: [folderId],
-            appProperties: {
-                [FILE_VALIDATION_KEY]: FileType.SETUP,
-            },
+
+    const fileRequest: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File = {
+        name: filename,
+        appProperties: {
+            [FILE_VALIDATION_KEY]: FileType.SETUP,
         },
-        setupFileId,
-        {
-            supportsAllDrives: true,
-        },
-    );
+    };
+    if (folderId) {
+        fileRequest.parents = [folderId];
+    }
+
+    const newFile = Drive?.Files.copy(fileRequest, setupFileId, {
+        supportsAllDrives: true,
+    });
 
     const newFileId = newFile?.id;
 
@@ -349,4 +351,58 @@ export function copySetupFile(setupFileId: string, folderId: string, groupName: 
 /**
  * Initializes a Report spreadsheet in the same folder as the setupFile, with the information from the Setup file.
  */
-export function initializeReport(setupFileId: string) {}
+export function initializeReport(setupFileId: string, parentId: string) {
+    // ========= Data Gathering ===========
+    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, {
+        fields: "sheets(properties(sheetId,title),data(rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges",
+    });
+
+    const { sheets: setupSheets, namedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+
+    const setupSheetCalendar = setupSheets[SetupSheetSchema.sheets.calendar.sheetName];
+    const setupSheetData = setupSheets[SetupSheetSchema.sheets.groupData.sheetName];
+
+    const groupName = setupRanges[SetupSheetSchema.sheets.groupData.ranges.groupName];
+
+    if (!setupSheetCalendar || !setupSheetData || !groupName) throw new Error("Registro Inicial de grupo incompleto.");
+
+    const sanitizedGroupName = sanitizeFileName(MappedNamedRange.getCellDisplay({ mappedRange: groupName }));
+
+    // Copy Report Template
+    const reportFile = Drive?.Files.copy(
+        {
+            name: sanitizedGroupName,
+            parents: [parentId],
+            appProperties: {
+                [FILE_VALIDATION_KEY]: FileType.REPORT,
+            },
+        },
+        ReportSheetSchema.templateId,
+        {
+            supportsAllDrives: true,
+        },
+    );
+
+    const reportFileId = reportFile?.id;
+
+    if (!reportFileId) throw new Error("Error al copiar template de Reporte");
+
+    const reportSpreadsheet = Sheets?.Spreadsheets.get(reportFileId, {
+        fields: "sheets(properties(sheetId,title),data(rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges",
+    });
+
+    const { sheets: reportSheets, namedRanges: reportRanges } = parseSpreadsheet(reportSpreadsheet, ReportSheetSchema);
+
+    const reportSheetData = reportSheets[ReportSheetSchema.sheets.persistentData.sheetName];
+    const reportAssistanceTemplate = reportSheets[ReportSheetSchema.sheets.attendanceTemplate.sheetName];
+
+    if (!reportSheetData || !reportAssistanceTemplate) throw new Error("Archivo de reportes incompleto.");
+
+    // ============ Batch Changes ==============
+
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    // ============ Execute Batch update ===========
+
+    Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
+}
