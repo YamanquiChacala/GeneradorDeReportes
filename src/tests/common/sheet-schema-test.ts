@@ -59,7 +59,7 @@ export function testSchemaValidation() {
                     for (const [rangeKey, rangeName] of Object.entries(sheetConfig.ranges)) {
                         if (config.skipRanges?.includes(rangeName)) continue;
 
-                        test(`[Range] "${rangeKey}" must exist`, () => {
+                        test(`|-- [Range] "${rangeKey}" must exist`, () => {
                             expect(parsedData.namedRanges[rangeName]).toBeTruthy();
                         });
                     }
