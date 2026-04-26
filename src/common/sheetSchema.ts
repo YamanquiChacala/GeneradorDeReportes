@@ -1,5 +1,41 @@
 export const SetupSheetSchema = {
     templateId: "19WMef0XLfSNkK48IQDQ1WUxeLa4Ir1LfvHZ4W5xEiIk",
+    sheets: {
+        groupData: {
+            sheetName: "Registro Inicial",
+            ranges: {
+                groupName: "datos_grupo",
+                attendancePerClass: "datos_asistenciaIndividual",
+                averagePerField: "datos_promedioPorCampos",
+                dateStart: "datos_fechaInicio",
+                dateTrim1: "datos_trimestre1",
+                dateTrim2: "datos_trimestre2",
+                dateEnd: "datos_fechaFin",
+                subjects: "datos_asignaturas",
+                students: "datos_estudiantes",
+            },
+        },
+        calendarTemplate: {
+            sheetName: "Template_Calendario",
+            ranges: {
+                monthNames1: "cal_mesAltura1",
+                monthNames2: "cal_mesAltura2",
+                monthNames3: "cal_mesAltura3",
+                trimester1Day: "cal_diaTrimestre1",
+                trimester2Day: "cal_diaTrimestre2",
+                trimester3Day: "cal_diaTrimestre3",
+                restDay: "cal_diaDescanso",
+            },
+        },
+        calendar: {
+            sheetName: "Calendario",
+            ranges: {},
+        },
+    },
+} as const;
+
+export const SetupSheetSchema2 = {
+    templateId: "19WMef0XLfSNkK48IQDQ1WUxeLa4Ir1LfvHZ4W5xEiIk",
     sheetNames: {
         groupData: "Registro Inicial",
         calendarTemplate: "Template_Calendario",

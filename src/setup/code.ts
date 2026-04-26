@@ -5,13 +5,13 @@ import { key as FILE_VALIDATION_KEY } from "../common/utils/fileValidation";
 import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mappedNameRange";
 
 const SetupFileDataConfig = defineRangesDataConfig({
-    groupName: { range: SetupSheetSchema.namedRanges.groupName, type: "string" },
-    attendancePerClass: { range: SetupSheetSchema.namedRanges.attendancePerClass, type: "boolean" },
-    averagePerField: { range: SetupSheetSchema.namedRanges.averagePerField, type: "boolean" },
-    dateStart: { range: SetupSheetSchema.namedRanges.dateStart, type: "date" },
-    dateEndTrimester1: { range: SetupSheetSchema.namedRanges.dateTrimester1, type: "date" },
-    dateEndTrimester2: { range: SetupSheetSchema.namedRanges.dateTrimester2, type: "date" },
-    dateEnd: { range: SetupSheetSchema.namedRanges.dateEnd, type: "date" },
+    groupName: { range: SetupSheetSchema.sheets.groupData.ranges.groupName, type: "string" },
+    attendancePerClass: { range: SetupSheetSchema.sheets.groupData.ranges.attendancePerClass, type: "boolean" },
+    averagePerField: { range: SetupSheetSchema.sheets.groupData.ranges.averagePerField, type: "boolean" },
+    dateStart: { range: SetupSheetSchema.sheets.groupData.ranges.dateStart, type: "date" },
+    dateEndTrimester1: { range: SetupSheetSchema.sheets.groupData.ranges.dateTrim1, type: "date" },
+    dateEndTrimester2: { range: SetupSheetSchema.sheets.groupData.ranges.dateTrim2, type: "date" },
+    dateEnd: { range: SetupSheetSchema.sheets.groupData.ranges.dateEnd, type: "date" },
 } as const);
 
 export type SetupFileData = { folderId: string } & {
@@ -88,15 +88,15 @@ export function generateCalendar(fileId: string) {
 
     const { sheets, namedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
-    const calendarTemplateSheet = sheets[SetupSheetSchema.sheetNames.calendarTemplate];
-    const calendarSheet = sheets[SetupSheetSchema.sheetNames.calendar];
+    const calendarTemplateSheet = sheets[SetupSheetSchema.sheets.calendarTemplate.sheetName];
+    const calendarSheet = sheets[SetupSheetSchema.sheets.calendar.sheetName];
 
     if (!calendarTemplateSheet) throw new Error("Faltan hojas o formato.");
 
-    const dateStart = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.namedRanges.dateStart] });
-    const dateTrimester1 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.namedRanges.dateTrimester1] });
-    const dateTrimester2 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.namedRanges.dateTrimester2] });
-    const dateEnd = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.namedRanges.dateEnd] });
+    const dateStart = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateStart] });
+    const dateTrimester1 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateTrim1] });
+    const dateTrimester2 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateTrim2] });
+    const dateEnd = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateEnd] });
 
     if (!dateStart || !dateTrimester1 || !dateTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
     if (dateStart >= dateTrimester1 || dateTrimester1 >= dateTrimester2 || dateTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
@@ -147,7 +147,7 @@ export function generateCalendar(fileId: string) {
             sourceSheetId: calendarTemplateSheet.properties?.sheetId,
             insertSheetIndex: 2,
             newSheetId: calendarSheetId,
-            newSheetName: SetupSheetSchema.sheetNames.calendar,
+            newSheetName: SetupSheetSchema.sheets.calendar.sheetName,
         },
     });
 
@@ -234,11 +234,11 @@ export function generateCalendar(fileId: string) {
             // Format the cells
             let formatSource: MappedNamedRange | undefined;
             if (isWeekday && inBounds) {
-                formatSource = namedRanges[SetupSheetSchema.namedRanges.trimester1Day]; // Default to trimester 1;
-                if (currentMs > dateTrimester2) formatSource = namedRanges[SetupSheetSchema.namedRanges.trimester3Day];
-                else if (currentMs > dateTrimester1) formatSource = namedRanges[SetupSheetSchema.namedRanges.trimester2Day];
+                formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.trimester1Day]; // Default to trimester 1;
+                if (currentMs > dateTrimester2) formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.trimester3Day];
+                else if (currentMs > dateTrimester1) formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.trimester2Day];
             } else {
-                formatSource = namedRanges[SetupSheetSchema.namedRanges.restDay];
+                formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.restDay];
             }
 
             const formatRequest = MappedNamedRange.buildCopyPasteRequest({
@@ -263,12 +263,12 @@ export function generateCalendar(fileId: string) {
     monthBlocks.forEach((block) => {
         const rowSpan = block.endRow - block.startRow;
 
-        let monthLabelRange = namedRanges[SetupSheetSchema.namedRanges.monthNames3];
+        let monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames3];
 
         if (rowSpan === 2) {
-            monthLabelRange = namedRanges[SetupSheetSchema.namedRanges.monthNames2];
+            monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames2];
         } else if (rowSpan === 1) {
-            monthLabelRange = namedRanges[SetupSheetSchema.namedRanges.monthNames1];
+            monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames1];
         }
 
         const monthName = MappedNamedRange.getCellDisplay({ mappedRange: monthLabelRange, rowOffset: block.monthIndex });
@@ -343,5 +343,5 @@ export function copySetupFile(fileId: string, folderId: string, groupName: strin
 
     if (!newFileId) throw new Error("Error al crear copia del Regirsto Inicial");
 
-    Sheets?.Spreadsheets.Values.update({ values: [[groupName]] }, newFileId, SetupSheetSchema.namedRanges.groupName, { valueInputOption: "USER_ENTERED" });
+    Sheets?.Spreadsheets.Values.update({ values: [[groupName]] }, newFileId, SetupSheetSchema.sheets.groupData.ranges.groupName, { valueInputOption: "USER_ENTERED" });
 }

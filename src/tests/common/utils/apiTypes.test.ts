@@ -84,8 +84,14 @@ describe("googleAPI Utilities", () => {
 
     describe("parseSpreadsheet", () => {
         const schema = {
-            sheetNames: { config: "Configuration" },
-            namedRanges: { users: "UsersRange" },
+            sheets: {
+                config: {
+                    sheetName: "Configuration",
+                    ranges: {
+                        users: "UsersRange",
+                    },
+                },
+            },
         } as const;
 
         it("should correctly map allowed sheets and ranges and ignore others", () => {
@@ -103,13 +109,13 @@ describe("googleAPI Utilities", () => {
             const result = parseSpreadsheet(mockSpreadsheet, schema);
 
             // Check sheets
-            expect(result.sheets[schema.sheetNames.config]).toBeDefined();
-            expect(result.sheets[schema.sheetNames.config]?.properties?.title).toBe("Configuration");
+            expect(result.sheets[schema.sheets.config.sheetName]).toBeDefined();
+            expect(result.sheets[schema.sheets.config.sheetName]?.properties?.title).toBe("Configuration");
             expect("SecretData" in result.sheets).toBe(false);
 
             // Check ranges
-            expect(result.namedRanges[schema.namedRanges.users]).toBeDefined();
-            expect(result.namedRanges[schema.namedRanges.users]?.range.sheetId).toBe(1);
+            expect(result.namedRanges[schema.sheets.config.ranges.users]).toBeDefined();
+            expect(result.namedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
             expect("HiddenRange" in result.namedRanges).toBe(false);
         });
     });

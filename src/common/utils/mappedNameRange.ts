@@ -13,6 +13,22 @@ export interface MappedNamedRange {
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
+interface NestedSheetSchema {
+    readonly sheets: Record<
+        string,
+        {
+            readonly sheetName: string;
+            readonly ranges?: Record<string, string>;
+        }
+    >;
+}
+
+type ExtractSheetNames<T extends NestedSheetSchema> = T["sheets"][keyof T["sheets"]]["sheetName"];
+
+type ExtractRangeNames<T extends NestedSheetSchema> = {
+    [K in keyof T["sheets"]]: T["sheets"][K] extends { ranges?: infer R } ? (R extends undefined ? never : R[keyof R]) : never;
+}[keyof T["sheets"]];
+
 interface GetCellParams {
     mappedRange: MappedNamedRange | undefined;
     rowOffset?: number;
@@ -184,17 +200,28 @@ export const MappedNamedRange = {
  * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.
  */
 
-export function parseSpreadsheet<S extends Record<string, string>, R extends Record<string, string>>(
+export function parseSpreadsheet<T extends NestedSheetSchema>(
     spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet | undefined,
-    schema: { readonly sheetNames: S; readonly namedRanges: R },
-): { sheets: Partial<Record<S[keyof S], GoogleAppsScript.Sheets.Schema.Sheet>>; namedRanges: Partial<Record<R[keyof R], MappedNamedRange>> } {
-    const mappedSheets: Partial<Record<S[keyof S], GoogleAppsScript.Sheets.Schema.Sheet>> = {};
-    const mappedRanges: Partial<Record<R[keyof R], MappedNamedRange>> = {};
+    schema: T,
+): { sheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>; namedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> } {
+    const mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>> = {};
+    const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
 
     if (!spreadsheet?.sheets) return { sheets: mappedSheets, namedRanges: mappedRanges };
 
-    const allowedSheetNames = new Set<string>(Object.values(schema.sheetNames));
-    const allowedRangeNames = new Set<string>(Object.values(schema.namedRanges));
+    const allowedSheetNames = new Set<string>();
+    const allowedRangeNames = new Set<string>();
+
+    for (const key of Object.keys(schema.sheets)) {
+        const sheetConfig = schema.sheets[key];
+        if (sheetConfig) allowedSheetNames.add(sheetConfig.sheetName);
+
+        if (sheetConfig?.ranges) {
+            for (const rangeKey of Object.keys(sheetConfig.ranges)) {
+                if (sheetConfig.ranges[rangeKey]) allowedRangeNames.add(sheetConfig.ranges[rangeKey]);
+            }
+        }
+    }
 
     const sheetIdLookup: Record<number, GoogleAppsScript.Sheets.Schema.Sheet> = {};
 
@@ -202,7 +229,7 @@ export function parseSpreadsheet<S extends Record<string, string>, R extends Rec
         sheetIdLookup[sheet.properties?.sheetId ?? 0] = sheet;
         const sheetTitle = sheet.properties?.title;
         if (sheetTitle != null && allowedSheetNames.has(sheetTitle)) {
-            mappedSheets[sheetTitle as S[keyof S]] = sheet;
+            mappedSheets[sheetTitle as ExtractSheetNames<T>] = sheet;
         }
     }
 
@@ -212,7 +239,7 @@ export function parseSpreadsheet<S extends Record<string, string>, R extends Rec
             const linkedSheet = sheetIdLookup[namedRange.range.sheetId ?? 0];
 
             if (linkedSheet && allowedRangeNames.has(namedRange.name)) {
-                mappedRanges[namedRange.name as R[keyof R]] = {
+                mappedRanges[namedRange.name as ExtractRangeNames<T>] = {
                     range: namedRange.range,
                     sheet: linkedSheet,
                 };
