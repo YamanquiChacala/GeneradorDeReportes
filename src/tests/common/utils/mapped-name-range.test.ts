@@ -91,17 +91,17 @@ describe("MappedNamedRange", () => {
             expect(result[0]?.length).toBe(5);
 
             // 2. Assert Chunk 1 data mapped correctly
-            expect(result[0]?.[0]).toBe({ formattedValue: "Test String", effectiveValue: { numberValue: 42 } });
+            expect(result[0]?.[0]).toStrictEqual({ formattedValue: "Test String", effectiveValue: { numberValue: 42 } });
 
             // 3. Assert a cell with an effectiveValue but no formattedValue returns an empty string
-            expect(result[1]?.[0]).toBe({ effectiveValue: { numberValue: 0 } });
+            expect(result[1]?.[0]).toStrictEqual({ effectiveValue: { numberValue: 0 } });
 
             // 4. Assert Chunk 2 (Offset data) mapped correctly
-            expect(result[3]?.[2]).toBe({ formattedValue: "Offset Data 1" });
-            expect(result[3]?.[3]).toBe({ formattedValue: "Offset Data 2" });
+            expect(result[3]?.[2]).toStrictEqual({ formattedValue: "Offset Data 1" });
+            expect(result[3]?.[3]).toStrictEqual({ formattedValue: "Offset Data 2" });
 
             // 5. Assert an untouched cell remains an empty string
-            expect(result[4]?.[4]).toBe({});
+            expect(result[4]?.[4]).toStrictEqual({});
         });
 
         it("should return an empty array if range dimensions are 0", () => {
