@@ -52,6 +52,7 @@ export const ReportSheetSchema = {
                 dateTrim1: "pers_FechaTrim1",
                 dateTrim2: "pers_FechaTrim2",
                 dateEnd: "pers_FechaFin",
+                fields: "pers_CamposFormativos",
                 subjects: "pers_Asignaturas",
                 students: "pers_Estudiantes",
                 calendarDates: "pers_Calendario",

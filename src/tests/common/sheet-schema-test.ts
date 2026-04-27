@@ -1,5 +1,5 @@
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
-import { buildFieldsMask } from "../../common/utils/api-types";
+import { buildFieldsMask } from "../../common/utils/gas-types";
 import { type NestedSheetSchema, parseSpreadsheet } from "../../common/utils/mapped-name-range";
 import { GasTestRunner } from "../gas-test-runner";
 

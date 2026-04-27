@@ -1,7 +1,7 @@
 import { FileType, Numbers } from "../common/enums";
 import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
-import { buildFieldsMask, defineRangesDataConfig, type MappedInput } from "../common/utils/api-types";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
+import { buildFieldsMask, defineRangesDataConfig, type MappedInput } from "../common/utils/gas-types";
 import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mapped-name-range";
 import { sanitizeFileName } from "../common/utils/text";
 
@@ -470,3 +470,6 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
 }
+
+
+function extractFieldsAndSubjects(rawData: GoogleAppsScript.Sheets.Schema.CellData[][]) { }

@@ -1,6 +1,6 @@
 import { headerIcon, headerImage, textButton } from "../common/card-parts";
 import { Colors, Icon } from "../common/enums";
-import { buildFieldsMask, defineActionParameters, defineInputsSchema } from "../common/utils/api-types";
+import { buildFieldsMask, defineActionParameters, defineInputsSchema } from "../common/utils/gas-types";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar, onInitializeReport } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({
@@ -115,7 +115,7 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
     calendarSection.addWidget(
         CardService.newTextParagraph().setText(
             "Si modificaste las fechas del ciclo escolar, actualiza el calendario aquí.<br><br>" +
-                `<font color='${Colors.ORANGE}'><b>⚠️ Advertencia:</b></font> Regenerar el calendario borrará los días festivos que ya hayas seleccionado manualmente.`,
+            `<font color='${Colors.ORANGE}'><b>⚠️ Advertencia:</b></font> Regenerar el calendario borrará los días festivos que ya hayas seleccionado manualmente.`,
         ),
     );
 

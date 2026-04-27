@@ -48,7 +48,7 @@ interface CopyPasteParams {
 }
 
 export const MappedNamedRange = {
-    getFormattedValues(mappedRange: MappedNamedRange): string[][] {
+    getCellDataArray(mappedRange: MappedNamedRange): GoogleAppsScript.Sheets.Schema.CellData[][] {
         const { range, sheet } = mappedRange;
 
         const startRow = range.startRowIndex ?? 0;
@@ -59,7 +59,7 @@ export const MappedNamedRange = {
         const numRows = Math.max(0, endRow - startRow);
         const numCols = Math.max(0, endCol - startCol);
 
-        const result: string[][] = Array.from({ length: numRows }, () => Array(numCols).fill(""));
+        const result: GoogleAppsScript.Sheets.Schema.CellData[][] = Array.from({ length: numRows }, () => Array(numCols).fill({}));
 
         if (!sheet.data || numRows === 0 || numCols === 0) return result;
 
@@ -88,8 +88,8 @@ export const MappedNamedRange = {
                     const resultColIndex = absoluteCol - startCol; // Where in the result this will end.
                     const cellData = values[c];
 
-                    if (cellData?.formattedValue != null) {
-                        targetRow[resultColIndex] = cellData.formattedValue;
+                    if (cellData != null) {
+                        targetRow[resultColIndex] = cellData;
                     }
                 }
             }
@@ -255,20 +255,4 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(
     }
 
     return { sheets: mappedSheets, namedRanges: mappedRanges };
-} /**
- * Transforms a column number into it's corresponding column letter, using 0-based index.
- */
-
-// TODO: Move everythign under to a new api-utils file.
-export function getColumnLetter(column: number): string {
-    let temp: number,
-        letter = "";
-    while (column >= 0) {
-        temp = column % 26;
-        letter = String.fromCharCode(temp + 65) + letter;
-        column = Math.floor(column / 26) - 1;
-    }
-    return letter;
 }
-
-// TODO: Function to "transfer" GoogleAppsScript.Sheets.Schema.GridRange to another sheet (give it another sheetId).

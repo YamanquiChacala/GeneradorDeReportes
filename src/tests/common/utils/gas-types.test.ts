@@ -1,7 +1,7 @@
-import { defineActionParameters, getInputs } from "../../../common/utils/api-types";
-import { getColumnLetter, parseSpreadsheet } from "../../../common/utils/mapped-name-range";
+import { defineActionParameters, getInputs } from "../../../common/utils/gas-types";
+import { parseSpreadsheet } from "../../../common/utils/mapped-name-range";
 
-describe("googleAPI Utilities", () => {
+describe("googleAPI Type Utilities", () => {
     describe("defineActionParameters", () => {
         const schema = { id: "number", active: "boolean", name: "string" } as const;
         const actions = defineActionParameters(schema);
@@ -117,26 +117,6 @@ describe("googleAPI Utilities", () => {
             expect(result.namedRanges[schema.sheets.config.ranges.users]).toBeDefined();
             expect(result.namedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
             expect("HiddenRange" in result.namedRanges).toBe(false);
-        });
-    });
-
-    describe("getColumnLetter", () => {
-        it("should correctly map a single letter", () => {
-            expect(getColumnLetter(1 - 1)).toBe("A");
-            expect(getColumnLetter(13 - 1)).toBe("M");
-            expect(getColumnLetter(26 - 1)).toBe("Z");
-        });
-
-        it("should correctly map multiple letters", () => {
-            expect(getColumnLetter(1 * 26 + 1 - 1)).toBe("AA");
-            expect(getColumnLetter(2 * 26 + 6 - 1)).toBe("BF");
-            expect(getColumnLetter(26 * 26 + 26 - 1)).toBe("ZZ");
-            expect(getColumnLetter(4 * 26 * 26 + 26 + 26 - 1)).toBe("DAZ");
-        });
-
-        it("should ignore negative numbers", () => {
-            expect(getColumnLetter(-1)).toBe("");
-            expect(getColumnLetter(-10000)).toBe("");
         });
     });
 });

@@ -82,26 +82,26 @@ describe("MappedNamedRange", () => {
         });
     });
 
-    describe("getFormattedValues", () => {
+    describe("getCellDataArray", () => {
         it("should return a correctly sized 2D array stitched from sparse data chunks", () => {
-            const result = MappedNamedRange.getFormattedValues(mockMappedRange);
+            const result = MappedNamedRange.getCellDataArray(mockMappedRange);
 
             // 1. Assert the dimensions match the Named Range (5x5)
             expect(result.length).toBe(5);
             expect(result[0]?.length).toBe(5);
 
             // 2. Assert Chunk 1 data mapped correctly
-            expect(result[0]?.[0]).toBe("Test String");
+            expect(result[0]?.[0]).toBe({ formattedValue: "Test String", effectiveValue: { numberValue: 42 } });
 
             // 3. Assert a cell with an effectiveValue but no formattedValue returns an empty string
-            expect(result[1]?.[0]).toBe("");
+            expect(result[1]?.[0]).toBe({ effectiveValue: { numberValue: 0 } });
 
             // 4. Assert Chunk 2 (Offset data) mapped correctly
-            expect(result[3]?.[2]).toBe("Offset Data 1");
-            expect(result[3]?.[3]).toBe("Offset Data 2");
+            expect(result[3]?.[2]).toBe({ formattedValue: "Offset Data 1" });
+            expect(result[3]?.[3]).toBe({ formattedValue: "Offset Data 2" });
 
             // 5. Assert an untouched cell remains an empty string
-            expect(result[4]?.[4]).toBe("");
+            expect(result[4]?.[4]).toBe({});
         });
 
         it("should return an empty array if range dimensions are 0", () => {
@@ -109,7 +109,7 @@ describe("MappedNamedRange", () => {
                 range: { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 },
                 sheet: { data: [] },
             };
-            const result = MappedNamedRange.getFormattedValues(emptyRange);
+            const result = MappedNamedRange.getCellDataArray(emptyRange);
             expect(result.length).toBe(0);
         });
     });

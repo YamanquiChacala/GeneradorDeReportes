@@ -2,7 +2,7 @@ import { onPopCardStack } from "../common/callbacks";
 import { headerIcon, headerImage, textButton } from "../common/card-parts";
 import { Colors, Icon, Numbers } from "../common/enums";
 import { buildUtilityCard } from "../common/premade-cards";
-import { getInputs } from "../common/utils/api-types";
+import { getInputs } from "../common/utils/gas-types";
 import { sanitizeFileName } from "../common/utils/text";
 import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams, GenerateCalendarParams, InitializeReportParams } from "./cards";
 import type { SetupFileData } from "./code";

@@ -3,21 +3,22 @@ type InputType = "string" | "number" | "boolean" | "date" | "time" | "array";
 export type MappedInput<T extends InputType> = T extends "string"
     ? string
     : T extends "number"
-      ? number
-      : T extends "boolean"
-        ? boolean
-        : T extends "date"
-          ? number
-          : T extends "time"
-            ? { hours: number; minutes: number }
-            : T extends "array"
-              ? string[]
-              : never;
+    ? number
+    : T extends "boolean"
+    ? boolean
+    : T extends "date"
+    ? number
+    : T extends "time"
+    ? { hours: number; minutes: number }
+    : T extends "array"
+    ? string[]
+    : never;
 
 type ParamType = "string" | "number" | "boolean";
 
 type MappedParam<T extends ParamType> = T extends "string" ? string : T extends "number" ? number : T extends "boolean" ? boolean : never;
 
+/** The part of the event object dealing with form inputs */
 type GASFormInputs = GoogleAppsScript.Addons.CommonEventObject["formInputs"];
 
 /**
@@ -170,16 +171,16 @@ type Decrement = [never, 0, 1, 2, 3, 4, 5];
 type FieldPaths<T, Depth extends Decrement[number] = 5> = [Depth] extends [never]
     ? never
     : T extends object
-      ? {
-            [K in keyof T]-?: K extends string
-                ? UnwrapArray<NonNullable<T[K]>> extends object
-                    ? // If it's an object, we keep the parent key OR recurse deeper
-                      K | `${K}.${FieldPaths<UnwrapArray<NonNullable<T[K]>>, Decrement[Depth]>}`
-                    : // If it's a primitive (string, number), we just return the key
-                      K
-                : never;
-        }[keyof T]
-      : never;
+    ? {
+        [K in keyof T]-?: K extends string
+        ? UnwrapArray<NonNullable<T[K]>> extends object
+        ? // If it's an object, we keep the parent key OR recurse deeper
+        K | `${K}.${FieldPaths<UnwrapArray<NonNullable<T[K]>>, Decrement[Depth]>}`
+        : // If it's a primitive (string, number), we just return the key
+        K
+        : never;
+    }[keyof T]
+    : never;
 
 /**
  * Takes an array of type-checked dot-notation strings and joins them into a mask.

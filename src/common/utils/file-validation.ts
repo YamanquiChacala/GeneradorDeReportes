@@ -1,5 +1,5 @@
 import type { FileType } from "../enums";
-import { buildFieldsMask } from "./api-types";
+import { buildFieldsMask } from "./gas-types";
 
 export const key = "fileType";
 
