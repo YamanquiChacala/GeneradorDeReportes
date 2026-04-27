@@ -427,15 +427,44 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
-    apiRequests.push({
+    // ============ Single cell data copies ================
+
+    const cellMapping = [
+        {
+            source: SetupSheetSchema.sheets.groupData.ranges.attendancePerClass,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.attendancePerClass,
+        },
+        {
+            source: SetupSheetSchema.sheets.groupData.ranges.averagePerField,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.averagePerField,
+        },
+        {
+            source: SetupSheetSchema.sheets.groupData.ranges.dateStart,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.dateStart,
+        },
+        {
+            source: SetupSheetSchema.sheets.groupData.ranges.dateTrim1,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.dateTrim1,
+        },
+        {
+            source: SetupSheetSchema.sheets.groupData.ranges.dateTrim2,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.dateTrim2,
+        },
+        {
+            source: SetupSheetSchema.sheets.groupData.ranges.dateEnd,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.dateEnd,
+        },
+    ] as const;
+
+    const singleCellRequests: GoogleAppsScript.Sheets.Schema.Request[] = cellMapping.map(({ source, dest }) => ({
         repeatCell: {
-            cell: {
-                userEnteredValue: MappedNamedRange.getCellEffectiveValue({ mappedRange: setupRanges[SetupSheetSchema.sheets.groupData.ranges.attendancePerClass] }),
-            },
-            range: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.attendancePerClass]?.range,
+            cell: { userEnteredValue: MappedNamedRange.getCellEffectiveValue({ mappedRange: setupRanges[source] }) },
+            range: reportRanges[dest]?.range,
             fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         },
-    });
+    }));
+
+    apiRequests.push(...singleCellRequests);
 
     // ============ Execute Batch update ===========
 

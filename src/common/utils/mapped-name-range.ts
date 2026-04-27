@@ -259,6 +259,7 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(
  * Transforms a column number into it's corresponding column letter, using 0-based index.
  */
 
+// TODO: Move everythign under to a new api-utils file.
 export function getColumnLetter(column: number): string {
     let temp: number,
         letter = "";
@@ -269,3 +270,5 @@ export function getColumnLetter(column: number): string {
     }
     return letter;
 }
+
+// TODO: Function to "transfer" GoogleAppsScript.Sheets.Schema.GridRange to another sheet (give it another sheetId).
