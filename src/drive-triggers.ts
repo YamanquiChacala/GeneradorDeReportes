@@ -12,9 +12,9 @@ export function buildDriveCard(e: GoogleAppsScript.Addons.EventObject): GoogleAp
         const selectedFileFileType = getFileType(selectedFile.id);
         switch (selectedFileFileType) {
             case FileType.SETUP:
-            // TODO: return Card "Ready to initialize?"
+            // TODO: return Card "Make copy of Setup | Ready to initialize?"
             case FileType.REPORT:
-            // TODO: return Card "Open in Sheets to edit or generate all reports"
+            // TODO: return Card "Open in Sheets to edit | generate all reports"
         }
 
         let selectedFolder: GoogleAppsScript.Drive.Folder;

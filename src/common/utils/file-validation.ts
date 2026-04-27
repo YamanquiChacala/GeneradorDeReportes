@@ -1,4 +1,5 @@
 import type { FileType } from "../enums";
+import { buildFieldsMask } from "./api-types";
 
 export const key = "fileType";
 
@@ -18,7 +19,7 @@ export function setFileType(fileId: string, fileType: FileType) {
  */
 export function getFileType(fileId: string): FileType | undefined {
     if (!fileId) return undefined;
-    const fileData = Drive?.Files.get(fileId, { fields: "appProperties" });
+    const fileData = Drive?.Files.get(fileId, { fields: buildFieldsMask<GoogleAppsScript.Drive_v3.Drive.V3.Schema.File>("appProperties") });
 
     return fileData?.appProperties?.[key];
 }

@@ -1,4 +1,5 @@
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
+import { buildFieldsMask } from "../../common/utils/api-types";
 import { type NestedSheetSchema, parseSpreadsheet } from "../../common/utils/mapped-name-range";
 import { GasTestRunner } from "../gas-test-runner";
 
@@ -32,7 +33,7 @@ export function testSchemaValidation() {
 
             beforeAll(() => {
                 const response = Sheets?.Spreadsheets.get(config.schema.templateId, {
-                    fields: "sheets(properties(sheetId,title)),namedRanges",
+                    fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>("sheets.properties.sheetId", "sheets.properties.title", "namedRanges"),
                 });
 
                 if (!response) throw new Error(`Failed to fetch the spreadsheet for ${config.name}.`);

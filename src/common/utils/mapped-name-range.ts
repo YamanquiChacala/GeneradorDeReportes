@@ -41,8 +41,8 @@ interface CopyPasteParams {
     destinationStartRow: number;
     destinationStartColumn: number;
     pasteType: PasteType;
-    offsetRow?: number;
-    offsetColumn?: number;
+    rowOffset?: number;
+    columnOffset?: number;
     height?: number;
     width?: number;
 }
@@ -128,20 +128,26 @@ export const MappedNamedRange = {
         return undefined;
     },
 
-    getCellDisplay({ mappedRange, rowOffset: row, columnOffset: column }: GetCellParams): string | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset: row, columnOffset: column });
+    getCellEffectiveValue({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.ExtendedValue | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset, columnOffset });
+
+        return cellData?.effectiveValue;
+    },
+
+    getCellDisplay({ mappedRange, rowOffset, columnOffset }: GetCellParams): string | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset, columnOffset });
 
         return cellData?.formattedValue;
     },
 
-    getCellNumber({ mappedRange, rowOffset: row, columnOffset: column }: GetCellParams): number | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset: row, columnOffset: column });
+    getCellNumber({ mappedRange, rowOffset, columnOffset }: GetCellParams): number | undefined {
+        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset, columnOffset });
 
         return cellData?.effectiveValue?.numberValue;
     },
 
-    getCellUnixEpoch({ mappedRange, rowOffset: row, columnOffset: column }: GetCellParams): number | undefined {
-        const cellNumber = MappedNamedRange.getCellNumber({ mappedRange, rowOffset: row, columnOffset: column });
+    getCellUnixEpoch({ mappedRange, rowOffset, columnOffset }: GetCellParams): number | undefined {
+        const cellNumber = MappedNamedRange.getCellNumber({ mappedRange, rowOffset, columnOffset });
 
         if (cellNumber == null) return undefined;
 
@@ -156,14 +162,14 @@ export const MappedNamedRange = {
         destinationStartRow,
         destinationStartColumn,
         pasteType,
-        offsetRow,
-        offsetColumn,
+        rowOffset,
+        columnOffset,
         height,
         width,
     }: CopyPasteParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
         if (!mappedRange) return undefined;
-        const srcStartRow = (mappedRange.range.startRowIndex ?? 0) + (offsetRow ?? 0);
-        const srcStartColumn = (mappedRange.range.startColumnIndex ?? 0) + (offsetColumn ?? 0);
+        const srcStartRow = (mappedRange.range.startRowIndex ?? 0) + (rowOffset ?? 0);
+        const srcStartColumn = (mappedRange.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
 
         const endRow = mappedRange.range.endRowIndex;
         const endColumn = mappedRange.range.endColumnIndex;

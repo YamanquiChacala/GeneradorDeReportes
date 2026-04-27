@@ -1,6 +1,6 @@
 import { FileType, Numbers } from "../common/enums";
 import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
-import { defineRangesDataConfig, type MappedInput } from "../common/utils/api-types";
+import { buildFieldsMask, defineRangesDataConfig, type MappedInput } from "../common/utils/api-types";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
 import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mapped-name-range";
 import { sanitizeFileName } from "../common/utils/text";
@@ -25,7 +25,7 @@ export type SetupFileData = { folderId: string } & {
 export function createSetupFile(initData: SetupFileData) {
     // ========== Create File ============
 
-    const fileName = `__Registro ${initData.groupName}`;
+    const fileName = `__Registro Inicial - ${initData.groupName}`;
 
     const newFile = Drive?.Files.copy(
         {
@@ -83,9 +83,14 @@ export function createSetupFile(initData: SetupFileData) {
  * The spreadsheet must be a Setup Group.
  */
 export function generateCalendar(setupFileId: string) {
-    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, {
-        fields: "sheets(properties(sheetId,title),data(rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges",
-    });
+    const fieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
+        "sheets.properties.sheetId",
+        "sheets.properties.title",
+        "sheets.data.rowData.values.formattedValue",
+        "sheets.data.rowData.values.effectiveValue.numberValue",
+        "namedRanges",
+    );
+    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
 
     const { sheets, namedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
@@ -174,7 +179,12 @@ export function generateCalendar(setupFileId: string) {
                     frozenColumnCount: 1,
                 },
             },
-            fields: "hidden,gridProperties(rowCount,frozenRowCount,frozenColumnCount)",
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.SheetProperties>(
+                "hidden",
+                "gridProperties.rowCount",
+                "gridProperties.frozenRowCount",
+                "gridProperties.frozenColumnCount",
+            ),
         },
     });
 
@@ -185,7 +195,7 @@ export function generateCalendar(setupFileId: string) {
                 sheetId: calendarTemplateSheet.properties?.sheetId,
                 hidden: true,
             },
-            fields: "hidden",
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.SheetProperties>("hidden"),
         },
     });
 
@@ -280,7 +290,7 @@ export function generateCalendar(setupFileId: string) {
             destinationSheetId: calendarSheetId,
             destinationStartRow: block.startRow,
             destinationStartColumn: 0,
-            offsetRow: block.monthIndex,
+            rowOffset: block.monthIndex,
             height: 1,
             width: 1,
             pasteType: PasteType.PASTE_FORMAT,
@@ -312,8 +322,20 @@ export function generateCalendar(setupFileId: string) {
     apiRequests.push({
         updateCells: {
             rows: rowDataArray,
-            fields: "userEnteredValue,dataValidation",
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue", "dataValidation"),
             start: { sheetId: calendarSheetId, rowIndex: 1, columnIndex: 0 },
+        },
+    });
+
+    // ============= Protect Calendar ==============
+
+    apiRequests.push({
+        addProtectedRange: {
+            protectedRange: {
+                range: { sheetId: calendarSheetId },
+                description: "Calendario",
+                warningOnly: false,
+            },
         },
     });
 
@@ -353,9 +375,14 @@ export function copySetupFile(setupFileId: string, folderId: string | undefined,
  */
 export function initializeReport(setupFileId: string, parentId: string) {
     // ========= Data Gathering ===========
-    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, {
-        fields: "sheets(properties(sheetId,title),data(rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges",
-    });
+    const fieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
+        "sheets.properties.sheetId",
+        "sheets.properties.title",
+        "sheets.data.rowData.values.formattedValue",
+        "sheets.data.rowData.values.effectiveValue",
+        "namedRanges",
+    );
+    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
 
     const { sheets: setupSheets, namedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
@@ -366,7 +393,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     if (!setupSheetCalendar || !setupSheetData || !groupName) throw new Error("Registro Inicial de grupo incompleto.");
 
-    const sanitizedGroupName = sanitizeFileName(MappedNamedRange.getCellDisplay({ mappedRange: groupName }));
+    const sanitizedGroupName = sanitizeFileName(`_${MappedNamedRange.getCellDisplay({ mappedRange: groupName })}`);
 
     // Copy Report Template
     const reportFile = Drive?.Files.copy(
@@ -387,9 +414,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     if (!reportFileId) throw new Error("Error al copiar template de Reporte");
 
-    const reportSpreadsheet = Sheets?.Spreadsheets.get(reportFileId, {
-        fields: "sheets(properties(sheetId,title),data(rowData/values(formattedValue,effectiveValue/numberValue))),namedRanges",
-    });
+    const reportSpreadsheet = Sheets?.Spreadsheets.get(reportFileId, { fields: fieldsMask });
 
     const { sheets: reportSheets, namedRanges: reportRanges } = parseSpreadsheet(reportSpreadsheet, ReportSheetSchema);
 
@@ -401,6 +426,16 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // ============ Batch Changes ==============
 
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    apiRequests.push({
+        repeatCell: {
+            cell: {
+                userEnteredValue: MappedNamedRange.getCellEffectiveValue({ mappedRange: setupRanges[SetupSheetSchema.sheets.groupData.ranges.attendancePerClass] }),
+            },
+            range: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.attendancePerClass]?.range,
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        },
+    });
 
     // ============ Execute Batch update ===========
 

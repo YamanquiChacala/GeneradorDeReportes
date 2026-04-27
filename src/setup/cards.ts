@@ -1,6 +1,6 @@
 import { headerIcon, headerImage, textButton } from "../common/card-parts";
 import { Colors, Icon } from "../common/enums";
-import { defineActionParameters, defineInputsSchema } from "../common/utils/api-types";
+import { buildFieldsMask, defineActionParameters, defineInputsSchema } from "../common/utils/api-types";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar, onInitializeReport } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({
@@ -142,10 +142,13 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
     let parentId: string;
 
     try {
-        const fileData = Drive?.Files.get(setupFileId, { fields: "parents", supportsAllDrives: true });
+        const fileData = Drive?.Files.get(setupFileId, { fields: buildFieldsMask<GoogleAppsScript.Drive_v3.Drive.V3.Schema.File>("parents"), supportsAllDrives: true });
         if (!fileData?.parents?.length || !fileData.parents[0]) throw new Error("No parent for the Setup file");
         parentId = fileData.parents[0];
-        const parentData = Drive?.Files.get(fileData.parents[0], { fields: "parents", supportsAllDrives: true });
+        const parentData = Drive?.Files.get(fileData.parents[0], {
+            fields: buildFieldsMask<GoogleAppsScript.Drive_v3.Drive.V3.Schema.File>("parents"),
+            supportsAllDrives: true,
+        });
         if (!parentData?.parents?.length || !parentData.parents[0]) throw new Error("No grandparent for the Setup file");
         const searchFolder = parentData.parents[0];
 
@@ -153,7 +156,7 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
         const folderList = Drive?.Files.list({
             corpora: "allDrives",
             q: query,
-            fields: "files(id,name)",
+            fields: "files(id,name)", // Can't use buildFieldMask, since Drive uses an old sintax that doesn't use dot sintax.
             orderBy: "name",
             supportsAllDrives: true,
             includeItemsFromAllDrives: true,

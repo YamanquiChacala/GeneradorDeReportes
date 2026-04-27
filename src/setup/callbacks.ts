@@ -168,7 +168,7 @@ export function onInitializeReport(e: GoogleAppsScript.Addons.EventObject): Goog
         points: [
             "El archivo aparecerá en la carpeta de Drive en un momento.",
             "Ya puedes cerrar este archivo",
-            "Una vez que revises que el archivo de calificaciones, asistencias y reportes es correcto, puedes borrar este archivo",
+            "Una vez que revises que el archivo de calificaciones, asistencias y reportes es correcto, puedes borrar este archivo.",
         ],
     });
 
