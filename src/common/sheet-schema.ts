@@ -29,7 +29,10 @@ export const SetupSheetSchema = {
         },
         calendar: {
             sheetName: "Calendario",
-            ranges: {},
+            ranges: {
+                start: "realCal_InicioEpoch",
+                calendar: "realCal_CalendarioCompleto",
+            },
         },
     },
 } as const;

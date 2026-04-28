@@ -7,3 +7,7 @@
 * [ ] Unbound `Validation` and `Conditional Format` from `faltasValidFormCond` cell.
 * [ ] Set `BandedRange` for each subject, dynamic colors.
 * [ ] Remove format or rows between subjects.
+
+
+# General
+* [ ] Switch from using `formattedValue` to use `effectiveValue`.

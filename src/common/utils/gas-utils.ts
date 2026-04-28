@@ -12,7 +12,29 @@ export function getColumnLetter(column: number): string {
     return letter;
 }
 
-// TODO: Function to "transfer" GoogleAppsScript.Sheets.Schema.GridRange to another sheet (give it another sheetId).
+/**
+ * Changes the sheetId of the grid. Moving a grid to another sheet.
+ */
+export function transferGrid(grid: GoogleAppsScript.Sheets.Schema.GridRange, sheetId: number): GoogleAppsScript.Sheets.Schema.GridRange {
+    const newGrid = { ...grid };
+    newGrid.sheetId = sheetId;
+    return newGrid;
+}
+
+/** Helper function to convert Sheets API Color to a Hex string */
+export function colorToHex(color?: GoogleAppsScript.Sheets.Schema.Color, fallback = "#FFFFFF"): string {
+    // If there's no color provided, default to white as requested
+    if (!color) return fallback;
+
+    // Sheets API color channels default to 0 if not present in the object
+    const r = Math.round((color.red || 0) * 255);
+    const g = Math.round((color.green || 0) * 255);
+    const b = Math.round((color.blue || 0) * 255);
+
+    const toHex = (n: number) => n.toString(16).padStart(2, "0").toUpperCase();
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 
 /**
  * Trasnsforms from `effetive...` to `userEntered...` for use in writting.

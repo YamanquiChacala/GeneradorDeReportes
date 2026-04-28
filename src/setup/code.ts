@@ -2,6 +2,7 @@ import { FileType, Numbers } from "../common/enums";
 import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
 import { buildFieldsMask, defineRangesDataConfig, type MappedInput } from "../common/utils/gas-types";
+import { colorToHex } from "../common/utils/gas-utils";
 import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mapped-name-range";
 import { sanitizeFileName } from "../common/utils/text";
 
@@ -327,6 +328,51 @@ export function generateCalendar(setupFileId: string) {
         },
     });
 
+    apiRequests.push({
+        repeatCell: {
+            cell: { userEnteredValue: { numberValue: calStart } },
+            range: {
+                sheetId: calendarSheetId,
+                startRowIndex: 0,
+                endRowIndex: 1,
+                startColumnIndex: 0,
+                endColumnIndex: 1,
+            },
+        },
+    });
+
+    // ============= Calendar named ranges =============
+
+    apiRequests.push({
+        addNamedRange: {
+            namedRange: {
+                name: SetupSheetSchema.sheets.calendar.ranges.start,
+                range: {
+                    sheetId: calendarSheetId,
+                    startRowIndex: 0,
+                    endRowIndex: 1,
+                    startColumnIndex: 0,
+                    endColumnIndex: 1,
+                },
+            },
+        },
+    });
+
+    apiRequests.push({
+        addNamedRange: {
+            namedRange: {
+                name: SetupSheetSchema.sheets.calendar.ranges.calendar,
+                range: {
+                    sheetId: calendarSheetId,
+                    startRowIndex: 1,
+                    endRowIndex: totalRows,
+                    startColumnIndex: 1,
+                    endColumnIndex: 15,
+                },
+            },
+        },
+    });
+
     // ============= Protect Calendar ==============
 
     apiRequests.push({
@@ -471,5 +517,72 @@ export function initializeReport(setupFileId: string, parentId: string) {
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
 }
 
+/**
+ * Helper function to extract the fields and subjects from the setup page.
+ */
+function extractFieldsAndSubjects(rawData: GoogleAppsScript.Sheets.Schema.CellData[][]): {
+    fields: GoogleAppsScript.Sheets.Schema.CellData[][];
+    subjects: GoogleAppsScript.Sheets.Schema.CellData[][];
+} {
+    const fields: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    const subjects: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
-function extractFieldsAndSubjects(rawData: GoogleAppsScript.Sheets.Schema.CellData[][]) { }
+    // Track the active group as we iterate through the rows
+    let currentGroupInfo: { name: string; color: string; count: number } | null = null;
+
+    for (let r = 0; r < rawData.length; r++) {
+        const row = rawData[r];
+        if (!row || row.length === 0) continue;
+
+        // Check for a Group in the first column
+        const groupCell = row[0];
+        const possibleGroupVal = (groupCell?.formattedValue || "").trim();
+
+        if (possibleGroupVal !== "") {
+            // Before starting a new group, save the previous one IF it had elements
+            if (currentGroupInfo && currentGroupInfo.count > 0) {
+                fields.push([
+                    { userEnteredValue: { stringValue: currentGroupInfo.color } },
+                    { userEnteredValue: { stringValue: currentGroupInfo.name } },
+                    { userEnteredValue: { numberValue: currentGroupInfo.count } },
+                ]);
+            }
+
+            // Initialize the new group
+            const bgColor = groupCell?.effectiveFormat?.backgroundColor;
+            currentGroupInfo = {
+                name: possibleGroupVal,
+                color: colorToHex(bgColor),
+                count: 0,
+            };
+        }
+        if (currentGroupInfo) {
+            // Check for an Element in the remaining columns
+            let foundElementVal = "";
+            for (let c = 1; c < row.length; c++) {
+                const cellVal = (row[c]?.formattedValue || "").trim();
+                if (cellVal !== "") {
+                    foundElementVal = cellVal;
+                    break; // Found the element, stop scanning this row
+                }
+            }
+
+            // If an element exists, add it to subjects and increment the group count
+            if (foundElementVal !== "") {
+                subjects.push([{ userEnteredValue: { stringValue: foundElementVal } }]);
+                currentGroupInfo.count++;
+            }
+        }
+    }
+
+    // 4. End of data: Make sure to push the final group if it had elements
+    if (currentGroupInfo && currentGroupInfo.count > 0) {
+        fields.push([
+            { userEnteredValue: { stringValue: currentGroupInfo.color } },
+            { userEnteredValue: { stringValue: currentGroupInfo.name } },
+            { userEnteredValue: { numberValue: currentGroupInfo.count } },
+        ]);
+    }
+
+    return { fields, subjects };
+}

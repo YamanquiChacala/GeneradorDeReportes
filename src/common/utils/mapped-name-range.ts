@@ -156,6 +156,7 @@ export const MappedNamedRange = {
         return sheetsEpoch + cellNumber * msPerDay;
     },
 
+    // TODO: Move to gas-utils, remove mappedRange, use only GridRange for both source and destination.
     buildCopyPasteRequest({
         mappedRange,
         destinationSheetId,
