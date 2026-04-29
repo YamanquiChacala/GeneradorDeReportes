@@ -59,7 +59,7 @@ export const MappedNamedRange = {
         const numRows = Math.max(0, endRow - startRow);
         const numCols = Math.max(0, endCol - startCol);
 
-        const result: GoogleAppsScript.Sheets.Schema.CellData[][] = Array.from({ length: numRows }, () => Array(numCols).fill({}));
+        const result = Array.from({ length: numRows }, () => Array<GoogleAppsScript.Sheets.Schema.CellData>(numCols).fill({}));
 
         if (!sheet.data || numRows === 0 || numCols === 0) return result;
 

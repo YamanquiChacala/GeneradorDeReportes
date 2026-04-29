@@ -1,5 +1,5 @@
-import { defineActionParameters, getInputs } from "../../../common/utils/gas-types";
-import { parseSpreadsheet } from "../../../common/utils/mapped-name-range";
+import { defineActionParameters, getInputs } from "./gas-types";
+import { parseSpreadsheet } from "./mapped-name-range";
 
 describe("googleAPI Type Utilities", () => {
     describe("defineActionParameters", () => {

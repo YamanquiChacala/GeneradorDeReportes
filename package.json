@@ -2,6 +2,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",
     "@gas-plugin/unplugin": "^0.1.2",
+    "@google/clasp": "^3.3.0",
     "@types/google-apps-script": "^2.0.8",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
@@ -11,7 +12,7 @@
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",

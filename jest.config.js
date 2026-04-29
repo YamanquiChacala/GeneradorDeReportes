@@ -8,4 +8,8 @@ module.exports = {
     transform: {
         ...tsJestTransformCfg,
     },
+    testPathIgnorePatterns: [
+        "/node_modules/",
+        "\\.gas\\.test\\.ts$", // Tells Jest to completely ignore gas tests
+    ],
 };

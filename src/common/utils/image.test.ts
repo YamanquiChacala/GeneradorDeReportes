@@ -1,4 +1,4 @@
-import * as Utils from "../../../common/utils/image";
+import * as Utils from "./image";
 
 describe("Image Utils Module", () => {
     describe("iconifyUrl()", () => {

@@ -1,4 +1,4 @@
-import { getColumnLetter } from "../../../common/utils/gas-utils";
+import { getColumnLetter } from "./gas-utils";
 
 describe("googleAPI Type Utilities", () => {
     describe("getColumnLetter", () => {

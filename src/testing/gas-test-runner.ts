@@ -7,6 +7,13 @@ interface TestSuite {
     afterAlls: TestCallback[];
 }
 
+/**
+ * Usage:
+ * const runner = new GasTestRunner();
+ * const { describe, test, beforeAll, afterAll, expect } = runner;
+ * ...
+ * runner.execute();
+ */
 export class GasTestRunner {
     private logs: string[] = [];
     private passed = 0;

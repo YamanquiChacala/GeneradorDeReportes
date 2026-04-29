@@ -1,4 +1,4 @@
-import { MappedNamedRange, PasteType } from "../../../common/utils/mapped-name-range";
+import { MappedNamedRange, PasteType } from "./mapped-name-range";
 
 describe("MappedNamedRange", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks

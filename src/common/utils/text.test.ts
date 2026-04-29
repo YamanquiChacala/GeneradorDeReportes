@@ -1,4 +1,4 @@
-import * as Utils from "../../../common/utils/text";
+import * as Utils from "./text";
 
 describe("Text Utils Module", () => {
     describe("sanitizeFileName()", () => {

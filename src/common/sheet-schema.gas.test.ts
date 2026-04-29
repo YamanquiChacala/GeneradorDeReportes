@@ -1,7 +1,7 @@
-import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
-import { buildFieldsMask } from "../../common/utils/gas-types";
-import { type NestedSheetSchema, parseSpreadsheet } from "../../common/utils/mapped-name-range";
-import { GasTestRunner } from "../gas-test-runner";
+import { GasTestRunner } from "../testing/gas-test-runner";
+import { ReportSheetSchema, SetupSheetSchema } from "./sheet-schema";
+import { buildFieldsMask } from "./utils/gas-types";
+import { type NestedSheetSchema, parseSpreadsheet } from "./utils/mapped-name-range";
 
 interface SchemaTestConfig {
     name: string;
@@ -60,7 +60,7 @@ export function testSchemaValidation() {
                     for (const [rangeKey, rangeName] of Object.entries(sheetConfig.ranges)) {
                         if (config.skipRanges?.includes(rangeName)) continue;
 
-                        test(`|-- [Range] "${rangeKey}" must exist`, () => {
+                        test(`    [Range] "${rangeKey}" must exist`, () => {
                             expect(parsedData.namedRanges[rangeName]).toBeTruthy();
                         });
                     }
