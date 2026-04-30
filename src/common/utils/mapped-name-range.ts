@@ -3,6 +3,7 @@ export interface MappedNamedRange {
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
+// TODO: Stop exporting just for the tests
 export interface NestedSheetSchema {
     readonly sheets: Record<
         string,
@@ -141,11 +142,16 @@ export const MappedNamedRange = {
 export function parseSpreadsheet<T extends NestedSheetSchema>(
     spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet | undefined,
     schema: T,
-): { sheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>; namedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> } {
+): {
+    sheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
+    sheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>>;
+    namedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
+} {
     const mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>> = {};
+    const mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>> = {};
     const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
 
-    if (!spreadsheet?.sheets) return { sheets: mappedSheets, namedRanges: mappedRanges };
+    if (!spreadsheet?.sheets) return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, namedRanges: mappedRanges };
 
     const allowedSheetNames = new Set<string>();
     const allowedRangeNames = new Set<string>();
@@ -168,6 +174,7 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(
         const sheetTitle = sheet.properties?.title;
         if (sheetTitle != null && allowedSheetNames.has(sheetTitle)) {
             mappedSheets[sheetTitle as ExtractSheetNames<T>] = sheet;
+            mappedSheetNamedRanges[sheetTitle as ExtractSheetNames<T>] = spreadsheet.namedRanges?.filter((namedRange) => namedRange.range?.sheetId === sheet.properties?.sheetId);
         }
     }
 
@@ -185,5 +192,5 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(
         }
     }
 
-    return { sheets: mappedSheets, namedRanges: mappedRanges };
+    return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, namedRanges: mappedRanges };
 }
