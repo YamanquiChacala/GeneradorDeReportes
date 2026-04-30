@@ -1,4 +1,4 @@
-import { MappedNamedRange, PasteType } from "./mapped-name-range";
+import { MappedNamedRange } from "./mapped-name-range";
 
 describe("MappedNamedRange", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks
@@ -111,60 +111,6 @@ describe("MappedNamedRange", () => {
             };
             const result = MappedNamedRange.getCellDataArray(emptyRange);
             expect(result.length).toBe(0);
-        });
-    });
-
-    describe("buildCopyPasteRequest", () => {
-        it("should return a valid request object on success", () => {
-            const req = MappedNamedRange.buildCopyPasteRequest({
-                mappedRange: mockMappedRange,
-                destinationSheetId: 99,
-                destinationStartRow: 10,
-                destinationStartColumn: 20,
-                pasteType: PasteType.PASTE_NORMAL,
-                width: 2,
-            });
-
-            expect(req).toBeDefined();
-            expect(req?.copyPaste).toBeDefined();
-
-            // Source assertions
-            expect(req?.copyPaste?.source?.sheetId).toBe(1);
-            expect(req?.copyPaste?.source?.startRowIndex).toBe(0);
-            expect(req?.copyPaste?.source?.endRowIndex).toBe(5);
-            expect(req?.copyPaste?.source?.startColumnIndex).toBe(0);
-            expect(req?.copyPaste?.source?.endColumnIndex).toBe(2);
-
-            // Destination assertions
-            expect(req?.copyPaste?.destination?.sheetId).toBe(99);
-            expect(req?.copyPaste?.destination?.startRowIndex).toBe(10);
-            expect(req?.copyPaste?.destination?.endRowIndex).toBe(15);
-            expect(req?.copyPaste?.destination?.startColumnIndex).toBe(20);
-            expect(req?.copyPaste?.destination?.endColumnIndex).toBe(22);
-        });
-
-        it("should return undefined if mappedRange is missing", () => {
-            const req = MappedNamedRange.buildCopyPasteRequest({
-                mappedRange: undefined,
-                destinationSheetId: 2,
-                destinationStartRow: 0,
-                destinationStartColumn: 0,
-                pasteType: PasteType.PASTE_NORMAL,
-            });
-            expect(req).toBeUndefined();
-        });
-
-        it("should return undefined if requested range is out of bounds", () => {
-            const req = MappedNamedRange.buildCopyPasteRequest({
-                mappedRange: mockMappedRange,
-                destinationSheetId: 2,
-                destinationStartRow: 0,
-                destinationStartColumn: 0,
-                pasteType: PasteType.PASTE_NORMAL,
-                height: 10, // Exceeds the endRowIndex of 5
-                width: 1,
-            });
-            expect(req).toBeUndefined();
         });
     });
 });

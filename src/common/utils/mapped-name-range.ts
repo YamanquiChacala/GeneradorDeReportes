@@ -1,13 +1,3 @@
-export enum PasteType {
-    PASTE_NORMAL = "PASTE_NORMAL",
-    PASTE_VALUES = "PASTE_VALUES",
-    PASTE_FORMAT = "PASTE_FORMAT",
-    PASTE_NO_BORDERS = "PASTE_NO_BORDERS",
-    PASTE_FORMULA = "PASTE_FORMULA",
-    PASTE_DATA_VALIDATION = "PASTE_DATA_VALIDATION",
-    PASTE_CONDITIONAL_FORMATTING = "PASTE_CONDITIONAL_FORMATTING",
-}
-
 export interface MappedNamedRange {
     range: GoogleAppsScript.Sheets.Schema.GridRange;
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
@@ -33,18 +23,6 @@ interface GetCellParams {
     mappedRange: MappedNamedRange | undefined;
     rowOffset?: number;
     columnOffset?: number;
-}
-
-interface CopyPasteParams {
-    mappedRange: MappedNamedRange | undefined;
-    destinationSheetId: number;
-    destinationStartRow: number;
-    destinationStartColumn: number;
-    pasteType: PasteType;
-    rowOffset?: number;
-    columnOffset?: number;
-    height?: number;
-    width?: number;
 }
 
 export const MappedNamedRange = {
@@ -128,80 +106,32 @@ export const MappedNamedRange = {
         return undefined;
     },
 
-    getCellEffectiveValue({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.ExtendedValue | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset, columnOffset });
+    getCellEffectiveValue(args: GetCellParams): GoogleAppsScript.Sheets.Schema.ExtendedValue | undefined {
+        const cellData = MappedNamedRange.getCellData(args);
 
         return cellData?.effectiveValue;
     },
 
-    getCellDisplay({ mappedRange, rowOffset, columnOffset }: GetCellParams): string | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset, columnOffset });
+    getCellText(args: GetCellParams): string | undefined {
+        const effectiveValue = MappedNamedRange.getCellEffectiveValue(args);
 
-        return cellData?.formattedValue;
+        return effectiveValue?.stringValue;
     },
 
-    getCellNumber({ mappedRange, rowOffset, columnOffset }: GetCellParams): number | undefined {
-        const cellData = MappedNamedRange.getCellData({ mappedRange, rowOffset, columnOffset });
+    getCellNumber(args: GetCellParams): number | undefined {
+        const effectiveValue = MappedNamedRange.getCellEffectiveValue(args);
 
-        return cellData?.effectiveValue?.numberValue;
+        return effectiveValue?.numberValue;
     },
 
-    getCellUnixEpoch({ mappedRange, rowOffset, columnOffset }: GetCellParams): number | undefined {
-        const cellNumber = MappedNamedRange.getCellNumber({ mappedRange, rowOffset, columnOffset });
+    getCellUnixEpoch(args: GetCellParams): number | undefined {
+        const cellNumber = MappedNamedRange.getCellNumber(args);
 
         if (cellNumber == null) return undefined;
 
         const msPerDay = 24 * 60 * 60 * 1000;
         const sheetsEpoch = new Date(Date.UTC(1899, 11, 30)).getTime();
         return sheetsEpoch + cellNumber * msPerDay;
-    },
-
-    // TODO: Move to gas-utils, remove mappedRange, use only GridRange for both source and destination.
-    buildCopyPasteRequest({
-        mappedRange,
-        destinationSheetId,
-        destinationStartRow,
-        destinationStartColumn,
-        pasteType,
-        rowOffset,
-        columnOffset,
-        height,
-        width,
-    }: CopyPasteParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
-        if (!mappedRange) return undefined;
-        const srcStartRow = (mappedRange.range.startRowIndex ?? 0) + (rowOffset ?? 0);
-        const srcStartColumn = (mappedRange.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
-
-        const endRow = mappedRange.range.endRowIndex;
-        const endColumn = mappedRange.range.endColumnIndex;
-
-        const finalHeight = height ?? (endRow != null ? endRow - srcStartRow : undefined);
-        const finalWidth = width ?? (endColumn != null ? endColumn - srcStartColumn : undefined);
-
-        if (!finalHeight || !finalWidth) return undefined;
-
-        if ((endRow != null && endRow < srcStartRow + finalHeight) || (endColumn != null && endColumn < srcStartColumn + finalWidth)) return undefined;
-
-        return {
-            copyPaste: {
-                source: {
-                    sheetId: mappedRange.range.sheetId ?? 0,
-                    startRowIndex: srcStartRow,
-                    endRowIndex: srcStartRow + finalHeight,
-                    startColumnIndex: srcStartColumn,
-                    endColumnIndex: srcStartColumn + finalWidth,
-                },
-                destination: {
-                    sheetId: destinationSheetId,
-                    startRowIndex: destinationStartRow,
-                    endRowIndex: destinationStartRow + finalHeight,
-                    startColumnIndex: destinationStartColumn,
-                    endColumnIndex: destinationStartColumn + finalWidth,
-                },
-                pasteType: pasteType,
-                pasteOrientation: "NORMAL",
-            },
-        };
     },
 } as const;
 

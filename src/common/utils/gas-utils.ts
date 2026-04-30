@@ -1,3 +1,5 @@
+import type { PasteType } from "../gas-enums";
+
 /**
  * Transforms a column number into it's corresponding column letter, using 0-based index.
  */
@@ -12,13 +14,59 @@ export function getColumnLetter(column: number): string {
     return letter;
 }
 
+export function createSingleCellRange(sheetId: number, startRowIndex: number, startColumnIndex: number): GoogleAppsScript.Sheets.Schema.GridRange {
+    return {
+        sheetId,
+        startRowIndex,
+        startColumnIndex,
+        endRowIndex: startRowIndex + 1,
+        endColumnIndex: startColumnIndex + 1,
+    };
+}
+
 /**
  * Changes the sheetId of the grid. Moving a grid to another sheet.
  */
-export function transferGrid(grid: GoogleAppsScript.Sheets.Schema.GridRange, sheetId: number): GoogleAppsScript.Sheets.Schema.GridRange {
+export function changeGridRangeSheet(grid: GoogleAppsScript.Sheets.Schema.GridRange, sheetId: number): GoogleAppsScript.Sheets.Schema.GridRange {
     const newGrid = { ...grid };
     newGrid.sheetId = sheetId;
     return newGrid;
+}
+
+interface OffsetGridRangeProperties {
+    origin: GoogleAppsScript.Sheets.Schema.GridRange;
+    rowOffset?: number;
+    colOffset?: number;
+    height?: number;
+    width?: number;
+}
+
+/**
+ * Offsets a `range` and optionally bounds it to a given size.
+ */
+export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, width }: OffsetGridRangeProperties): GoogleAppsScript.Sheets.Schema.GridRange {
+    const startRow = (origin.startRowIndex ?? 0) + rowOffset;
+    const startCol = (origin.startColumnIndex ?? 0) + colOffset;
+
+    const result: GoogleAppsScript.Sheets.Schema.GridRange = {
+        sheetId: origin.sheetId,
+        startRowIndex: startRow,
+        startColumnIndex: startCol,
+    };
+
+    if (height != null) {
+        result.endRowIndex = startRow + height;
+    } else if (origin.endRowIndex != null) {
+        result.endRowIndex = origin.endRowIndex + rowOffset;
+    }
+
+    if (width != null) {
+        result.endColumnIndex = startCol + width;
+    } else if (origin.endColumnIndex != null) {
+        result.endColumnIndex = origin.endColumnIndex + colOffset;
+    }
+
+    return result;
 }
 
 /** Helper function to convert Sheets API Color to a Hex string */
@@ -61,6 +109,26 @@ export function makeUserEntered(data: GoogleAppsScript.Sheets.Schema.CellData[][
             return newCell;
         }),
     );
+}
+
+/**
+ * Generates batch update `copyPaste` request to copy data from `origin` into `destination` ranges.
+ */
+export function buildCopyPasteRequest(
+    source: GoogleAppsScript.Sheets.Schema.GridRange | undefined,
+    destination: GoogleAppsScript.Sheets.Schema.GridRange | undefined,
+    pasteType: PasteType,
+): GoogleAppsScript.Sheets.Schema.Request | undefined {
+    if (!source || !destination) return undefined;
+
+    return {
+        copyPaste: {
+            source,
+            destination,
+            pasteType,
+            pasteOrientation: "NORMAL",
+        },
+    };
 }
 
 /**

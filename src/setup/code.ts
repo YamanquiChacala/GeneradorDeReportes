@@ -1,9 +1,10 @@
 import { FileType, Numbers } from "../common/enums";
+import { PasteType } from "../common/gas-enums";
 import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
 import { buildFieldsMask, defineRangesDataConfig, type MappedInput } from "../common/utils/gas-types";
-import { colorToHex } from "../common/utils/gas-utils";
-import { MappedNamedRange, PasteType, parseSpreadsheet } from "../common/utils/mapped-name-range";
+import { buildCopyPasteRequest, colorToHex, createSingleCellRange, offsetGridRange } from "../common/utils/gas-utils";
+import { MappedNamedRange, parseSpreadsheet } from "../common/utils/mapped-name-range";
 import { sanitizeFileName } from "../common/utils/text";
 
 const SetupFileDataConfig = defineRangesDataConfig({
@@ -87,7 +88,6 @@ export function generateCalendar(setupFileId: string) {
     const fieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
         "sheets.properties.sheetId",
         "sheets.properties.title",
-        "sheets.data.rowData.values.formattedValue",
         "sheets.data.rowData.values.effectiveValue.numberValue",
         "namedRanges",
     );
@@ -253,13 +253,10 @@ export function generateCalendar(setupFileId: string) {
                 formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.restDay];
             }
 
-            const formatRequest = MappedNamedRange.buildCopyPasteRequest({
-                mappedRange: formatSource,
-                destinationSheetId: calendarSheetId,
-                destinationStartRow: currentRowNumber,
-                destinationStartColumn: 2 * i + 1,
-                pasteType: PasteType.PASTE_FORMAT,
-            });
+            const destinationRange = createSingleCellRange(calendarSheetId, currentRowNumber, 2 * i + 1);
+
+            const formatRequest = buildCopyPasteRequest(formatSource?.range, destinationRange, PasteType.PASTE_FORMAT);
+
             if (formatRequest) apiRequests.push(formatRequest);
 
             currentMs += msPerDay;
@@ -283,19 +280,15 @@ export function generateCalendar(setupFileId: string) {
             monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames1];
         }
 
-        const monthName = MappedNamedRange.getCellDisplay({ mappedRange: monthLabelRange, rowOffset: block.monthIndex });
+        const monthName = MappedNamedRange.getCellText({ mappedRange: monthLabelRange, rowOffset: block.monthIndex });
         const monthYearText = `${monthName ?? ""}\n${block.year}`;
 
-        const formatRequest = MappedNamedRange.buildCopyPasteRequest({
-            mappedRange: monthLabelRange,
-            destinationSheetId: calendarSheetId,
-            destinationStartRow: block.startRow,
-            destinationStartColumn: 0,
-            rowOffset: block.monthIndex,
-            height: 1,
-            width: 1,
-            pasteType: PasteType.PASTE_FORMAT,
-        });
+        if (!monthLabelRange?.range) throw new Error("Missing month names.");
+
+        const sourceMonthNameRange = offsetGridRange({ origin: monthLabelRange.range, rowOffset: block.monthIndex, height: 1, width: 1 });
+        const destinationMonthNameRange = createSingleCellRange(calendarSheetId, block.startRow, 0);
+
+        const formatRequest = buildCopyPasteRequest(sourceMonthNameRange, destinationMonthNameRange, PasteType.PASTE_FORMAT);
         if (formatRequest) apiRequests.push(formatRequest);
 
         // Merge
@@ -424,7 +417,6 @@ export function initializeReport(setupFileId: string, parentId: string) {
     const fieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
         "sheets.properties.sheetId",
         "sheets.properties.title",
-        "sheets.data.rowData.values.formattedValue",
         "sheets.data.rowData.values.effectiveValue",
         "namedRanges",
     );
@@ -439,7 +431,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     if (!setupSheetCalendar || !setupSheetData || !groupName) throw new Error("Registro Inicial de grupo incompleto.");
 
-    const sanitizedGroupName = sanitizeFileName(`_${MappedNamedRange.getCellDisplay({ mappedRange: groupName })}`);
+    const sanitizedGroupName = sanitizeFileName(`_${MappedNamedRange.getCellText({ mappedRange: groupName })}`);
 
     // Copy Report Template
     const reportFile = Drive?.Files.copy(
@@ -536,7 +528,7 @@ function extractFieldsAndSubjects(rawData: GoogleAppsScript.Sheets.Schema.CellDa
 
         // Check for a Group in the first column
         const groupCell = row[0];
-        const possibleGroupVal = (groupCell?.formattedValue || "").trim();
+        const possibleGroupVal = (groupCell?.effectiveValue?.stringValue || "").trim();
 
         if (possibleGroupVal !== "") {
             // Before starting a new group, save the previous one IF it had elements
@@ -560,7 +552,7 @@ function extractFieldsAndSubjects(rawData: GoogleAppsScript.Sheets.Schema.CellDa
             // Check for an Element in the remaining columns
             let foundElementVal = "";
             for (let c = 1; c < row.length; c++) {
-                const cellVal = (row[c]?.formattedValue || "").trim();
+                const cellVal = (row[c]?.effectiveValue?.stringValue || "").trim();
                 if (cellVal !== "") {
                     foundElementVal = cellVal;
                     break; // Found the element, stop scanning this row
