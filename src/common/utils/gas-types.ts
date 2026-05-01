@@ -100,7 +100,7 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
         // If rawField doesn't exist and isn't a boolean, it's safely undefined
         if (!rawField) continue;
 
-        // 2. Dates (DatePickers, DateTimePicker). Can return NaN on malformed Text Input
+        // 2. Dates (DatePickers, DateTimePicker).
         if (expectedType === "date") {
             const epoch = rawField.dateInput?.msSinceEpoch ?? rawField.dateTimeInput?.msSinceEpoch;
             if (epoch) {
@@ -115,7 +115,7 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
                 if (Number.isNaN(num2)) continue;
                 result[key] = num2;
             }
-            // Neither DatePicker, DateTimePicker or Text Input, so we ignore it.
+            // Malformed input, we return nothing.
             continue;
         }
 

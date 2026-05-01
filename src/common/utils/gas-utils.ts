@@ -1,11 +1,11 @@
-import type { PasteType } from "../gas-enums";
+import { Dimension, PasteOrientation, type PasteType } from "../gas-enums";
 
 /**
  * Transforms a column number into it's corresponding column letter, using 0-based index.
  */
 export function getColumnLetter(column: number): string {
-    let temp: number,
-        letter = "";
+    let temp: number;
+    let letter = "";
     while (column >= 0) {
         temp = column % 26;
         letter = String.fromCharCode(temp + 65) + letter;
@@ -75,9 +75,9 @@ export function colorToHex(color?: GoogleAppsScript.Sheets.Schema.Color, fallbac
     if (!color) return fallback;
 
     // Sheets API color channels default to 0 if not present in the object
-    const r = Math.round((color.red || 0) * 255);
-    const g = Math.round((color.green || 0) * 255);
-    const b = Math.round((color.blue || 0) * 255);
+    const r = Math.round((color.red ?? 0) * 255);
+    const g = Math.round((color.green ?? 0) * 255);
+    const b = Math.round((color.blue ?? 0) * 255);
 
     const toHex = (n: number) => n.toString(16).padStart(2, "0").toUpperCase();
 
@@ -126,7 +126,7 @@ export function buildCopyPasteRequest(
             source,
             destination,
             pasteType,
-            pasteOrientation: "NORMAL",
+            pasteOrientation: PasteOrientation.NORMAL,
         },
     };
 }
@@ -171,14 +171,14 @@ export function buildTransferRequest(
         if (dataRows > destRows) {
             requests.push({
                 insertDimension: {
-                    range: { sheetId, dimension: "ROWS", startIndex: startRow + 1, endIndex: startRow + 1 + (dataRows - destRows) },
+                    range: { sheetId, dimension: Dimension.ROWS, startIndex: startRow + 1, endIndex: startRow + 1 + (dataRows - destRows) },
                     inheritFromBefore: true,
                 },
             });
         } else if (dataRows < destRows) {
             requests.push({
                 deleteDimension: {
-                    range: { sheetId, dimension: "ROWS", startIndex: startRow + dataRows, endIndex: endRow },
+                    range: { sheetId, dimension: Dimension.ROWS, startIndex: startRow + dataRows, endIndex: endRow },
                 },
             });
         }
@@ -187,14 +187,14 @@ export function buildTransferRequest(
         if (dataCols > destCols) {
             requests.push({
                 insertDimension: {
-                    range: { sheetId, dimension: "COLUMNS", startIndex: startCol + 1, endIndex: startCol + 1 + (dataCols - destCols) },
+                    range: { sheetId, dimension: Dimension.COLUMNS, startIndex: startCol + 1, endIndex: startCol + 1 + (dataCols - destCols) },
                     inheritFromBefore: true,
                 },
             });
         } else if (dataCols < destCols) {
             requests.push({
                 deleteDimension: {
-                    range: { sheetId, dimension: "COLUMNS", startIndex: startCol + dataCols, endIndex: endCol },
+                    range: { sheetId, dimension: Dimension.COLUMNS, startIndex: startCol + dataCols, endIndex: endCol },
                 },
             });
         }

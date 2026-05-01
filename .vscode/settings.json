@@ -9,6 +9,7 @@
   "html.validate.styles": false,
   "js/ts.tsserver.experimental.enableProjectDiagnostics": true,
   "editor.tokenColorCustomizations": {
+    // Make strings and numbers pop-out to detect "magic" constants.
     "textMateRules": [
       {
         "scope": ["string", "string.quoted.single", "string.quoted.double"],

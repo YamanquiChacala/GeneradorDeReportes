@@ -19,10 +19,6 @@ export enum Templates {
     HTML_TO_PDF_TEMPLATE = "PdfPrintTemplate",
 }
 
-export enum Numbers {
-    MORE_THAN_A_YEAR = 400 * 24 * 60 * 60 * 1000,
-}
-
 export enum Colors {
     LOGO_OSCURO = "#34666A",
     LOGO_CLARO = "#159A5E",

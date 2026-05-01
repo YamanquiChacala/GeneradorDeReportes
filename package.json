@@ -6,13 +6,14 @@
     "@types/google-apps-script": "^2.0.8",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
+    "cross-env": "^10.1.0",
     "esbuild": "^0.28.0",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9",
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "test": "jest --passWithNoTests",
+    "test": "cross-env NODE_OPTIONS=\"--no-webstorage\" jest --passWithNoTests",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",

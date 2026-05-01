@@ -2,7 +2,7 @@ import type { Icon } from "../enums";
 import { webColor } from "./text";
 
 export interface IconifyParams {
-    iconName: Icon | string;
+    iconName: Icon;
     color?: string;
     width?: number;
     height?: number;

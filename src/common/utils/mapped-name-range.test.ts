@@ -1,4 +1,4 @@
-import { MappedNamedRange } from "./mapped-name-range";
+import { MappedNamedRange, parseSpreadsheet } from "./mapped-name-range";
 
 describe("MappedNamedRange", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks
@@ -9,8 +9,8 @@ describe("MappedNamedRange", () => {
                 {
                     // Chunk 1: Implicitly starts at 0, 0
                     rowData: [
-                        { values: [{ formattedValue: "Test String", effectiveValue: { numberValue: 42 } }] }, // Row 0, Col 0
-                        { values: [{ effectiveValue: { numberValue: 0 } }] }, // Row 1, Col 0 (For epoch test, no formattedValue)
+                        { values: [{ effectiveValue: { stringValue: "Test String" } }] }, // Row 0, Col 0
+                        { values: [{ effectiveValue: { numberValue: 0 } }] }, // Row 1, Col 0 (For epoch test)
                     ],
                 },
                 {
@@ -20,8 +20,8 @@ describe("MappedNamedRange", () => {
                     rowData: [
                         {
                             values: [
-                                { formattedValue: "Offset Data 1" }, // Row 3, Col 2
-                                { formattedValue: "Offset Data 2" }, // Row 3, Col 3
+                                { effectiveValue: { stringValue: "Offset Data 1" } }, // Row 3, Col 2
+                                { effectiveValue: { stringValue: "Offset Data 2" } }, // Row 3, Col 3
                             ],
                         },
                     ],
@@ -29,8 +29,8 @@ describe("MappedNamedRange", () => {
             ],
         },
     };
+
     // Mock an unbounded range (e.g., A:Z) where endRowIndex and endColumnIndex are undefined.
-    // It relies on the sheet's gridProperties to determine its maximum size (100 rows, 26 columns).
     const mockUnboundedRange: MappedNamedRange = {
         range: { sheetId: 2, startRowIndex: 0, startColumnIndex: 0 }, // No end indexes
         sheet: {
@@ -41,7 +41,7 @@ describe("MappedNamedRange", () => {
                 {
                     startRow: 99,
                     startColumn: 25,
-                    rowData: [{ values: [{ formattedValue: "Bottom Right Cell" }] }],
+                    rowData: [{ values: [{ effectiveValue: { stringValue: "Bottom Right Cell" } }] }],
                 },
             ],
         },
@@ -50,12 +50,12 @@ describe("MappedNamedRange", () => {
     describe("getCellData & Utilities", () => {
         it("getCellData should return data if within bounds of the first data chunk", () => {
             const data = MappedNamedRange.getCellData({ mappedRange: mockMappedRange, rowOffset: 0, columnOffset: 0 });
-            expect(data?.formattedValue).toBe("Test String");
+            expect(data?.effectiveValue?.stringValue).toBe("Test String");
         });
 
         it("getCellData should correctly locate data in an offset data chunk", () => {
             const data = MappedNamedRange.getCellData({ mappedRange: mockMappedRange, rowOffset: 3, columnOffset: 2 });
-            expect(data?.formattedValue).toBe("Offset Data 1");
+            expect(data?.effectiveValue?.stringValue).toBe("Offset Data 1");
         });
 
         it("getCellData should return undefined for empty cells within bounds", () => {
@@ -74,11 +74,36 @@ describe("MappedNamedRange", () => {
             const epoch = MappedNamedRange.getCellUnixEpoch({ mappedRange: mockMappedRange, rowOffset: 1, columnOffset: 0 });
             expect(epoch).toBe(expectedEpoch);
         });
+
         it("getCellData should handle unbounded ranges without throwing out-of-bounds errors", () => {
-            // Because endRowIndex/endColumnIndex are undefined, the boundary check should naturally pass,
-            // and it should successfully find the data chunk way down the sheet.
+            // Because endRowIndex/endColumnIndex are undefined, the boundary check should naturally pass
             const data = MappedNamedRange.getCellData({ mappedRange: mockUnboundedRange, rowOffset: 99, columnOffset: 25 });
-            expect(data?.formattedValue).toBe("Bottom Right Cell");
+            expect(data?.effectiveValue?.stringValue).toBe("Bottom Right Cell");
+        });
+
+        it("getCellEffectiveValue should return the effectiveValue object of a cell", () => {
+            const value = MappedNamedRange.getCellEffectiveValue({ mappedRange: mockMappedRange, rowOffset: 0, columnOffset: 0 });
+            expect(value).toStrictEqual({ stringValue: "Test String" });
+        });
+
+        it("getCellText should extract the stringValue from a cell", () => {
+            const text = MappedNamedRange.getCellText({ mappedRange: mockMappedRange, rowOffset: 0, columnOffset: 0 });
+            expect(text).toBe("Test String");
+        });
+
+        it("getCellText should safely return undefined if the cell has no stringValue", () => {
+            const text = MappedNamedRange.getCellText({ mappedRange: mockMappedRange, rowOffset: 1, columnOffset: 0 });
+            expect(text).toBeUndefined(); // Row 1, Col 0 has a numberValue, not a stringValue
+        });
+
+        it("getCellNumber should extract the numberValue from a cell", () => {
+            const num = MappedNamedRange.getCellNumber({ mappedRange: mockMappedRange, rowOffset: 1, columnOffset: 0 });
+            expect(num).toBe(0);
+        });
+
+        it("getCellNumber should safely return undefined if the cell has no numberValue", () => {
+            const num = MappedNamedRange.getCellNumber({ mappedRange: mockMappedRange, rowOffset: 0, columnOffset: 0 });
+            expect(num).toBeUndefined(); // Row 0, Col 0 has a stringValue, not a numberValue
         });
     });
 
@@ -91,16 +116,16 @@ describe("MappedNamedRange", () => {
             expect(result[0]?.length).toBe(5);
 
             // 2. Assert Chunk 1 data mapped correctly
-            expect(result[0]?.[0]).toStrictEqual({ formattedValue: "Test String", effectiveValue: { numberValue: 42 } });
+            expect(result[0]?.[0]).toStrictEqual({ effectiveValue: { stringValue: "Test String" } });
 
-            // 3. Assert a cell with an effectiveValue but no formattedValue returns an empty string
+            // 3. Assert the epoch cell mapped correctly
             expect(result[1]?.[0]).toStrictEqual({ effectiveValue: { numberValue: 0 } });
 
             // 4. Assert Chunk 2 (Offset data) mapped correctly
-            expect(result[3]?.[2]).toStrictEqual({ formattedValue: "Offset Data 1" });
-            expect(result[3]?.[3]).toStrictEqual({ formattedValue: "Offset Data 2" });
+            expect(result[3]?.[2]).toStrictEqual({ effectiveValue: { stringValue: "Offset Data 1" } });
+            expect(result[3]?.[3]).toStrictEqual({ effectiveValue: { stringValue: "Offset Data 2" } });
 
-            // 5. Assert an untouched cell remains an empty string
+            // 5. Assert an untouched cell remains an empty object
             expect(result[4]?.[4]).toStrictEqual({});
         });
 
@@ -111,6 +136,63 @@ describe("MappedNamedRange", () => {
             };
             const result = MappedNamedRange.getCellDataArray(emptyRange);
             expect(result.length).toBe(0);
+        });
+    });
+
+    describe("parseSpreadsheet", () => {
+        const schema = {
+            sheets: {
+                config: {
+                    sheetName: "Configuration",
+                    ranges: {
+                        users: "UsersRange",
+                    },
+                },
+            },
+        } as const;
+
+        it("should correctly map sheets, named ranges, and all named ranges belonging to that sheet", () => {
+            const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
+                sheets: [
+                    { properties: { sheetId: 1, title: "Configuration" } },
+                    { properties: { sheetId: 2, title: "SecretData" } }, // Should be ignored
+                ],
+                namedRanges: [
+                    { name: "UsersRange", range: { sheetId: 1 } },
+                    { name: "OtherConfigRange", range: { sheetId: 1 } }, // Unmapped in schema, but still belongs to the sheet
+                    { name: "HiddenRange", range: { sheetId: 2 } }, // Should be ignored
+                ],
+            };
+
+            const result = parseSpreadsheet(mockSpreadsheet, schema);
+
+            // Check strict sheets mapping
+            expect(result.sheets[schema.sheets.config.sheetName]).toBeDefined();
+            expect(result.sheets[schema.sheets.config.sheetName]?.properties?.title).toBe("Configuration");
+            expect("SecretData" in result.sheets).toBe(false);
+
+            // Check strict named ranges mapping
+            expect(result.namedRanges[schema.sheets.config.ranges.users]).toBeDefined();
+            expect(result.namedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
+            expect("HiddenRange" in result.namedRanges).toBe(false);
+            expect("OtherConfigRange" in result.namedRanges).toBe(false); // Valid for the sheet, but not in our explicit schema
+
+            // Check the new sheetNamedRanges array
+            const configSheetRanges = result.sheetNamedRanges[schema.sheets.config.sheetName];
+            expect(configSheetRanges).toBeDefined();
+            expect(configSheetRanges?.length).toBe(2);
+
+            // It should grab BOTH ranges that belong to sheetId 1, regardless of schema
+            const rangeNames = configSheetRanges?.map((r) => r.name);
+            expect(rangeNames).toContain("UsersRange");
+            expect(rangeNames).toContain("OtherConfigRange");
+        });
+
+        it("should safely handle undefined data safely", () => {
+            const result = parseSpreadsheet(undefined, schema);
+            expect(result.sheets).toEqual({});
+            expect(result.namedRanges).toEqual({});
+            expect(result.sheetNamedRanges).toEqual({});
         });
     });
 });

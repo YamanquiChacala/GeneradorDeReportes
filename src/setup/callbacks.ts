@@ -1,6 +1,7 @@
 import { onPopCardStack } from "../common/callbacks";
 import { headerIcon, headerImage, textButton } from "../common/card-parts";
-import { Colors, Icon, Numbers } from "../common/enums";
+import { MORE_THAN_A_YEAR } from "../common/constants";
+import { Colors, Icon } from "../common/enums";
 import { buildUtilityCard } from "../common/premade-cards";
 import { getInputs } from "../common/utils/gas-types";
 import { sanitizeFileName } from "../common/utils/text";
@@ -40,7 +41,7 @@ export function onCreateSetupFile(e: GoogleAppsScript.Addons.EventObject): Googl
             .build();
     }
 
-    if (dateEnd - dateStart > Numbers.MORE_THAN_A_YEAR) {
+    if (dateEnd - dateStart > MORE_THAN_A_YEAR) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Periodo demasiado largo.`))
             .build();

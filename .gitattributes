@@ -1,5 +1,7 @@
 [attr]lfs           filter=lfs diff=lfs merge=lfs -text
 
+* text=auto eol=lf
+
 # Images
 *.png               lfs
 *.kra               lfs

@@ -3,8 +3,7 @@ export interface MappedNamedRange {
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
-// TODO: Stop exporting just for the tests
-export interface NestedSheetSchema {
+interface NestedSheetSchema {
     readonly sheets: Record<
         string,
         {
@@ -174,7 +173,9 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(
         const sheetTitle = sheet.properties?.title;
         if (sheetTitle != null && allowedSheetNames.has(sheetTitle)) {
             mappedSheets[sheetTitle as ExtractSheetNames<T>] = sheet;
-            mappedSheetNamedRanges[sheetTitle as ExtractSheetNames<T>] = spreadsheet.namedRanges?.filter((namedRange) => namedRange.range?.sheetId === sheet.properties?.sheetId);
+            mappedSheetNamedRanges[sheetTitle as ExtractSheetNames<T>] = spreadsheet.namedRanges?.filter(
+                (namedRange) => namedRange.range?.sheetId === sheet.properties?.sheetId,
+            );
         }
     }
 

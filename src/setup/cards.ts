@@ -115,7 +115,7 @@ export function buildEditSetupFileCard(setupFileId: string): GoogleAppsScript.Ca
     calendarSection.addWidget(
         CardService.newTextParagraph().setText(
             "Si modificaste las fechas del ciclo escolar, actualiza el calendario aquí.<br><br>" +
-            `<font color='${Colors.ORANGE}'><b>⚠️ Advertencia:</b></font> Regenerar el calendario borrará los días festivos que ya hayas seleccionado manualmente.`,
+                `<font color='${Colors.ORANGE}'><b>⚠️ Advertencia:</b></font> Regenerar el calendario borrará los días festivos que ya hayas seleccionado manualmente.`,
         ),
     );
 

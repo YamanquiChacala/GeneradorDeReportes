@@ -2,26 +2,26 @@ import * as Utils from "./text";
 
 describe("Text Utils Module", () => {
     describe("sanitizeFileName()", () => {
-        test("should remove OS-prohibited characters", () => {
+        it("should remove OS-prohibited characters", () => {
             const input = 'My <Cool> : "File" / \\ | ? * .txt';
             expect(Utils.sanitizeFileName(input)).toBe("My Cool File .txt");
         });
 
-        test("should use default fallback if input becomes empty after sanitization", () => {
+        it("should use default fallback if input becomes empty after sanitization", () => {
             expect(Utils.sanitizeFileName(' < > : " / \\ | ? * ')).toBe("Grupo");
         });
 
-        test("should use custom fallback if provided", () => {
+        it("should use custom fallback if provided", () => {
             expect(Utils.sanitizeFileName("", "DefaultFile")).toBe("DefaultFile");
         });
 
-        test("should handle undefined or whitespace-only inputs", () => {
+        it("should handle undefined or whitespace-only inputs", () => {
             expect(Utils.sanitizeFileName(undefined)).toBe("Grupo");
             expect(Utils.sanitizeFileName("   ")).toBe("Grupo");
             expect(Utils.sanitizeFileName(undefined, "Fallback")).toBe("Fallback");
         });
 
-        test("should normalize unicode characters (NFKC) and keep Spanish accents intact", () => {
+        it("should normalize unicode characters (NFKC) and keep Spanish accents intact", () => {
             // \uFB01 is the ligature "ﬁ"
             // \u0065\u0301 is a decomposed "e" + "´"
             // NFKC should convert the ligature to "fi" and compose the accent to "é"
@@ -31,26 +31,26 @@ describe("Text Utils Module", () => {
     });
 
     describe("sanitizeSheetName()", () => {
-        test("should replace quotes and apostrophes with spaces", () => {
-            expect(Utils.sanitizeSheetName('O\'Conner "Math"')).toBe("O Conner Math");
+        it("should replace quotes, backticks, and apostrophes with spaces", () => {
+            expect(Utils.sanitizeSheetName('O\'Conner `Math` "Data"')).toBe("O Conner Math Data");
         });
 
-        test("should remove Spreadsheet-prohibited characters", () => {
+        it("should remove Spreadsheet-prohibited characters", () => {
             expect(Utils.sanitizeSheetName("Data [2024] : * ? / \\ |")).toBe("Data 2024");
         });
 
-        test("should collapse double spaces created by quote replacements", () => {
+        it("should collapse double spaces created by quote replacements", () => {
             expect(Utils.sanitizeSheetName("A'B\"'C'\"")).toBe("A B C"); // A space B space C
         });
 
-        test("should enforce 31 character limit for Excel compatibility", () => {
+        it("should enforce 31 character limit for Excel compatibility", () => {
             const longName = "This Is A Very Long Spreadsheet Name That Exceeds Thirty One Characters";
             const result = Utils.sanitizeSheetName(longName);
             expect(result.length).toBeLessThanOrEqual(31);
             expect(result).toBe("This Is A Very Long Spreadsheet");
         });
 
-        test("should trim properly if truncation leaves a trailing space at character 31", () => {
+        it("should trim properly if truncation leaves a trailing space at character 31", () => {
             // A 30-character string, followed by a space, followed by an X.
             // "123456789012345678901234567890 X"
             // Substring to 31 grabs the trailing space, so the final .trim() must remove it.
@@ -60,10 +60,14 @@ describe("Text Utils Module", () => {
             expect(result).toBe("123456789012345678901234567890");
         });
 
-        test("should return an empty string if all characters are stripped", () => {
+        it("should return an empty string if all characters are stripped", () => {
             // Note: Google Sheets requires tab names to be >= 1 character.
             // It's good to know this returns an empty string so upstream logic can handle it if needed.
             expect(Utils.sanitizeSheetName("[:*?/\\|]")).toBe("");
+        });
+
+        it("should handle an initially empty string gracefully", () => {
+            expect(Utils.sanitizeSheetName("")).toBe("");
         });
     });
 
@@ -97,6 +101,7 @@ describe("Text Utils Module", () => {
 
         describe("Named color to Hex translation", () => {
             it("should return correct 6-digit hex for valid named colors", () => {
+                // Assuming CssColorMap maps these properly
                 expect(Utils.webColor("red")).toBe("#FF0000");
                 expect(Utils.webColor("black")).toBe("#000000");
                 expect(Utils.webColor("  ALICEBLUE  ")).toBe("#F0F8FF");

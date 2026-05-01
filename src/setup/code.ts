@@ -1,4 +1,5 @@
-import { FileType, Numbers } from "../common/enums";
+import { MORE_THAN_A_YEAR } from "../common/constants";
+import { FileType } from "../common/enums";
 import { PasteType } from "../common/gas-enums";
 import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
@@ -88,15 +89,14 @@ export function generateCalendar(setupFileId: string) {
     const fieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
         "sheets.properties.sheetId",
         "sheets.properties.title",
-        "sheets.data.rowData.values.effectiveValue.numberValue",
+        "sheets.data.rowData.values.effectiveValue",
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
 
-    const { sheets, namedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const { sheets, sheetNamedRanges, namedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     const calendarTemplateSheet = sheets[SetupSheetSchema.sheets.calendarTemplate.sheetName];
-    const calendarSheet = sheets[SetupSheetSchema.sheets.calendar.sheetName];
 
     if (!calendarTemplateSheet) throw new Error("Faltan hojas o formato.");
 
@@ -107,7 +107,7 @@ export function generateCalendar(setupFileId: string) {
 
     if (!dateStart || !dateTrimester1 || !dateTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
     if (dateStart >= dateTrimester1 || dateTrimester1 >= dateTrimester2 || dateTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
-    if (dateEnd - dateStart > Numbers.MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
+    if (dateEnd - dateStart > MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
 
     // ========= Date calculations ===========
     const msPerDay = 24 * 60 * 60 * 1000;
@@ -127,6 +127,18 @@ export function generateCalendar(setupFileId: string) {
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     // Remove the old calendar, if it exists.
+
+    const calendarNamedRanges = sheetNamedRanges[SetupSheetSchema.sheets.calendar.sheetName] ?? [];
+
+    calendarNamedRanges.forEach((namedRange) => {
+        apiRequests.push({
+            deleteNamedRange: {
+                namedRangeId: namedRange.namedRangeId,
+            },
+        });
+    });
+
+    const calendarSheet = sheets[SetupSheetSchema.sheets.calendar.sheetName];
     if (calendarSheet) {
         apiRequests.push({
             deleteSheet: {
@@ -136,7 +148,8 @@ export function generateCalendar(setupFileId: string) {
     }
 
     // Tempraraty remove named ranges so they don't get duplicated
-    const templateNamedRanges = (SetupSpreadsheet?.namedRanges ?? []).filter((namedRange) => namedRange.range?.sheetId === calendarTemplateSheet.properties?.sheetId);
+    const templateNamedRanges = sheetNamedRanges[SetupSheetSchema.sheets.calendarTemplate.sheetName] ?? [];
+    // const templateNamedRanges = (SetupSpreadsheet?.namedRanges ?? []).filter((namedRange) => namedRange.range?.sheetId === calendarTemplateSheet.properties?.sheetId);
 
     templateNamedRanges.forEach((namedRange) => {
         apiRequests.push({
@@ -331,6 +344,7 @@ export function generateCalendar(setupFileId: string) {
                 startColumnIndex: 0,
                 endColumnIndex: 1,
             },
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         },
     });
 

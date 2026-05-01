@@ -7,3 +7,14 @@ export enum PasteType {
     PASTE_DATA_VALIDATION = "PASTE_DATA_VALIDATION",
     PASTE_CONDITIONAL_FORMATTING = "PASTE_CONDITIONAL_FORMATTING",
 }
+
+export enum PasteOrientation {
+    NORMAL = "NORMAL",
+    TRANSPOSE = "TRANSPOSE",
+}
+
+export enum Dimension {
+    DIMENSION_UNSPECIFIED = "DIMENSION_UNSPECIFIED",
+    ROWS = "ROWS",
+    COLUMNS = "COLUMNS",
+}

@@ -1,11 +1,23 @@
 import { GasTestRunner } from "../testing/gas-test-runner";
 import { ReportSheetSchema, SetupSheetSchema } from "./sheet-schema";
 import { buildFieldsMask } from "./utils/gas-types";
-import { type NestedSheetSchema, parseSpreadsheet } from "./utils/mapped-name-range";
+import { parseSpreadsheet } from "./utils/mapped-name-range";
+
+interface ExpectedSchemaShape {
+    readonly templateId: string;
+    readonly sheets: Record<
+        string,
+        {
+            readonly sheetName: string;
+            readonly ranges?: Record<string, string>;
+        }
+    >;
+}
 
 interface SchemaTestConfig {
     name: string;
-    schema: NestedSheetSchema & { templateId: string };
+    // schema: NestedSheetSchema & { templateId: string };
+    schema: ExpectedSchemaShape;
     skipSheets?: string[];
     skipRanges?: string[];
 }

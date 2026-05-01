@@ -68,8 +68,8 @@ export function headerIcon({ title, subtitle, cropCircle, iconName, color, width
 /**
  * Builds am IconImage using the Iconify API.
  */
-export function icon({ iconName, color, width, height, box }: IconifyParams): GoogleAppsScript.Card_Service.IconImage {
-    const { url, name: displayName } = iconifyUrl({ iconName, color, width, height, box });
+export function icon(args: IconifyParams): GoogleAppsScript.Card_Service.IconImage {
+    const { url, name: displayName } = iconifyUrl(args);
 
     return CardService.newIconImage().setIconUrl(url).setAltText(displayName);
 }
