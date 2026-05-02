@@ -82,7 +82,7 @@ describe("googleAPI Utilities", () => {
             });
         });
 
-        it("should bounds the range to a new size if height and width are provided", () => {
+        it("should bound the range to a new size if positive height and width are provided", () => {
             const result = offsetGridRange({ origin, rowOffset: 0, colOffset: 0, height: 10, width: 5 });
             expect(result).toEqual({
                 sheetId: 1,
@@ -103,6 +103,39 @@ describe("googleAPI Utilities", () => {
                 startColumnIndex: 1,
                 endColumnIndex: 2,
             });
+        });
+
+        it("should prevent startRowIndex and startColumnIndex from becoming negative", () => {
+            const result = offsetGridRange({ origin, rowOffset: -5, colOffset: -5 });
+            expect(result).toEqual({
+                sheetId: 1,
+                startRowIndex: 0,
+                endRowIndex: 0,
+                startColumnIndex: 0,
+                endColumnIndex: 0,
+            });
+        });
+
+        it("should un-bound the range if height and width are negative", () => {
+            const result = offsetGridRange({ origin, rowOffset: 1, colOffset: 1, height: -1, width: -1 });
+            expect(result).toEqual({
+                sheetId: 1,
+                startRowIndex: 3,
+                startColumnIndex: 3,
+            });
+            expect(result.endRowIndex).toBeUndefined();
+            expect(result.endColumnIndex).toBeUndefined();
+        });
+
+        it("should handle un-bounding only one dimension (e.g. height) while maintaining original width", () => {
+            const result = offsetGridRange({ origin, rowOffset: 1, colOffset: 1, height: -1 });
+            expect(result).toEqual({
+                sheetId: 1,
+                startRowIndex: 3,
+                startColumnIndex: 3,
+                endColumnIndex: 5,
+            });
+            expect(result.endRowIndex).toBeUndefined();
         });
     });
 
@@ -194,43 +227,101 @@ describe("googleAPI Utilities", () => {
     });
 
     describe("buildTransferRequest", () => {
-        const dest: GoogleAppsScript.Sheets.Schema.GridRange = {
+        // Setup a 2x3 (asymmetrical) destination range
+        const destination: GoogleAppsScript.Sheets.Schema.GridRange = {
             sheetId: 1,
             startRowIndex: 0,
-            endRowIndex: 1,
+            endRowIndex: 2,
             startColumnIndex: 0,
-            endColumnIndex: 1,
+            endColumnIndex: 3,
         };
 
-        const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { stringValue: "Test" } }]];
+        // 2x3 Asymmetrical Data
+        const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+            [{ userEnteredValue: { stringValue: "R1-C1" } }, { userEnteredValue: { stringValue: "R1-C2" } }, { userEnteredValue: { stringValue: "R1-C3" } }],
+            [{ userEnteredValue: { stringValue: "R2-C1" } }, { userEnteredValue: { stringValue: "R2-C2" } }, { userEnteredValue: { stringValue: "R2-C3" } }],
+        ];
 
-        it("should return an updateCells request strictly sized to the dest range when adaptRange is false", () => {
-            const requests = buildTransferRequest(dest, data, "userEnteredValue", false);
+        it("should return an updateCells request with correctly mapped values when adaptRange is false", () => {
+            const requests = buildTransferRequest({ destination, data, fields: "userEnteredValue", adaptRange: false });
             expect(requests.length).toBe(1);
 
             const updateReq = requests[0]?.updateCells;
-            expect(updateReq?.range).toEqual(dest);
+            expect(updateReq?.range).toEqual(destination);
             expect(updateReq?.fields).toBe("userEnteredValue");
-            expect(updateReq?.rows?.length).toBe(1); // 1 row
+
+            // DEEP ASSERTION: Check that both the shape AND the values were mapped correctly
+            expect(updateReq?.rows).toEqual([
+                {
+                    values: [
+                        { userEnteredValue: { stringValue: "R1-C1" } },
+                        { userEnteredValue: { stringValue: "R1-C2" } },
+                        { userEnteredValue: { stringValue: "R1-C3" } },
+                    ],
+                },
+                {
+                    values: [
+                        { userEnteredValue: { stringValue: "R2-C1" } },
+                        { userEnteredValue: { stringValue: "R2-C2" } },
+                        { userEnteredValue: { stringValue: "R2-C3" } },
+                    ],
+                },
+            ]);
         });
 
         it("should return no requests if data is empty and adaptRange is true", () => {
-            const requests = buildTransferRequest(dest, [], "userEnteredValue", true);
+            const requests = buildTransferRequest({ destination, data: [], fields: "userEnteredValue", adaptRange: true });
             expect(requests.length).toBe(0);
         });
 
-        it("should insert dimensions if data is larger than destination range and adaptRange is true", () => {
-            const largeData: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { stringValue: "A" } }], [{ userEnteredValue: { stringValue: "B" } }]]; // 2 rows, 1 col (dest is 1 row, 1 col)
+        it("should return no requests if destination is undefined", () => {
+            const requests = buildTransferRequest({ destination: undefined, data, fields: "userEnteredValue", adaptRange: true });
+            expect(requests.length).toBe(0);
+        });
 
-            const requests = buildTransferRequest(dest, largeData, "userEnteredValue", true);
+        it("should insert dimensions and map correct values if data is larger than destination range and adaptRange is true", () => {
+            // Dest is 1x1, but our Data is 2x3
+            const smallDest: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 0,
+                endRowIndex: 1,
+                startColumnIndex: 0,
+                endColumnIndex: 1,
+            };
 
-            // Expected: 1 insertRows request + 1 updateCells request
-            expect(requests.length).toBe(2);
+            const requests = buildTransferRequest({ destination: smallDest, data, fields: "userEnteredValue", adaptRange: true });
+
+            // Expected: 1 insertRows + 1 insertCols + 1 updateCells = 3 requests
+            expect(requests.length).toBe(3);
+
+            // Assert Row Insertion
             expect(requests[0]?.insertDimension?.range?.dimension).toBe(Dimension.ROWS);
             expect(requests[0]?.insertDimension?.range?.startIndex).toBe(1);
             expect(requests[0]?.insertDimension?.range?.endIndex).toBe(2);
 
-            expect(requests[1]?.updateCells?.rows?.length).toBe(2);
+            // Assert Col Insertion
+            expect(requests[1]?.insertDimension?.range?.dimension).toBe(Dimension.COLUMNS);
+            expect(requests[1]?.insertDimension?.range?.startIndex).toBe(1);
+            expect(requests[1]?.insertDimension?.range?.endIndex).toBe(3);
+
+            // DEEP ASSERTION: Validate the content payload survived the mapping logic
+            const updateReq = requests[2]?.updateCells;
+            expect(updateReq?.rows).toEqual([
+                {
+                    values: [
+                        { userEnteredValue: { stringValue: "R1-C1" } },
+                        { userEnteredValue: { stringValue: "R1-C2" } },
+                        { userEnteredValue: { stringValue: "R1-C3" } },
+                    ],
+                },
+                {
+                    values: [
+                        { userEnteredValue: { stringValue: "R2-C1" } },
+                        { userEnteredValue: { stringValue: "R2-C2" } },
+                        { userEnteredValue: { stringValue: "R2-C3" } },
+                    ],
+                },
+            ]);
         });
     });
 });

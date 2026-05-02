@@ -26,8 +26,10 @@ interface GetCellParams {
 }
 
 export const MappedNamedRange = {
-    getCellDataArray(mappedRange: MappedNamedRange): GoogleAppsScript.Sheets.Schema.CellData[][] {
-        const { range, sheet } = mappedRange;
+    getCellDataArray(mappedRange: MappedNamedRange | undefined): GoogleAppsScript.Sheets.Schema.CellData[][] {
+        const { range, sheet } = mappedRange ?? {};
+
+        if (!range || !sheet) return [];
 
         const startRow = range.startRowIndex ?? 0;
         const startCol = range.startColumnIndex ?? 0;

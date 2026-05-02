@@ -4,7 +4,7 @@ import { PasteType } from "../common/gas-enums";
 import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
 import { buildFieldsMask, defineRangesDataConfig, type MappedInput } from "../common/utils/gas-types";
-import { buildCopyPasteRequest, colorToHex, createSingleCellRange, offsetGridRange } from "../common/utils/gas-utils";
+import { buildCopyPasteRequest, buildTransferRequest, colorToHex, createSingleCellRange, offsetGridRange } from "../common/utils/gas-utils";
 import { MappedNamedRange, parseSpreadsheet } from "../common/utils/mapped-name-range";
 import { sanitizeFileName } from "../common/utils/text";
 
@@ -479,7 +479,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
-    // ============ Single cell data copies ================
+    // ============ Persistent Data, since cell copies ================
 
     const cellMapping = [
         {
@@ -518,9 +518,80 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     apiRequests.push(...singleCellRequests);
 
+    // ============ Persistent Data Calendar Dates ===========
+
+    const setupCalendarStartEpoch = MappedNamedRange.getCellNumber({ mappedRange: setupRanges[SetupSheetSchema.sheets.calendar.ranges.start] }) ?? 0;
+    const setupCalendarRawData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.calendar.ranges.calendar]);
+
+    const calendarDays = getCalendarDays(setupCalendarRawData, setupCalendarStartEpoch);
+
+    const calendarDaysRequests = buildTransferRequest({
+        destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.calendarDates]?.range,
+        data: calendarDays,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
+        adaptRange: true,
+    });
+
+    apiRequests.push(...calendarDaysRequests);
+
+    // =========== Persistent Data Students ==============
+
     // ============ Execute Batch update ===========
 
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
+}
+
+/**
+ * Helper function that take a nice looking calendar and returns the selected dates.
+ */
+function getCalendarDays(calendarData: GoogleAppsScript.Sheets.Schema.CellData[][], initialDay: number): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    // Validate that initialDay is a Sunday.
+    // Note: This assumes initialDay is a Unix Epoch in milliseconds, as is standard in JS.
+    if (new Date(initialDay).getUTCDay() !== 0) {
+        throw new Error("Initial Day must fall on a Sunday.");
+    }
+
+    const MS_PER_DAY = 86400000;
+    // Google Sheets uses Dec 30, 1899 as its epoch.
+    // Unix uses Jan 1, 1970. The difference is exactly 25,569 days.
+    const SHEETS_EPOCH_OFFSET = 25569;
+
+    // Calculate the starting Sheets Serial Number
+    const initialSheetsDate = initialDay / MS_PER_DAY + SHEETS_EPOCH_OFFSET;
+
+    const result: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    // Use entries() for a clean, index-aware iteration that satisfies strict linters
+    for (const [rowIndex, row] of calendarData.entries()) {
+        // Gracefully handle empty or malformed rows without throwing or using `!`
+        if (!row) continue;
+
+        // A week always has 7 days
+        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            // Target the 2nd column of each day: 1, 3, 5, 7, 9, 11, 13
+            const columnIndex = dayIndex * 2 + 1;
+            const cell = row[columnIndex];
+
+            // Optional chaining safely handles missing fields and out-of-bounds indices
+            const isChecked = cell?.effectiveValue?.boolValue === true;
+
+            if (isChecked) {
+                // Calculate the exact Google Sheets date for the current checked day
+                const currentSheetsDate = initialSheetsDate + rowIndex * 7 + dayIndex;
+
+                // Push an array of exactly 1 column in width
+                result.push([
+                    {
+                        userEnteredValue: {
+                            numberValue: currentSheetsDate,
+                        },
+                    },
+                ]);
+            }
+        }
+    }
+
+    return result;
 }
 
 /**

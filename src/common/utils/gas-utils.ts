@@ -43,10 +43,11 @@ interface OffsetGridRangeProperties {
 
 /**
  * Offsets a `range` and optionally bounds it to a given size.
+ * height or width negative unbounds the range.
  */
 export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, width }: OffsetGridRangeProperties): GoogleAppsScript.Sheets.Schema.GridRange {
-    const startRow = (origin.startRowIndex ?? 0) + rowOffset;
-    const startCol = (origin.startColumnIndex ?? 0) + colOffset;
+    const startRow = Math.max(0, (origin.startRowIndex ?? 0) + rowOffset);
+    const startCol = Math.max(0, (origin.startColumnIndex ?? 0) + colOffset);
 
     const result: GoogleAppsScript.Sheets.Schema.GridRange = {
         sheetId: origin.sheetId,
@@ -55,15 +56,15 @@ export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, 
     };
 
     if (height != null) {
-        result.endRowIndex = startRow + height;
+        if (height >= 0) result.endRowIndex = startRow + height;
     } else if (origin.endRowIndex != null) {
-        result.endRowIndex = origin.endRowIndex + rowOffset;
+        result.endRowIndex = Math.max(startRow, origin.endRowIndex + rowOffset);
     }
 
     if (width != null) {
-        result.endColumnIndex = startCol + width;
+        if (width >= 0) result.endColumnIndex = startCol + width;
     } else if (origin.endColumnIndex != null) {
-        result.endColumnIndex = origin.endColumnIndex + colOffset;
+        result.endColumnIndex = Math.max(startCol, origin.endColumnIndex + colOffset);
     }
 
     return result;
@@ -131,18 +132,22 @@ export function buildCopyPasteRequest(
     };
 }
 
+interface BuildTranferRequestParams {
+    destination?: GoogleAppsScript.Sheets.Schema.GridRange;
+    data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    fields: string;
+    adaptRange?: boolean;
+}
+
 /**
  * Generates batch update requests to put `data` into the range defined by `destination`.
  * @param fields Mask to see what to copy.
  * @param adaptRange If true, add/remove rows and columns to adapt the range to the size of `data`
  */
-export function buildTransferRequest(
-    destination: GoogleAppsScript.Sheets.Schema.GridRange,
-    data: GoogleAppsScript.Sheets.Schema.CellData[][],
-    fields: string,
-    adaptRange: boolean = false,
-): GoogleAppsScript.Sheets.Schema.Request[] {
+export function buildTransferRequest({ destination, data, fields, adaptRange = false }: BuildTranferRequestParams): GoogleAppsScript.Sheets.Schema.Request[] {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    if (!destination) return requests;
 
     const sheetId = destination.sheetId ?? 0;
     const startRow = destination.startRowIndex ?? 0;
@@ -206,7 +211,7 @@ export function buildTransferRequest(
         const sourceRow = data[r] ?? [];
 
         for (let c = 0; c < finalCols; c++) {
-            rowValues.push(sourceRow[r] ?? {});
+            rowValues.push(sourceRow[c] ?? {});
         }
 
         finalRowData.push({ values: rowValues });
