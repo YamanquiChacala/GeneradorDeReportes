@@ -1,3 +1,4 @@
+import { MS_PER_DAY, SHEETS_EPOCH_OFFSET } from "../constants";
 import { Dimension, PasteOrientation, type PasteType } from "../gas-enums";
 
 /**
@@ -14,6 +15,17 @@ export function getColumnLetter(column: number): string {
     return letter;
 }
 
+// TODO: Make tests for this
+/**
+ * Converts a Unix Epoch into a Sheets Epoch.
+ */
+export function getSheetsDate(epoch: number): number {
+    return epoch / MS_PER_DAY + SHEETS_EPOCH_OFFSET;
+}
+
+/**
+ * Creates a range with a single cell.
+ */
 export function createSingleCellRange(sheetId: number, startRowIndex: number, startColumnIndex: number): GoogleAppsScript.Sheets.Schema.GridRange {
     return {
         sheetId,

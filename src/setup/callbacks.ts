@@ -6,8 +6,10 @@ import { buildUtilityCard } from "../common/premade-cards";
 import { getInputs } from "../common/utils/gas-types";
 import { sanitizeFileName } from "../common/utils/text";
 import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams, GenerateCalendarParams, InitializeReportParams } from "./cards";
-import type { SetupFileData } from "./code";
-import { copySetupFile, createSetupFile, generateCalendar, initializeReport } from "./code";
+import { copySetupFile } from "./copy-setup-file";
+import { createSetupFile, type SetupFileData } from "./create-setup-file";
+import { generateCalendar } from "./generate-calendar";
+import { initializeReport } from "./initialize-report";
 
 /**
  * Callback to the button to create a new Initialization Group File.

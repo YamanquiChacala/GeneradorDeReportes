@@ -13,9 +13,9 @@ interface NestedSheetSchema {
     >;
 }
 
-type ExtractSheetNames<T extends NestedSheetSchema> = T["sheets"][keyof T["sheets"]]["sheetName"];
+export type ExtractSheetNames<T extends NestedSheetSchema> = T["sheets"][keyof T["sheets"]]["sheetName"];
 
-type ExtractRangeNames<T extends NestedSheetSchema> = {
+export type ExtractRangeNames<T extends NestedSheetSchema> = {
     [K in keyof T["sheets"]]: T["sheets"][K] extends { ranges?: infer R } ? (R extends undefined ? never : R[keyof R]) : never;
 }[keyof T["sheets"]];
 
@@ -26,15 +26,15 @@ interface GetCellParams {
 }
 
 export const MappedNamedRange = {
-    getCellDataArray(mappedRange: MappedNamedRange | undefined): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    getCellDataArray(mappedRange: MappedNamedRange | undefined, unboundRows = false, unboundColumns = false): GoogleAppsScript.Sheets.Schema.CellData[][] {
         const { range, sheet } = mappedRange ?? {};
 
         if (!range || !sheet) return [];
 
         const startRow = range.startRowIndex ?? 0;
         const startCol = range.startColumnIndex ?? 0;
-        const endRow = range.endRowIndex ?? sheet.properties?.gridProperties?.rowCount ?? startRow;
-        const endCol = range.endColumnIndex ?? sheet.properties?.gridProperties?.columnCount ?? startCol;
+        const endRow = (unboundRows ? undefined : range.endRowIndex) ?? sheet.properties?.gridProperties?.rowCount ?? startRow;
+        const endCol = (unboundColumns ? undefined : range.endColumnIndex) ?? sheet.properties?.gridProperties?.columnCount ?? startCol;
 
         const numRows = Math.max(0, endRow - startRow);
         const numCols = Math.max(0, endCol - startCol);
