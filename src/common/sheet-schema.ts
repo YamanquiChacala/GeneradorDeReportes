@@ -77,6 +77,21 @@ export const ReportSheetSchema = {
                 formatPeriod3: "faltas_FormatoPeriodo3",
             },
         },
+        studentTemplate: {
+            sheetName: "_EstudianteTemplate",
+            ranges: {
+                firstName: "est_Nombre",
+                lastName: "est_Apellido",
+                generalInfo: "est_Datos",
+                generalAbsences: "est_FaltasGeneral",
+                abilities: "est_Habilidades",
+                comments: "est_Observaciones",
+                trim1Subjects: "est_Per1_Materias",
+                trim1Fields: "est_Per1_Campos",
+                trim1Totals: "est_Per1_Prom",
+                trim1Absences: "est_Per1_Faltas",
+            }
+        },
         attendance: {
             sheetName: "Asistencia",
         },
