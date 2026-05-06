@@ -31,6 +31,7 @@ const schemasToTest: SchemaTestConfig[] = [
     {
         name: "Report Sheet",
         schema: ReportSheetSchema,
+        skipSheets: [ReportSheetSchema.sheets.attendance.sheetName],
     },
 ];
 

@@ -1,6 +1,6 @@
-import { FileType } from "../common/enums";
-import { SetupSheetSchema } from "../common/sheet-schema";
-import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
+import { FileType } from "../../common/enums";
+import { SetupSheetSchema } from "../../common/sheet-schema";
+import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
 
 /**
  * Copies the SetupFile `fileId` changing the group name and saves it into `folderId`.

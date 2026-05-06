@@ -1,10 +1,11 @@
-import { FileType } from "../common/enums";
-import { ReportSheetSchema, SetupSheetSchema } from "../common/sheet-schema";
-import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
-import { buildFieldsMask } from "../common/utils/gas-types";
-import { type ExtractRangeNames, MappedNamedRange, parseSpreadsheet } from "../common/utils/mapped-name-range";
-import { sanitizeFileName } from "../common/utils/text";
-import { fillPersistentData } from "./initialize-reports/persistent-data";
+import { FileType } from "../../common/enums";
+import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
+import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
+import { buildFieldsMask } from "../../common/utils/gas-types";
+import { type ExtractRangeNames, MappedNamedRange, parseSpreadsheet } from "../../common/utils/mapped-name-range";
+import { sanitizeFileName } from "../../common/utils/text";
+import { createAttendanceSheet } from "./attendance";
+import { fillPersistentData } from "./persistent-data";
 
 /**
  * Initializes a Report spreadsheet in the same folder as the setupFile, with the information from the Setup file.
@@ -30,7 +31,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: setupFieldsMask });
-    const { sheets: setupSheets, namedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const { namedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Create report file.
 
@@ -39,17 +40,19 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // Fetch and parse report file data
 
     const reportSpreadsheet = Sheets?.Spreadsheets.get(reportFileId, { fields: reportFieldsMask });
-    const { sheets: reportSheets, namedRanges: reportRanges } = parseSpreadsheet(reportSpreadsheet, ReportSheetSchema);
+    const parsedReportSheet = parseSpreadsheet(reportSpreadsheet, ReportSheetSchema);
 
     // Fill Report Persistent Data
 
-    const { data: persistentData, requests: persistentDataRequests } = fillPersistentData(setupRanges, reportRanges);
+    const { data: persistentData, requests: persistentDataRequests } = fillPersistentData(setupRanges, parsedReportSheet.namedRanges);
+
+    // Create Attendance sheet
+
+    const attendanceRequests = createAttendanceSheet(parsedReportSheet, persistentData);
 
     // ============ Batch Changes ==============
 
-    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests];
-
-    // =========== Persistent Data Students ==============
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests];
 
     // ============ Execute Batch update ===========
 

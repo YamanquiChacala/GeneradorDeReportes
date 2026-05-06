@@ -1,8 +1,8 @@
-import { FileType } from "../common/enums";
-import { SetupSheetSchema } from "../common/sheet-schema";
-import { key as FILE_VALIDATION_KEY } from "../common/utils/file-validation";
-import { defineRangesDataConfig, type MappedInput } from "../common/utils/gas-types";
-import { generateCalendar } from "./generate-calendar";
+import { FileType } from "../../common/enums";
+import { SetupSheetSchema } from "../../common/sheet-schema";
+import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
+import { defineRangesDataConfig, type MappedInput } from "../../common/utils/gas-types";
+import { generateCalendar } from "../generate-calendar";
 
 const SetupFileDataConfig = defineRangesDataConfig({
     groupName: { range: SetupSheetSchema.sheets.groupData.ranges.groupName, type: "string" },

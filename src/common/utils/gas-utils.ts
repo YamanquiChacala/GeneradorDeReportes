@@ -24,16 +24,27 @@ export function getSheetsDate(epoch: number): number {
 }
 
 /**
+ * Converts a Sheets Epock into a Unix Epoch.
+ */
+export function getEpochDate(sheetsDate: number): number {
+    return (sheetsDate - SHEETS_EPOCH_OFFSET) * MS_PER_DAY;
+}
+
+/**
+ * Creates a range with the given data.
+ */
+export function createRange(sheetId: number, startRowIndex: number, startColumnIndex: number, height?: number, width?: number): GoogleAppsScript.Sheets.Schema.GridRange {
+    const result: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId, startRowIndex, startColumnIndex };
+    if (height && height > 0) result.endRowIndex = startRowIndex + height;
+    if (width && width > 0) result.endColumnIndex = startColumnIndex + width;
+    return result;
+}
+
+/**
  * Creates a range with a single cell.
  */
 export function createSingleCellRange(sheetId: number, startRowIndex: number, startColumnIndex: number): GoogleAppsScript.Sheets.Schema.GridRange {
-    return {
-        sheetId,
-        startRowIndex,
-        startColumnIndex,
-        endRowIndex: startRowIndex + 1,
-        endColumnIndex: startColumnIndex + 1,
-    };
+    return createRange(sheetId, startRowIndex, startColumnIndex, 1, 1);
 }
 
 /**

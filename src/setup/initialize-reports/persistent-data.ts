@@ -1,7 +1,7 @@
 import { MS_PER_DAY } from "../../common/constants";
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
 import { buildFieldsMask } from "../../common/utils/gas-types";
-import { buildTransferRequest, colorToHex, getSheetsDate } from "../../common/utils/gas-utils";
+import { buildTransferRequest, colorToHex, getEpochDate, getSheetsDate } from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
 import { sanitizeSheetName } from "../../common/utils/text";
 
@@ -9,11 +9,12 @@ export interface ReportPersistentData {
     configData: ConfigData;
     protectedSections: ProtectedSections;
     academicFields: AcademicField[];
-    students: Student[];
+    subjects: string[];
+    students: StudentRow[];
     calendar: number[];
 }
 
-interface ConfigData {
+export interface ConfigData {
     attendancePerClass: boolean;
     averagePerField: boolean;
     dateStart: number;
@@ -37,7 +38,10 @@ interface AcademicField {
     subjects: string[];
 }
 
+export type StudentRow = Student | StudentSpace;
+
 interface Student {
+    type: "student";
     id: number;
     firstName: string;
     lastName: string;
@@ -45,6 +49,10 @@ interface Student {
     sex: string;
     level: string;
     grade: string;
+}
+
+interface StudentSpace {
+    type: "separator";
 }
 
 /**
@@ -57,7 +65,22 @@ export function fillPersistentData(
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     data: ReportPersistentData;
 } {
-    const data: Partial<ReportPersistentData> = {
+    // Get general configuration data
+    const { requests: configRequests, configData } = getConfigData(setupRanges, reportRanges);
+
+    // Get calendar days
+    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupRanges, reportRanges);
+
+    // Get Students
+    const { requests: studentRequests, students } = getStudents(setupRanges, reportRanges);
+
+    // Get Academic Fields and subjects
+    const { requests: subjectRequests, academicFields, subjects } = getSubjects(setupRanges, reportRanges);
+
+    // Build response
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...calendarDaysRequests, ...studentRequests, ...subjectRequests];
+
+    const data: ReportPersistentData = {
         protectedSections: {
             data: true,
             habilities: false,
@@ -66,29 +89,14 @@ export function fillPersistentData(
             trim2: true,
             trim3: true,
         },
+        configData,
+        calendar,
+        students,
+        academicFields,
+        subjects,
     };
 
-    // Get general configuration data
-    const { requests: configRequests, configData } = getConfigData(setupRanges, reportRanges);
-
-    // Get calendar days
-    const { requests: calendarDaysRequests, calendarDays } = getCalendarDays(setupRanges, reportRanges);
-
-    // Get Students
-    const { requests: studentRequests, students } = getStudents(setupRanges, reportRanges);
-
-    // Get Academic Fields and subjects
-    const { requests: subjectRequests, academicFields } = getSubjects(setupRanges, reportRanges);
-
-    // Build response
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...calendarDaysRequests, ...studentRequests, ...subjectRequests];
-
-    data.configData = configData;
-    data.calendar = calendarDays;
-    data.students = students;
-    data.academicFields = academicFields;
-
-    return { data: data as ReportPersistentData, requests };
+    return { data: data, requests };
 }
 
 /**
@@ -103,7 +111,7 @@ function getConfigData(
 } {
     type CellMapDefinition = {
         [K in keyof ConfigData]: {
-            kind: "boolean" | "number";
+            kind: "boolean" | "number" | "date";
             source: ExtractRangeNames<typeof SetupSheetSchema>;
             dest: ExtractRangeNames<typeof ReportSheetSchema>;
         };
@@ -121,22 +129,22 @@ function getConfigData(
             dest: ReportSheetSchema.sheets.persistentData.ranges.averagePerField,
         },
         dateStart: {
-            kind: "number",
+            kind: "date",
             source: SetupSheetSchema.sheets.groupData.ranges.dateStart,
             dest: ReportSheetSchema.sheets.persistentData.ranges.dateStart,
         },
         dateTrim1: {
-            kind: "number",
+            kind: "date",
             source: SetupSheetSchema.sheets.groupData.ranges.dateTrim1,
             dest: ReportSheetSchema.sheets.persistentData.ranges.dateTrim1,
         },
         dateTrim2: {
-            kind: "number",
+            kind: "date",
             source: SetupSheetSchema.sheets.groupData.ranges.dateTrim2,
             dest: ReportSheetSchema.sheets.persistentData.ranges.dateTrim2,
         },
         dateEnd: {
-            kind: "number",
+            kind: "date",
             source: SetupSheetSchema.sheets.groupData.ranges.dateEnd,
             dest: ReportSheetSchema.sheets.persistentData.ranges.dateEnd,
         },
@@ -151,12 +159,13 @@ function getConfigData(
         const extendedValue = MappedNamedRange.getCellEffectiveValue({ mappedRange: setupRanges[source] });
         switch (kind) {
             case "boolean":
-                // @ts-expect-error
-                configData[name] = extendedValue?.boolValue ?? false;
+                Object.assign(configData, { [name]: extendedValue?.boolValue ?? false });
                 break;
             case "number":
-                // @ts-expect-error
-                configData[name] = extendedValue?.numberValue ?? 0;
+                Object.assign(configData, { [name]: extendedValue?.numberValue ?? 0 });
+                break;
+            case "date":
+                Object.assign(configData, { [name]: getEpochDate(extendedValue?.numberValue ?? 0) });
         }
         requests.push({
             repeatCell: {
@@ -177,9 +186,9 @@ function getCalendarDays(
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
-    calendarDays: number[];
+    calendar: number[];
 } {
-    const calendarDays: number[] = [];
+    const calendar: number[] = [];
 
     const initialMillisecond = MappedNamedRange.getCellNumber({ mappedRange: setupRanges[SetupSheetSchema.sheets.calendar.ranges.start] }) ?? 0;
     const calendarRawData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.calendar.ranges.calendar]);
@@ -199,7 +208,7 @@ function getCalendarDays(
 
             if (isChecked) {
                 const day = initialMillisecond + (rowIndex * 7 + dayIndex) * MS_PER_DAY;
-                calendarDays.push(day);
+                calendar.push(day);
                 sheetDays.push([
                     {
                         userEnteredValue: { numberValue: getSheetsDate(day) },
@@ -216,7 +225,7 @@ function getCalendarDays(
         adaptRange: true,
     });
 
-    return { requests, calendarDays };
+    return { requests, calendar };
 }
 
 /**
@@ -227,13 +236,11 @@ function getStudents(
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
-    students: Student[];
+    students: StudentRow[];
 } {
-    const students: Student[] = [];
+    const students: StudentRow[] = [];
 
     const studentSetupData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.groupData.ranges.students], true);
-
-    console.log("rows: ", studentSetupData.length);
 
     const studentReportData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
@@ -253,6 +260,7 @@ function getStudents(
         const sheetName = sanitizeSheetName(`${firstName} ${lastName}`);
 
         const student: Student = {
+            type: "student",
             id: studentNumber,
             firstName,
             lastName,
@@ -261,7 +269,6 @@ function getStudents(
             level: studentRow[3]?.effectiveValue?.stringValue ?? "",
             grade: studentRow[4]?.effectiveValue?.stringValue ?? "",
         };
-        students.push(student);
 
         const studentReportDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
             { userEnteredValue: { numberValue: studentNumber } },
@@ -270,9 +277,12 @@ function getStudents(
             { userEnteredValue: { stringValue: sheetName } },
         ];
         if (emptyBefore && !firstTime) {
+            students.push({ type: "separator" });
             studentReportData.push([]);
             emptyBefore = false;
         }
+
+        students.push(student);
         studentReportData.push(studentReportDataRow);
         if (firstTime) {
             firstTime = false;
@@ -299,8 +309,10 @@ function getSubjects(
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     academicFields: AcademicField[];
+    subjects: string[];
 } {
     const academicFields: AcademicField[] = [];
+    const subjects: string[] = [];
 
     const setupSubjectData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.groupData.ranges.subjects]);
 
@@ -342,6 +354,7 @@ function getSubjects(
             }
             if (subject !== "") {
                 currentField.subjects.push(subject);
+                subjects.push(subject);
             }
         }
     }
@@ -350,7 +363,7 @@ function getSubjects(
 
     const requests = buildReportFieldsAndSubjects(reportRanges, academicFields);
 
-    return { requests, academicFields };
+    return { requests, academicFields, subjects };
 }
 
 /**

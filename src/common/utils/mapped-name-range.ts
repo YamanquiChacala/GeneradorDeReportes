@@ -137,17 +137,16 @@ export const MappedNamedRange = {
     },
 } as const;
 
-/**
- * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.
- */
-export function parseSpreadsheet<T extends NestedSheetSchema>(
-    spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet | undefined,
-    schema: T,
-): {
+export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
     sheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
     sheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>>;
     namedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
-} {
+}
+
+/**
+ * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.
+ */
+export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet | undefined, schema: T): ParsedSpreadsheet<T> {
     const mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>> = {};
     const mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>> = {};
     const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
