@@ -8,6 +8,7 @@
 * [ ] Set `BandedRange` for each subject, dynamic colors.
 * [ ] Remove format for rows between subjects.
 * [ ] Protect Sheet!
+* [x] Update formulas so it only takes 1/10
 
 ## Student Sheets
 * [ ] Generate sheet name from student names.

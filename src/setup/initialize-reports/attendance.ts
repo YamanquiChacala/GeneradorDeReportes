@@ -1,7 +1,16 @@
 import { MergeType, PasteType } from "../../common/gas-enums";
 import { ReportSheetSchema } from "../../common/sheet-schema";
+import { getDistinctHues } from "../../common/utils/color-utils";
 import { buildFieldsMask } from "../../common/utils/gas-types";
-import { buildCopyPasteRequest, buildTransferRequest, createRange, createSingleCellRange, getColumnLetter, offsetGridRange } from "../../common/utils/gas-utils";
+import {
+    buildCopyPasteRequest,
+    buildTransferRequest,
+    createBanding,
+    createRange,
+    createSingleCellRange,
+    getColumnLetter,
+    offsetGridRange,
+} from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, MappedNamedRange, type ParsedSpreadsheet } from "../../common/utils/mapped-name-range";
 import type { ReportPersistentData } from "./persistent-data";
 
@@ -28,17 +37,19 @@ export function createAttendanceSheet(
 
     // Add student list(s)
 
-    const studentListRequest = addStudentLists(attendanceSheetId, parsedReport.namedRanges, persistentData, trimesters);
+    const { requests: studentListRequest, writableRanges } = addStudentLists(attendanceSheetId, parsedReport.namedRanges, persistentData, trimesters);
 
     // Put format in the main edit area.
 
-    const formatRequests = formatMainArea(attendanceSheetId, parsedReport.namedRanges, trimesters);
+    const formatRequests = formatMainArea(attendanceSheetId, writableRanges, parsedReport.namedRanges, trimesters);
 
     // Protect sheet.
 
+    const protectRequests = protectSheet(attendanceSheetId, writableRanges);
+
     // Build requests
 
-    requests.push(...copyTemplateRequests, ...datesRequests, ...studentListRequest, ...formatRequests);
+    requests.push(...copyTemplateRequests, ...datesRequests, ...studentListRequest, ...formatRequests, ...protectRequests);
 
     return requests;
 }
@@ -316,16 +327,13 @@ function addStudentLists(
     namedRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
     data: ReportPersistentData,
     trimesters: Trimesters,
-): GoogleAppsScript.Sheets.Schema.Request[] {
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; writableRanges: GoogleAppsScript.Sheets.Schema.GridRange[] } {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    const writableRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
 
     const { frozenRows, frozenCols } = getFrozenRowCols(namedRanges);
 
     const { trim1Range, trim2Range, trim3Range } = trimesters;
-
-    console.log("range1", trim1Range);
-    console.log("range2", trim2Range);
-    console.log("range3", trim3Range);
 
     const studentGroup = (initialRow: number): GoogleAppsScript.Sheets.Schema.CellData[][] => {
         const result: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
@@ -363,6 +371,8 @@ function addStudentLists(
 
         const space = data.students.length + 2;
 
+        const hues = getDistinctHues(data.subjects.length, 0.4);
+
         const subjectStudentListData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
         for (const [index, subject] of data.subjects.entries()) {
             subjectStudentListData.push([], [{ userEnteredValue: { stringValue: subject } }]); // Space and subject name.
@@ -377,6 +387,20 @@ function addStudentLists(
             const studentRowFormatDestination = createRange(sheetId, frozenRows + 2 + index * space, 0, data.students.length, frozenCols);
             const studentRowFormatCopyRequest = buildCopyPasteRequest(studentRowFormatOrigin, studentRowFormatDestination, PasteType.PASTE_FORMAT);
             if (studentRowFormatCopyRequest) studentListFormatRequests.push(studentRowFormatCopyRequest);
+
+            // Put banding on
+            const hue = hues[index] ?? 0;
+            studentListFormatRequests.push({
+                addBanding: {
+                    bandedRange: {
+                        range: createRange(sheetId, frozenRows + 1 + index * space, 0, data.students.length + 1, -1),
+                        rowProperties: createBanding(hue, true),
+                    },
+                },
+            });
+
+            // Get unprotected range.
+            writableRanges.push(createRange(sheetId, frozenRows + 2 + index * space, frozenCols, data.students.length, -1));
         }
 
         // Copy the data for all the subjects and students.
@@ -390,6 +414,7 @@ function addStudentLists(
         );
     } else {
         const studentListDataRange = createRange(sheetId, frozenRows + 1, 0, data.students.length, frozenCols);
+        writableRanges.push(createRange(sheetId, frozenRows + 1, frozenCols, data.students.length, -1));
 
         studentListDataRequests.push(
             ...buildTransferRequest({
@@ -403,10 +428,21 @@ function addStudentLists(
 
         const copyRequest = buildCopyPasteRequest(studentRow, studentListDataRange, PasteType.PASTE_FORMAT);
         if (copyRequest) studentListFormatRequests.push(copyRequest);
+
+        // Banding
+
+        studentListFormatRequests.push({
+            addBanding: {
+                bandedRange: {
+                    range: studentListDataRange,
+                    rowProperties: createBanding(0.4),
+                },
+            },
+        });
     }
     requests.push(...studentListDataRequests, ...studentListFormatRequests);
 
-    return requests;
+    return { requests, writableRanges };
 }
 
 interface Range {
@@ -449,15 +485,15 @@ function calculateTrimesters(data: ReportPersistentData, frozenCols: number): Tr
  * Define the formala for calculating the attendance percent.
  */
 function createAttendaceFormulas(row: number, columms: Range): { percent: string; count: string } {
-    if (columms.start === -1 || columms.start > columms.end) return { percent: '="ND"', count: "" };
+    if (columms.start === -1 || columms.start > columms.end) return { percent: '="ND"', count: '=""' };
 
     const str = getColumnLetter(columms.start);
     const end = getColumnLetter(columms.end);
 
     const range = `$${str}${row + 1}:$${end}${row + 1}`;
 
-    const percent = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 7, (COUNTA(${range}) - SUM(${range})) / COUNTA(${range}), "ND")`;
-    const count = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 7, SUM(${range}), "")`;
+    const percent = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, (COUNTA(${range}) - SUM(${range})) / COUNTA(${range}), "ND")`;
+    const count = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, SUM(${range}), "")`;
 
     return { percent, count };
 }
@@ -467,37 +503,60 @@ function createAttendaceFormulas(row: number, columms: Range): { percent: string
  */
 function formatMainArea(
     sheetId: number,
+    editableRanges: GoogleAppsScript.Sheets.Schema.GridRange[],
     namedRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
     trimesters: Trimesters,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
     const { frozenRows, frozenCols } = getFrozenRowCols(namedRanges);
-
     const { trim1Range, trim2Range, trim3Range } = trimesters;
-
-    const noFormatSource = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.formatAttendanceCell]?.range;
 
     const trim1FormatSource = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod1]?.range;
     const trim2FormatSource = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod2]?.range;
     const trim3FormatSource = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod3]?.range;
 
+    // Clean up format
+    const noFormatSource = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.formatAttendanceCell]?.range;
     const noFormatDest = createRange(sheetId, frozenRows, frozenCols);
-
-    const trim1FormatDest = createRange(sheetId, frozenRows + 1, trim1Range.start, -1, trim1Range.end - trim1Range.start + 1);
-    const trim2FormatDest = createRange(sheetId, frozenRows + 1, trim2Range.start, -1, trim2Range.end - trim2Range.start + 1);
-    const trim3FormatDest = createRange(sheetId, frozenRows + 1, trim3Range.start, -1, trim3Range.end - trim3Range.start + 1);
-
     const noFormatCopyRequest = buildCopyPasteRequest(noFormatSource, noFormatDest, PasteType.PASTE_NORMAL);
     if (noFormatCopyRequest) requests.push(noFormatCopyRequest);
 
-    const trim1CopyRequest = buildCopyPasteRequest(trim1FormatSource, trim1FormatDest, PasteType.PASTE_FORMAT);
-    if (trim1Range.start !== -1 && trim1CopyRequest) requests.push(trim1CopyRequest);
+    // Add format to the editable ranges
+    for (const fullRange of editableRanges) {
+        const trim1FormatDest = offsetGridRange({ origin: fullRange, colOffset: trim1Range.start - frozenCols, width: trim1Range.end - trim1Range.start + 1 });
+        const trim2FormatDest = offsetGridRange({ origin: fullRange, colOffset: trim2Range.start - frozenCols, width: trim2Range.end - trim2Range.start + 1 });
+        const trim3FormatDest = offsetGridRange({ origin: fullRange, colOffset: trim3Range.start - frozenCols, width: trim3Range.end - trim3Range.start + 1 });
 
-    const trim2CopyRequest = buildCopyPasteRequest(trim2FormatSource, trim2FormatDest, PasteType.PASTE_FORMAT);
-    if (trim2Range.start !== -1 && trim2CopyRequest) requests.push(trim2CopyRequest);
+        const trim1CopyRequest = buildCopyPasteRequest(trim1FormatSource, trim1FormatDest, PasteType.PASTE_FORMAT);
+        if (trim1Range.start !== -1 && trim1CopyRequest) requests.push(trim1CopyRequest);
 
-    const trim3CopyRequest = buildCopyPasteRequest(trim3FormatSource, trim3FormatDest, PasteType.PASTE_FORMAT);
-    if (trim3Range.start !== -1 && trim3CopyRequest) requests.push(trim3CopyRequest);
+        const trim2CopyRequest = buildCopyPasteRequest(trim2FormatSource, trim2FormatDest, PasteType.PASTE_FORMAT);
+        if (trim2Range.start !== -1 && trim2CopyRequest) requests.push(trim2CopyRequest);
+
+        const trim3CopyRequest = buildCopyPasteRequest(trim3FormatSource, trim3FormatDest, PasteType.PASTE_FORMAT);
+        if (trim3Range.start !== -1 && trim3CopyRequest) requests.push(trim3CopyRequest);
+    }
+
+    return requests;
+}
+
+/**
+ * Protect the final Sheet.
+ */
+function protectSheet(sheetId: number, unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[]): GoogleAppsScript.Sheets.Schema.Request[] {
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    requests.push({
+        addProtectedRange: {
+            protectedRange: {
+                range: { sheetId },
+                description: ReportSheetSchema.sheets.attendance.sheetName,
+                warningOnly: false,
+                unprotectedRanges,
+            },
+        },
+    });
 
     return requests;
 }

@@ -23,6 +23,9 @@
   "workbench.editor.customLabels.patterns": {
     "**/index.ts": "${dirname}"
   },
+  "workbench.editorAssociations": {
+    "*.md": "vscode.markdown.preview.editor"
+  },
   "editor.tokenColorCustomizations": {
     // Make strings and numbers pop-out to detect "magic" constants.
     "textMateRules": [
