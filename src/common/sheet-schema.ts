@@ -90,7 +90,15 @@ export const ReportSheetSchema = {
                 trim1Fields: "est_Per1_Campos",
                 trim1Totals: "est_Per1_Prom",
                 trim1Absences: "est_Per1_Faltas",
-            }
+                trim2Subjects: "est_Per2_Materias",
+                trim2Fields: "est_Per2_Campos",
+                trim2Totals: "est_Per2_Prom",
+                trim2Absences: "est_Per2_Faltas",
+                trim3Subjects: "est_Per3_Materias",
+                trim3Fields: "est_Per3_Campos",
+                trim3Totals: "est_Per3_Prom",
+                trim3Absences: "est_Per3_Faltas",
+            },
         },
         attendance: {
             sheetName: "Asistencia",

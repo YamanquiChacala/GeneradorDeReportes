@@ -35,7 +35,12 @@ interface ProtectedSections {
 interface AcademicField {
     name: string;
     color: string;
-    subjects: string[];
+    subjects: WeightedSubject[];
+}
+
+interface WeightedSubject {
+    subject: string;
+    weight: number;
 }
 
 export type StudentRow = Student | StudentSpace;
@@ -75,7 +80,7 @@ export function fillPersistentData(
     const { requests: studentRequests, students } = getStudents(setupRanges, reportRanges);
 
     // Get Academic Fields and subjects
-    const { requests: subjectRequests, academicFields, subjects } = getSubjects(setupRanges, reportRanges);
+    const { requests: subjectRequests, academicFields, subjects } = getSubjects(setupRanges, reportRanges, configData.averagePerField);
 
     // Build response
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...calendarDaysRequests, ...studentRequests, ...subjectRequests];
@@ -306,6 +311,7 @@ function getStudents(
 function getSubjects(
     setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
+    averagePerField: boolean,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     academicFields: AcademicField[];
@@ -344,22 +350,50 @@ function getSubjects(
             };
         }
         if (currentField.name !== "") {
+            let weight = 1;
             let subject = "";
             for (const cellData of iterator) {
-                const cellVal = (cellData.effectiveValue?.stringValue ?? "").trim();
-                if (cellVal !== "") {
-                    subject = cellVal;
+                // Find weight
+                const cellNumVal = cellData.effectiveValue?.numberValue;
+                if (cellNumVal) weight = cellNumVal;
+                // Find subject name
+                const cellStringVal = (cellData.effectiveValue?.stringValue ?? "").trim();
+                if (cellStringVal !== "") {
+                    subject = cellStringVal;
                     break;
                 }
             }
             if (subject !== "") {
-                currentField.subjects.push(subject);
+                currentField.subjects.push({ weight, subject });
                 subjects.push(subject);
             }
         }
     }
     // Save last Field
     if (currentField.name !== "" && currentField.color !== "" && currentField.subjects.length > 0) academicFields.push(currentField);
+
+    // Normalize weights
+    if (averagePerField) {
+        // Normalize weights per field (sum to 1 within each field)
+        for (const field of academicFields) {
+            const totalFieldWeight = field.subjects.reduce((sum, subj) => sum + subj.weight, 0);
+            for (const subj of field.subjects) {
+                subj.weight = subj.weight / totalFieldWeight;
+            }
+        }
+    } else {
+        // Normalize weights across all fields (sum to 1 across all subjects globally)
+        let grandTotalWeight = 0;
+        for (const field of academicFields) {
+            grandTotalWeight += field.subjects.reduce((sum, subj) => sum + subj.weight, 0);
+        }
+
+        for (const field of academicFields) {
+            for (const subj of field.subjects) {
+                subj.weight = subj.weight / grandTotalWeight;
+            }
+        }
+    }
 
     const requests = buildReportFieldsAndSubjects(reportRanges, academicFields);
 
@@ -384,7 +418,10 @@ function buildReportFieldsAndSubjects(
         ];
         fieldsData.push(fieldsDataRow);
 
-        const subjectsDataRow: GoogleAppsScript.Sheets.Schema.CellData[][] = field.subjects.map((subject) => [{ userEnteredValue: { stringValue: subject } }]);
+        const subjectsDataRow: GoogleAppsScript.Sheets.Schema.CellData[][] = field.subjects.map((weightedSubject) => [
+            { userEnteredValue: { stringValue: weightedSubject.subject } },
+            { userEnteredValue: { numberValue: weightedSubject.weight } },
+        ]);
         subjectsData.push(...subjectsDataRow);
     }
 
