@@ -6,6 +6,7 @@ import { type ExtractRangeNames, MappedNamedRange, parseSpreadsheet } from "../.
 import { sanitizeFileName } from "../../common/utils/text";
 import { createAttendanceSheet } from "./attendance";
 import { fillPersistentData } from "./persistent-data";
+import { prepareStudentTemplate } from "./student-template";
 
 /**
  * Initializes a Report spreadsheet in the same folder as the setupFile, with the information from the Setup file.
@@ -50,9 +51,13 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     const attendanceRequests = createAttendanceSheet(parsedReportSheet, persistentData);
 
+    // Prepare Student template sheet
+
+    const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet.namedRanges, persistentData);
+
     // ============ Batch Changes ==============
 
-    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests];
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests, ...studentTemplateSetup];
 
     // ============ Execute Batch update ===========
 
