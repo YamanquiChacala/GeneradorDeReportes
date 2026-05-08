@@ -1,5 +1,5 @@
 {
-  "name": "Report Generator",
+  "name": "montessori-school-report-generator",
   "description": "A simple GAS tool to help my school create student reports.",
   "version": "0.1.0",
   "devDependencies": {

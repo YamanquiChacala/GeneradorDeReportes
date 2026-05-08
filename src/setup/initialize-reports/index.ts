@@ -53,7 +53,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     // Prepare Student template sheet
 
-    const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet.namedRanges, persistentData);
+    const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet, persistentData);
 
     // ============ Batch Changes ==============
 
