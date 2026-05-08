@@ -9,7 +9,7 @@ export interface ReportPersistentData {
     configData: ConfigData;
     protectedSections: ProtectedSections;
     academicFields: AcademicField[];
-    subjects: string[];
+    subjects: WeightedSubject[];
     students: StudentRow[];
     calendar: number[];
 }
@@ -35,7 +35,7 @@ interface ProtectedSections {
 interface AcademicField {
     name: string;
     color: string;
-    subjects: WeightedSubject[];
+    subjects: number;
 }
 
 interface WeightedSubject {
@@ -315,17 +315,17 @@ function getSubjects(
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     academicFields: AcademicField[];
-    subjects: string[];
+    subjects: WeightedSubject[];
 } {
     const academicFields: AcademicField[] = [];
-    const subjects: string[] = [];
+    const subjects: WeightedSubject[] = [];
 
     const setupSubjectData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.groupData.ranges.subjects]);
 
     let currentField: AcademicField = {
         name: "",
         color: "",
-        subjects: [],
+        subjects: 0,
     };
 
     for (const dataRow of setupSubjectData) {
@@ -339,14 +339,14 @@ function getSubjects(
 
         if (fieldName !== "") {
             // Save previous Field
-            if (currentField.name !== "" && currentField.color !== "" && currentField.subjects.length > 0) academicFields.push(currentField);
+            if (currentField.name !== "" && currentField.color !== "" && currentField.subjects > 0) academicFields.push(currentField);
 
             // Start a new one
             const bgColor = fieldCell?.effectiveFormat?.backgroundColor;
             currentField = {
                 name: fieldName,
                 color: colorToHex(bgColor),
-                subjects: [],
+                subjects: 0,
             };
         }
         if (currentField.name !== "") {
@@ -364,38 +364,56 @@ function getSubjects(
                 }
             }
             if (subject !== "") {
-                currentField.subjects.push({ weight, subject });
-                subjects.push(subject);
+                currentField.subjects++;
+                subjects.push({ weight, subject });
             }
         }
     }
     // Save last Field
-    if (currentField.name !== "" && currentField.color !== "" && currentField.subjects.length > 0) academicFields.push(currentField);
+    if (currentField.name !== "" && currentField.color !== "" && currentField.subjects > 0) academicFields.push(currentField);
 
     // Normalize weights
     if (averagePerField) {
-        // Normalize weights per field (sum to 1 within each field)
-        for (const field of academicFields) {
-            const totalFieldWeight = field.subjects.reduce((sum, subj) => sum + subj.weight, 0);
-            for (const subj of field.subjects) {
-                subj.weight = subj.weight / totalFieldWeight;
-            }
-        }
-    } else {
-        // Normalize weights across all fields (sum to 1 across all subjects globally)
-        let grandTotalWeight = 0;
-        for (const field of academicFields) {
-            grandTotalWeight += field.subjects.reduce((sum, subj) => sum + subj.weight, 0);
-        }
+        // Normalize weights per field
+        let subjectIndex = 0; // Keep track of where we are in the flat subjects array
 
         for (const field of academicFields) {
-            for (const subj of field.subjects) {
-                subj.weight = subj.weight / grandTotalWeight;
+            const fieldSubjectCount = field.subjects;
+            let totalFieldWeight = 0;
+
+            // 1. Calculate the total weight for this specific block of subjects
+            for (let i = 0; i < fieldSubjectCount; i++) {
+                const currentSubject = subjects[subjectIndex + i];
+                if (currentSubject) {
+                    totalFieldWeight += currentSubject.weight;
+                }
+            }
+
+            // 2. Normalize the weights for this block
+            if (totalFieldWeight > 0) {
+                for (let i = 0; i < fieldSubjectCount; i++) {
+                    const currentSubject = subjects[subjectIndex + i];
+                    if (currentSubject) {
+                        currentSubject.weight /= totalFieldWeight;
+                    }
+                }
+            }
+
+            // 3. Move the index forward to the start of the next field's subjects
+            subjectIndex += fieldSubjectCount;
+        }
+    } else {
+        // Normalize weights globally across the entire flat array
+        const grandTotalWeight = subjects.reduce((sum, subj) => sum + subj.weight, 0);
+
+        if (grandTotalWeight > 0) {
+            for (const subj of subjects) {
+                subj.weight /= grandTotalWeight;
             }
         }
     }
 
-    const requests = buildReportFieldsAndSubjects(reportRanges, academicFields);
+    const requests = buildReportFieldsAndSubjects(reportRanges, academicFields, subjects);
 
     return { requests, academicFields, subjects };
 }
@@ -406,23 +424,26 @@ function getSubjects(
 function buildReportFieldsAndSubjects(
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
     academicFields: AcademicField[],
+    subjects: WeightedSubject[],
 ): GoogleAppsScript.Sheets.Schema.Request[] {
-    const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
     const fieldsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
     for (const field of academicFields) {
         const fieldsDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
             { userEnteredValue: { stringValue: field.color } },
             { userEnteredValue: { stringValue: field.name } },
-            { userEnteredValue: { numberValue: field.subjects.length } },
+            { userEnteredValue: { numberValue: field.subjects } },
         ];
         fieldsData.push(fieldsDataRow);
+    }
 
-        const subjectsDataRow: GoogleAppsScript.Sheets.Schema.CellData[][] = field.subjects.map((weightedSubject) => [
+    for (const weightedSubject of subjects) {
+        const weightedSubjectDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
             { userEnteredValue: { stringValue: weightedSubject.subject } },
             { userEnteredValue: { numberValue: weightedSubject.weight } },
-        ]);
-        subjectsData.push(...subjectsDataRow);
+        ];
+        subjectsData.push(weightedSubjectDataRow);
     }
 
     const subjectsRequests = buildTransferRequest({

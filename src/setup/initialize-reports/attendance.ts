@@ -374,8 +374,8 @@ function addStudentLists(
         const hues = getDistinctHues(data.subjects.length, 0.4);
 
         const subjectStudentListData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-        for (const [index, subject] of data.subjects.entries()) {
-            subjectStudentListData.push([], [{ userEnteredValue: { stringValue: subject } }]); // Space and subject name.
+        for (const [index, weightedSubject] of data.subjects.entries()) {
+            subjectStudentListData.push([], [{ userEnteredValue: { stringValue: weightedSubject.subject } }]); // Space and subject name.
             subjectStudentListData.push(...studentGroup(frozenRows + 2 + index * space));
 
             // Copy format for the subject title
