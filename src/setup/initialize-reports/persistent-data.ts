@@ -3,62 +3,8 @@ import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
 import { buildFieldsMask } from "../../common/utils/gas-types";
 import { buildTransferRequest, colorToHex, getEpochDate, getSheetsDate } from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
+import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/utils/report-utils";
 import { sanitizeSheetName } from "../../common/utils/text";
-
-export interface ReportPersistentData {
-    configData: ConfigData;
-    protectedSections: ProtectedSections;
-    academicFields: AcademicField[];
-    subjects: WeightedSubject[];
-    students: StudentRow[];
-    calendar: number[];
-}
-
-export interface ConfigData {
-    attendancePerClass: boolean;
-    averagePerField: boolean;
-    dateStart: number;
-    dateTrim1: number;
-    dateTrim2: number;
-    dateEnd: number;
-}
-
-interface ProtectedSections {
-    data: boolean;
-    habilities: boolean;
-    comments: boolean;
-    trim1: boolean;
-    trim2: boolean;
-    trim3: boolean;
-}
-
-interface AcademicField {
-    name: string;
-    color: string;
-    subjects: number;
-}
-
-interface WeightedSubject {
-    subject: string;
-    weight: number;
-}
-
-export type StudentRow = Student | StudentSpace;
-
-interface Student {
-    type: "student";
-    id: number;
-    firstName: string;
-    lastName: string;
-    sheetName: string;
-    sex: string;
-    level: string;
-    grade: string;
-}
-
-interface StudentSpace {
-    type: "separator";
-}
 
 /**
  * Dumps the setup data into Persistent data in the report.

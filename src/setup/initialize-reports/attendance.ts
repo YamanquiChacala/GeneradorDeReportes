@@ -12,7 +12,7 @@ import {
     offsetGridRange,
 } from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, MappedNamedRange, type ParsedSpreadsheet } from "../../common/utils/mapped-name-range";
-import type { ReportPersistentData } from "./persistent-data";
+import type { ReportPersistentData } from "../../common/utils/report-utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 

@@ -1,3 +1,4 @@
+import { MONTH_NAMES } from "../constants";
 import { CssColorMap, isColorKey } from "../enums";
 
 /**
@@ -70,4 +71,27 @@ export function webColor(input?: string): string | null {
         return CssColorMap[lowerInput];
     }
     return null;
+}
+
+// TODO: Create tests
+/**
+ * Return a nice text describing the space between two days.
+ */
+export function formatDateRange(startMs: number, endMs: number): string {
+    const startDate = new Date(startMs);
+    const endDate = new Date(endMs);
+
+    const startMonth = MONTH_NAMES[startDate.getUTCMonth()] ?? "";
+    const endMonth = MONTH_NAMES[endDate.getUTCMonth()] ?? "";
+
+    const startDay = startDate.getUTCDate();
+    const endDay = endDate.getUTCDate();
+    const startYear = startDate.getUTCFullYear();
+    const endYear = endDate.getUTCFullYear();
+
+    if (startYear === endYear) {
+        return `Del ${startDay} de ${startMonth} al ${endDay} de ${endMonth} de ${startYear}`;
+    }
+
+    return `Del ${startDay} de ${startMonth} de ${startYear} al ${endDay} de ${endMonth} de ${endYear}`;
 }
