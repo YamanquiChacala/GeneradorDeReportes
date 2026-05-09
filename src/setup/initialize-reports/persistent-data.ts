@@ -271,7 +271,9 @@ function getStudents(
             lastName,
             sheetName,
             sex: studentRow[2]?.effectiveValue?.stringValue ?? "",
-            level: studentRow[3]?.effectiveValue?.stringValue ?? "",
+            level:
+                studentRow[3]?.effectiveValue?.stringValue ??
+                (studentRow[3]?.effectiveValue?.numberValue != null ? `${studentRow[3]?.effectiveValue?.numberValue}º` : ""),
             grade: studentRow[4]?.effectiveValue?.stringValue ?? "",
         };
 
