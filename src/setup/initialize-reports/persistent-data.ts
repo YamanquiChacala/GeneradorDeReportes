@@ -4,7 +4,7 @@ import { buildFieldsMask } from "../../common/utils/gas-types";
 import { buildTransferRequests, colorToHex, getEpochDate, getSheetsDate } from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
 import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/utils/report-utils";
-import { sanitizeSheetName } from "../../common/utils/text";
+import { sanitizeSheetName } from "../../common/utils/text-utils";
 
 /**
  * Dumps the setup data into Persistent data in the report.

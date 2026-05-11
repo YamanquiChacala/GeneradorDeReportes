@@ -5,6 +5,9 @@ import { buildFieldsMask } from "../../common/utils/gas-types";
 import { buildCopyPasteRequest, createSingleCellRange, offsetGridRange } from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, type ExtractSheetNames, MappedNamedRange, parseSpreadsheet } from "../../common/utils/mapped-name-range";
 
+type SheetName = ExtractSheetNames<typeof SetupSheetSchema>;
+type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
+
 interface CalendarDates {
     dateStart: number;
     dateTrimester1: number;
@@ -60,11 +63,13 @@ export function generateCalendar(setupFileId: string) {
 /**
  * Extracts dates from named ranges, validates them, and calculates grid boundaries.
  */
-function calculateCalendarDates(namedRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>): CalendarDates {
-    const dateStart = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateStart] });
-    const dateTrimester1 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateTrim1] });
-    const dateTrimester2 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateTrim2] });
-    const dateEnd = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[SetupSheetSchema.sheets.groupData.ranges.dateEnd] });
+function calculateCalendarDates(namedRanges: Partial<Record<RangeName, MappedNamedRange>>): CalendarDates {
+    const ranges = SetupSheetSchema.sheets.groupData.ranges;
+
+    const dateStart = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[ranges.dateStart] });
+    const dateTrimester1 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[ranges.dateTrim1] });
+    const dateTrimester2 = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[ranges.dateTrim2] });
+    const dateEnd = MappedNamedRange.getCellUnixEpoch({ mappedRange: namedRanges[ranges.dateEnd] });
 
     if (!dateStart || !dateTrimester1 || !dateTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
     if (dateStart >= dateTrimester1 || dateTrimester1 >= dateTrimester2 || dateTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
@@ -88,8 +93,8 @@ function calculateCalendarDates(namedRanges: Partial<Record<ExtractRangeNames<ty
  * Prepares the structural requests: deleting old sheets, duplicating the template, and resizing.
  */
 function buildSheetSetupRequests(
-    sheets: Partial<Record<ExtractSheetNames<typeof SetupSheetSchema>, GoogleAppsScript.Sheets.Schema.Sheet>>,
-    sheetNamedRanges: Partial<Record<ExtractSheetNames<typeof SetupSheetSchema>, GoogleAppsScript.Sheets.Schema.NamedRange[]>>,
+    sheets: Partial<Record<SheetName, GoogleAppsScript.Sheets.Schema.Sheet>>,
+    sheetNamedRanges: Partial<Record<SheetName, GoogleAppsScript.Sheets.Schema.NamedRange[]>>,
     calendarSheetId: number,
     totalRows: number,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
@@ -158,11 +163,9 @@ function buildSheetSetupRequests(
 /**
  * Iterates through every day, building the cell data and formatting requests, while tracking month boundaries.
  */
-function buildDayDataAndFormats(
-    dates: CalendarDates,
-    namedRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
-    calendarSheetId: number,
-) {
+function buildDayDataAndFormats(dates: CalendarDates, namedRanges: Partial<Record<RangeName, MappedNamedRange>>, calendarSheetId: number) {
+    const ranges = SetupSheetSchema.sheets.calendarTemplate.ranges;
+
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const rowDataArray: GoogleAppsScript.Sheets.Schema.RowData[] = [];
     const monthBlocks: MonthBlock[] = [];
@@ -205,11 +208,11 @@ function buildDayDataAndFormats(
             // Format routing
             let formatSource: MappedNamedRange | undefined;
             if (isWeekday && inBounds) {
-                formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.trimester1Day];
-                if (currentMs > dates.dateTrimester2) formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.trimester3Day];
-                else if (currentMs > dates.dateTrimester1) formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.trimester2Day];
+                formatSource = namedRanges[ranges.trimester1Day];
+                if (currentMs > dates.dateTrimester2) formatSource = namedRanges[ranges.trimester3Day];
+                else if (currentMs > dates.dateTrimester1) formatSource = namedRanges[ranges.trimester2Day];
             } else {
-                formatSource = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.restDay];
+                formatSource = namedRanges[ranges.restDay];
             }
 
             const destinationRange = createSingleCellRange(calendarSheetId, currentRowNumber, 2 * i + 1);
@@ -234,17 +237,19 @@ function buildDayDataAndFormats(
 function buildMonthLabelRequests(
     monthBlocks: MonthBlock[],
     rowDataArray: GoogleAppsScript.Sheets.Schema.RowData[],
-    namedRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
+    namedRanges: Partial<Record<RangeName, MappedNamedRange>>,
     calendarSheetId: number,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
+    const ranges = SetupSheetSchema.sheets.calendarTemplate.ranges;
+
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     monthBlocks.forEach((block) => {
         const rowSpan = block.endRow - block.startRow;
-        let monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames3];
+        let monthLabelRange = namedRanges[ranges.monthNames3];
 
-        if (rowSpan === 2) monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames2];
-        else if (rowSpan === 1) monthLabelRange = namedRanges[SetupSheetSchema.sheets.calendarTemplate.ranges.monthNames1];
+        if (rowSpan === 2) monthLabelRange = namedRanges[ranges.monthNames2];
+        else if (rowSpan === 1) monthLabelRange = namedRanges[ranges.monthNames1];
 
         if (!monthLabelRange?.range) throw new Error("Faltan nombres de meses.");
 

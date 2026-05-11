@@ -73,7 +73,6 @@ export function webColor(input?: string): string | null {
     return null;
 }
 
-// TODO: Create tests
 /**
  * Return a nice text describing the space between two days.
  */

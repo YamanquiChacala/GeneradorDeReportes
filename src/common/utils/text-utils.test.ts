@@ -1,4 +1,9 @@
-import * as Utils from "./text";
+import * as Utils from "./text-utils";
+
+// Helper to create UTC timestamps safely
+function utcMs(year: number, monthIndex: number, day: number): number {
+    return Date.UTC(year, monthIndex, day);
+}
 
 describe("Text Utils Module", () => {
     describe("sanitizeFileName()", () => {
@@ -125,6 +130,42 @@ describe("Text Utils Module", () => {
                 expect(Utils.webColor("")).toBeNull();
                 expect(Utils.webColor("   ")).toBeNull();
             });
+        });
+    });
+
+    describe("formatDateRange", () => {
+        it("formats a range within the same year", () => {
+            const start = utcMs(2025, 0, 1); // 1 Jan 2025
+            const end = utcMs(2025, 1, 15); // 15 Feb 2025
+
+            expect(Utils.formatDateRange(start, end)).toBe("Del 1 de enero al 15 de febrero de 2025");
+        });
+
+        it("formats a range across different years", () => {
+            const start = utcMs(2024, 11, 31); // 31 Dec 2024
+            const end = utcMs(2025, 0, 1); // 1 Jan 2025
+
+            expect(Utils.formatDateRange(start, end)).toBe("Del 31 de diciembre de 2024 al 1 de enero de 2025");
+        });
+
+        it("formats a range within the same month", () => {
+            const start = utcMs(2025, 4, 10); // 10 May 2025
+            const end = utcMs(2025, 4, 20); // 20 May 2025
+
+            expect(Utils.formatDateRange(start, end)).toBe("Del 10 de mayo al 20 de mayo de 2025");
+        });
+
+        it("formats a single-day range", () => {
+            const date = utcMs(2025, 6, 7); // 7 Jul 2025
+
+            expect(Utils.formatDateRange(date, date)).toBe("Del 7 de julio al 7 de julio de 2025");
+        });
+
+        it("uses UTC dates instead of local timezone", () => {
+            const start = Date.UTC(2025, 0, 1, 23, 0, 0);
+            const end = Date.UTC(2025, 0, 2, 1, 0, 0);
+
+            expect(Utils.formatDateRange(start, end)).toBe("Del 1 de enero al 2 de enero de 2025");
         });
     });
 });

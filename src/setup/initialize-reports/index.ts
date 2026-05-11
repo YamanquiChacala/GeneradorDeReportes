@@ -3,7 +3,7 @@ import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
 import { buildFieldsMask } from "../../common/utils/gas-types";
 import { type ExtractRangeNames, MappedNamedRange, parseSpreadsheet } from "../../common/utils/mapped-name-range";
-import { sanitizeFileName } from "../../common/utils/text";
+import { sanitizeFileName } from "../../common/utils/text-utils";
 import { createAttendanceSheet } from "./attendance";
 import { fillPersistentData } from "./persistent-data";
 import { prepareStudentTemplate } from "./student-template";

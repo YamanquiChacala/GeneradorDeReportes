@@ -1,6 +1,6 @@
 import { type Icon, Urls } from "./enums";
-import { type IconifyParams, iconifyUrl } from "./utils/image";
-import { webColor } from "./utils/text";
+import { type IconifyParams, iconifyUrl } from "./utils/image-utils";
+import { webColor } from "./utils/text-utils";
 
 interface BaseHeaderParams {
     title: string;

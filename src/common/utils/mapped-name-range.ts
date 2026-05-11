@@ -196,3 +196,18 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
 
     return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, namedRanges: mappedRanges };
 }
+
+/**
+ * Factory function to create an easy way to get partial properties or throw an error.
+ */
+export function createRequiredGetter<K extends PropertyKey, V>(obj: Partial<Record<K, V>>, context?: string) {
+    return (key: K): V => {
+        const value = obj[key];
+
+        if (value === undefined) {
+            throw new Error(context ? `Falta ${context}: ${String(key)}` : `Falta propidad: ${String(key)}`);
+        }
+
+        return value;
+    };
+}

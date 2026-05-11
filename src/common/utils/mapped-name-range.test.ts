@@ -1,4 +1,4 @@
-import { MappedNamedRange, parseSpreadsheet } from "./mapped-name-range";
+import { createRequiredGetter, MappedNamedRange, parseSpreadsheet } from "./mapped-name-range";
 
 describe("MappedNamedRange", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks, but the sheet is 10x10.
@@ -251,6 +251,91 @@ describe("MappedNamedRange", () => {
             expect(result.sheets).toEqual({});
             expect(result.namedRanges).toEqual({});
             expect(result.sheetNamedRanges).toEqual({});
+        });
+    });
+    describe("createRequiredGetter", () => {
+        describe("when the key exists", () => {
+            it("returns the corresponding value", () => {
+                const getter = createRequiredGetter({
+                    a: 1,
+                    b: 2,
+                });
+
+                expect(getter("a")).toBe(1);
+                expect(getter("b")).toBe(2);
+            });
+
+            it("does not throw for 0", () => {
+                const getter = createRequiredGetter({
+                    zero: 0,
+                });
+
+                expect(getter("zero")).toBe(0);
+            });
+
+            it("does not throw for false", () => {
+                const getter = createRequiredGetter({
+                    falseValue: false,
+                });
+
+                expect(getter("falseValue")).toBe(false);
+            });
+
+            it("does not throw for empty string", () => {
+                const getter = createRequiredGetter({
+                    emptyString: "",
+                });
+
+                expect(getter("emptyString")).toBe("");
+            });
+
+            it("supports number keys", () => {
+                const getter = createRequiredGetter<number, string>({
+                    1: "one",
+                    2: "two",
+                });
+
+                expect(getter(1)).toBe("one");
+            });
+
+            it("supports symbol keys", () => {
+                const key = Symbol("test");
+
+                const getter = createRequiredGetter({
+                    [key]: 123,
+                });
+
+                expect(getter(key)).toBe(123);
+            });
+        });
+
+        describe("when the key does not exist", () => {
+            it("throws with the default message when no context is provided", () => {
+                const getter = createRequiredGetter<string, number>({
+                    a: 1,
+                });
+
+                expect(() => getter("b")).toThrow("Falta propidad: b");
+            });
+
+            it("throws with the contextualized message", () => {
+                const getter = createRequiredGetter<string, number>(
+                    {
+                        a: 1,
+                    },
+                    "rango",
+                );
+
+                expect(() => getter("b")).toThrow("Falta rango: b");
+            });
+
+            it("includes symbol keys in the error message", () => {
+                const key = Symbol("missing");
+
+                const getter = createRequiredGetter<symbol, number>({}, "symbol key");
+
+                expect(() => getter(key)).toThrow("Falta symbol key: Symbol(missing)");
+            });
         });
     });
 });

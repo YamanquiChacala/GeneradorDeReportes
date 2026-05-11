@@ -16,7 +16,7 @@
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "test": "cross-env NODE_OPTIONS=\"--no-webstorage\" jest --passWithNoTests",
+    "test": "jest --passWithNoTests",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",

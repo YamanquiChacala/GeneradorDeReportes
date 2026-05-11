@@ -1,5 +1,5 @@
 import { getA1Notation, getColumnLetter } from "./gas-utils";
-import { formatDateRange } from "./text";
+import { formatDateRange } from "./text-utils";
 
 export interface ReportPersistentData {
     configData: ConfigData;

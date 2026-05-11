@@ -18,3 +18,4 @@
 
 # General
 * [x] Switch from using `formattedValue` to use `effectiveValue`.
+* [ ] Use `createRequiredGetter` and siplified names everywhere.

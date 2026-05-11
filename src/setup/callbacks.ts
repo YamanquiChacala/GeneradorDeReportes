@@ -4,7 +4,7 @@ import { MORE_THAN_A_YEAR } from "../common/constants";
 import { Colors, Icon } from "../common/enums";
 import { buildUtilityCard } from "../common/premade-cards";
 import { getInputs } from "../common/utils/gas-types";
-import { sanitizeFileName } from "../common/utils/text";
+import { sanitizeFileName } from "../common/utils/text-utils";
 import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams, GenerateCalendarParams, InitializeReportParams } from "./cards";
 import { copySetupFile } from "./copy-setup-file";
 import { createSetupFile, type SetupFileData } from "./crete-setup-file";

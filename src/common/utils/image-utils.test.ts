@@ -1,5 +1,5 @@
 import type { Icon } from "../enums";
-import { iconifyUrl } from "./image";
+import { iconifyUrl } from "./image-utils";
 
 describe("Image Utils Module", () => {
     describe("iconifyUrl()", () => {

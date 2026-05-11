@@ -1,5 +1,5 @@
 import type { Icon } from "../enums";
-import { webColor } from "./text";
+import { webColor } from "./text-utils";
 
 export interface IconifyParams {
     iconName: Icon;
