@@ -3,7 +3,7 @@ import { Dimension, MergeType } from "../../common/gas-enums";
 import { ReportSheetSchema } from "../../common/sheet-schema";
 import { buildFieldsMask } from "../../common/utils/gas-types";
 import { buildAddNamedRangeRequest, buildMergeCellsRequest, buildTransferRequests, getColumnLetter, offsetGridRange } from "../../common/utils/gas-utils";
-import type { ExtractRangeNames, MappedNamedRange, ParsedSpreadsheet } from "../../common/utils/mapped-name-range";
+import { createRequiredGetter, type ExtractRangeNames, type MappedNamedRange, type ParsedSpreadsheet } from "../../common/utils/mapped-name-range";
 import { createStudentAsistanceFormula, createStudentAsistancePerSubjectFormula, generatePeriodString, type ReportPersistentData } from "../../common/utils/report-utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
@@ -47,11 +47,13 @@ function adaptSizeAndRanges(namedRanges: Partial<Record<RangeName, MappedNamedRa
 
     const ranges = ReportSheetSchema.sheets.studentTemplate.ranges;
 
-    const getRange = (name: RangeName): MappedNamedRange => {
-        const range = namedRanges[name];
-        if (!range) throw new Error(`Falta en template de estudiante: ${name}`);
-        return range;
-    };
+    const getRange = createRequiredGetter(namedRanges, "template de estudiante");
+
+    //    const getRange = (name: RangeName): MappedNamedRange => {
+    //        const range = namedRanges[name];
+    //        if (!range) throw new Error(`Falta en template de estudiante: ${name}`);
+    //        return range;
+    //    };
 
     // Handle absences
     if (persistentData.configData.attendancePerClass) {

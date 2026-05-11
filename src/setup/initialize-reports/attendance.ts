@@ -149,6 +149,8 @@ function copyAttendanceTemplate(
  * Adds the date headers to the attendance.
  */
 function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, MappedNamedRange>>, days: number[]): GoogleAppsScript.Sheets.Schema.Request[] {
+    const ranges = ReportSheetSchema.sheets.attendanceTemplate.ranges;
+
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     if (days.length === 0) return requests;
 
@@ -166,13 +168,11 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
         return months;
     };
 
-    const names1 = extractMonthNames(ReportSheetSchema.sheets.attendanceTemplate.ranges.monthNames1, 1);
-    const names2 = extractMonthNames(ReportSheetSchema.sheets.attendanceTemplate.ranges.monthNames2, 2);
-    const names5 = extractMonthNames(ReportSheetSchema.sheets.attendanceTemplate.ranges.monthNames5, 5);
+    const names1 = extractMonthNames(ranges.monthNames1, 1);
+    const names2 = extractMonthNames(ranges.monthNames2, 2);
+    const names5 = extractMonthNames(ranges.monthNames5, 5);
 
-    const dayNames = MappedNamedRange.getCellDataArray(namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.dayNames])[0]?.map(
-        (cellData) => cellData.effectiveValue?.stringValue ?? "",
-    );
+    const dayNames = MappedNamedRange.getCellDataArray(namedRanges[ranges.dayNames])[0]?.map((cellData) => cellData.effectiveValue?.stringValue ?? "");
 
     if (!dayNames) throw new Error("Faltan los nombres de los días.");
 
@@ -195,7 +195,7 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
 
     // Format row 2
     const row2FormatSource = offsetGridRange({
-        origin: namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.dayNames]?.range ?? {},
+        origin: namedRanges[ranges.dayNames]?.range ?? {},
         height: 1,
         width: 1,
     });
@@ -214,17 +214,17 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
         let text = "";
 
         if (count === 1) {
-            origin = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.monthNames1]?.range;
+            origin = namedRanges[ranges.monthNames1]?.range;
             width = 1;
             colOffset = month * 1;
             text = `${names1[month]}\n${shortYear}`;
         } else if (count >= 2 && count <= 4) {
-            origin = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.monthNames2]?.range;
+            origin = namedRanges[ranges.monthNames2]?.range;
             width = 2;
             colOffset = month * 2;
             text = `${names2[month]}\n${longYear}`;
         } else {
-            origin = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.monthNames5]?.range;
+            origin = namedRanges[ranges.monthNames5]?.range;
             width = 5;
             colOffset = month * 5;
             text = `${names5[month]}\n${longYear}`;
@@ -264,7 +264,7 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
         }
     };
 
-    const dayNamesOrigin = namedRanges[ReportSheetSchema.sheets.attendanceTemplate.ranges.dayNames]?.range;
+    const dayNamesOrigin = namedRanges[ranges.dayNames]?.range;
 
     if (!dayNamesOrigin) throw new Error("Error copiando formato de dias.");
 
