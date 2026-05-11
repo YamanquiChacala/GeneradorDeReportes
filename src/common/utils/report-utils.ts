@@ -1,3 +1,4 @@
+import { getA1Notation, getColumnLetter } from "./gas-utils";
 import { formatDateRange } from "./text";
 
 export interface ReportPersistentData {
@@ -56,6 +57,65 @@ interface StudentSpace {
 }
 
 /**
+ * Generate a formula for the general absences.
+ */
+export function createStudentAsistanceFormula(
+    period: 0 | 1 | 2,
+    firstNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    lastNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    assistanceSheetName: string,
+    absences = false,
+): string {
+    const firstNameA1 = getA1Notation(firstNameRange, true, true, true);
+    const lastNameA1 = getA1Notation(lastNameRange, true, true, true);
+    const returnColumn = getColumnLetter((absences ? 4 : 3) + period * 2);
+    return `=LET(
+    first_names, ${assistanceSheetName}!B:B,
+    last_names, ${assistanceSheetName}!C:C,
+    return_data, ${assistanceSheetName}!${returnColumn}:${returnColumn},
+    XLOOKUP(${firstNameA1}&${lastNameA1}, ARRAYFORMULA(first_names&last_names), return_data)
+)`;
+}
+
+/**
+ * Generate the student forumala to grab the absences per subject.
+ */
+export function createStudentAsistancePerSubjectFormula(
+    period: 0 | 1 | 2,
+    subjectRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    firstNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    lastNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    assistanceSheetName: string,
+): string {
+    const subjectA1 = getA1Notation(subjectRange, true, false, true);
+    const firstNameA1 = getA1Notation(firstNameRange, true, true, true);
+    const lastNameA1 = getA1Notation(lastNameRange, true, true, true);
+    const returnColum = getColumnLetter(3 + period * 2);
+    return `=LET(
+    start_row, MATCH(${subjectA1}, ${assistanceSheetName}!A:A, 0),
+    next_subject_offset,
+        IFERROR(
+            MATCH(
+                TRUE,
+                ARRAYFORMULA(
+                    ISTEXT(
+                        INDEX(${assistanceSheetName}!A:A, start_row + 1):
+                        INDEX(${assistanceSheetName}!A:A, ROWS(${assistanceSheetName}!A:A))
+                    )
+                ),
+                0
+            ),
+            ROWS(${assistanceSheetName}!A:A) - start_row
+        ),
+    height, next_subject_offset - 1,
+    first_names, OFFSET(${assistanceSheetName}!B$1, start_row, 0, height, 1),
+    last_names, OFFSET(${assistanceSheetName}!C$1, start_row, 0, height, 1),
+    return_data, OFFSET(${assistanceSheetName}!${returnColum}$1, start_row, 0, height, 2),
+    XLOOKUP(${firstNameA1} & ${lastNameA1}, ARRAYFORMULA(first_names & last_names), return_data)
+)`;
+}
+
+/**
  * Returns a nice string for the asked period.
  */
 export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 | 2): string {
@@ -84,7 +144,7 @@ export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 |
     const actualEnd = calendar[endIndex - 1];
 
     // Exit if dates weren't found, or if the boundaries resulted in crossed dates
-    if (!actualStart || !actualEnd || actualStart > actualEnd) throw new Error("Fechas de periodos erroneas.");
+    if (!actualStart || !actualEnd || actualStart > actualEnd) return "No hay fechas";
 
     return formatDateRange(actualStart, actualEnd);
 }

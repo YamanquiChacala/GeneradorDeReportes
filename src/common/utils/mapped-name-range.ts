@@ -3,7 +3,7 @@ export interface MappedNamedRange {
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
-interface NestedSheetSchema {
+export interface NestedSheetSchema {
     readonly sheets: Record<
         string,
         {

@@ -83,7 +83,6 @@ export const ReportSheetSchema = {
                 firstName: "est_Nombre",
                 lastName: "est_Apellido",
                 generalInfo: "est_Datos",
-                generalAbsences: "est_FaltasGeneral",
                 abilities: "est_Habilidades",
                 comments: "est_Observaciones",
                 trim1Subjects: "est_Per1_Materias",
@@ -98,6 +97,12 @@ export const ReportSheetSchema = {
                 trim3Fields: "est_Per3_Campos",
                 trim3Totals: "est_Per3_Prom",
                 trim3Absences: "est_Per3_Faltas",
+                // Ranges generated to control unprotected ranges
+                unprotectedAbilities: "est_edita_Habilidades",
+                unprotectedComments: "est_edita_Observaciones",
+                unprotectedTrim1: "est_edita_Periodo1",
+                unprotectedTrim2: "est_edita_Periodo2",
+                unprotectedTrim3: "est_edita_Periodo3",
             },
         },
         attendance: {

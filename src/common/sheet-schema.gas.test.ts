@@ -32,6 +32,13 @@ const schemasToTest: SchemaTestConfig[] = [
         name: "Report Sheet",
         schema: ReportSheetSchema,
         skipSheets: [ReportSheetSchema.sheets.attendance.sheetName],
+        skipRanges: [
+            ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedAbilities,
+            ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedComments,
+            ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim1,
+            ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim2,
+            ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim3,
+        ],
     },
 ];
 
