@@ -45,7 +45,9 @@ export const ReportSheetSchema = {
             ranges: {
                 attendancePerClass: "pers_AsistenciaPorAsignatura",
                 averagePerField: "pers_PromedioPorCampo",
-                protectData: "pers_ProtDatos",
+                subjectGrading1: "pers_Calif_Peso1",
+                subjectGrading2: "pers_Calif_Peso2",
+                subjectGrading3: "pers_Calif_Peso3",
                 protectSkills: "pers_ProtHabilidades",
                 protectComments: "pers_ProtObservaciones",
                 protectPeriod1: "pers_ProtPeriodo1",
