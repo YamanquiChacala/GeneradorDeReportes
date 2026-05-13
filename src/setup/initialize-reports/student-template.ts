@@ -458,6 +458,10 @@ function prepareFields(namedRanges: Partial<Record<RangeName, MappedNamedRange>>
     const weightsSheetName = ReportSheetSchema.sheets.persistentData.sheetName;
     const weightsRange = offsetGridRange({ origin: getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjects).range, colOffset: 1, width: 1 });
 
+    const gradingWeight1 = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGrading1).range;
+    const gradingWeight2 = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGrading2).range;
+    const gradingWeight3 = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGrading3).range;
+
     const trim1SubbjectsRange = getMappedRange(ranges.trim1Subjects).range;
     const trim2SubbjectsRange = getMappedRange(ranges.trim2Subjects).range;
     const trim3SubbjectsRange = getMappedRange(ranges.trim3Subjects).range;
@@ -478,7 +482,7 @@ function prepareFields(namedRanges: Partial<Record<RangeName, MappedNamedRange>>
         const fieldData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
         let subjectOffset = 0;
-        for (const field of persistenData.academicFields) {
+        for (const [index, field] of persistenData.academicFields.entries()) {
             const fieldRow: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: field.name } }];
             for (let i = 1; i < 4; i++) {
                 fieldRow.push({
@@ -497,19 +501,19 @@ function prepareFields(namedRanges: Partial<Record<RangeName, MappedNamedRange>>
             if (attendancePerClass) {
                 fieldRow.push({});
             }
-            const count = period === 2 ? 2 : 1;
-            for (let i = 0; i < count; i++) {
-                fieldRow.push({
-                    userEnteredValue: {
-                        formulaValue: createFieldFunction(
-                            field,
-                            offsetGridRange({ origin: subjectsRange, colOffset: attendancePerClass ? i + 5 : i + 4, width: 1 }),
-                            weightsSheetName,
-                            weightsRange,
-                            subjectOffset,
-                        ),
-                    },
-                });
+            // Average
+            const valuesRange = offsetGridRange({ origin: fieldsRange, rowOffset: index, colOffset: 1, height: 1, width: 3 });
+            fieldRow.push({
+                userEnteredValue: { formulaValue: createSubjectAverageFormula(valuesRange, weightsSheetName, gradingWeight1, gradingWeight2, gradingWeight3) },
+            });
+
+            // Final average
+            if (period === 2) {
+                const trim1Prom = offsetGridRange({ origin: trim1FieldsRange, rowOffset: index, colOffset: attendancePerClass ? 5 : 4, height: 1, width: 1 });
+                const trim2Prom = offsetGridRange({ origin: trim2FieldsRange, rowOffset: index, colOffset: attendancePerClass ? 5 : 4, height: 1, width: 1 });
+                const trim3Prom = offsetGridRange({ origin: trim3FieldsRange, rowOffset: index, colOffset: attendancePerClass ? 5 : 4, height: 1, width: 1 });
+
+                fieldRow.push({ userEnteredValue: { formulaValue: createFinalSubjectAverageFormula(trim1Prom, trim2Prom, trim3Prom) } });
             }
 
             subjectOffset += field.subjects;
