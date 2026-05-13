@@ -19,3 +19,12 @@
 # General
 * [x] Switch from using `formattedValue` to use `effectiveValue`.
 * [ ] Use `createRequiredGetter` and siplified names everywhere.
+* [ ] Maybe, just maybe, instead of hardcoding student names, subject names and academic field names, make them references to the persistent data.
+
+# Menu
+## Assistance
+* [ ] Recalculate periods
+
+## Persistant Data
+* [ ] Normalize weights (for grades and subjects) 
+* [ ] Change weights
