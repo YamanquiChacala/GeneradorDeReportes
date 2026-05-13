@@ -143,6 +143,24 @@ export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, 
     return result;
 }
 
+// TODO: Tests for this
+/**
+ * Calculates a new shifted range and the resulting offset for sequential ranges.
+ */
+export function calculateRangeShift(
+    originRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    dataLength: number,
+    currentOffset: number,
+): { newRange: GoogleAppsScript.Sheets.Schema.GridRange; nextRowOffset: number } {
+    const oldHeight = (originRange.endRowIndex ?? 0) - (originRange.startRowIndex ?? 0);
+    const newRange = offsetGridRange({ origin: originRange, rowOffset: currentOffset, height: dataLength });
+
+    return {
+        newRange,
+        nextRowOffset: currentOffset + dataLength - oldHeight,
+    };
+}
+
 /**
  * Creates a banding for alternating cell backgrounds in a given hue [0,1]
  */
