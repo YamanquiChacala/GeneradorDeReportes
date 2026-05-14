@@ -1,17 +1,17 @@
 import { BASE_ASSISTANCE_PROTECTED_RANGE } from "../../common/constants";
 import { MergeType, PasteType } from "../../common/gas-enums";
-import { ReportSheetSchema } from "../../common/sheet-schema";
-import { getDistinctHues } from "../../common/utils/color-utils";
-import { buildFieldsMask } from "../../common/utils/gas-types";
 import {
     buildCopyPasteRequest,
-    buildTransferRequests,
+    buildTransferRequestsBackup,
     createBanding,
     createRange,
     createSingleCellRange,
     getColumnLetter,
     offsetGridRange,
-} from "../../common/utils/gas-utils";
+} from "../../common/gas-utils";
+import { ReportSheetSchema } from "../../common/sheet-schema";
+import { getDistinctHues } from "../../common/utils/color-utils";
+import { buildFieldsMask } from "../../common/utils/gas-types";
 import { type ExtractRangeNames, MappedNamedRange, type ParsedSpreadsheet } from "../../common/utils/mapped-name-range";
 import type { ReportPersistentData } from "../../common/utils/report-utils";
 
@@ -300,7 +300,7 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
     const totalColumns = days.length;
 
     // Combine Rows 1, 2, and 3 into a single highly optimized transfer
-    const bulkDataTransfer = buildTransferRequests({
+    const bulkDataTransfer = buildTransferRequestsBackup({
         destination: {
             sheetId,
             startRowIndex: 0,
@@ -436,7 +436,7 @@ function addStudentLists(
         // Copy the data for all the subjects and students.
         const subjectStudentListDataRange = createRange(sheetId, frozenRows, 0, space * data.subjects.length, frozenCols);
         studentListDataRequests.push(
-            ...buildTransferRequests({
+            ...buildTransferRequestsBackup({
                 destination: subjectStudentListDataRange,
                 data: subjectStudentListData,
                 fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
@@ -461,7 +461,7 @@ function addStudentLists(
         }
 
         studentListDataRequests.push(
-            ...buildTransferRequests({
+            ...buildTransferRequestsBackup({
                 destination: studentListDataRange,
                 data: studentGroup(frozenRows + 1),
                 fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),

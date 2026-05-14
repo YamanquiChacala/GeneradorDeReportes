@@ -1,14 +1,9 @@
 import { Dimension, PasteType } from "../gas-enums";
-import {
-    buildCopyPasteRequest,
-    buildTransferRequests,
-    changeGridRangeSheet,
-    colorToHex,
-    createSingleCellRange,
-    getColumnLetter,
-    makeUserEntered,
-    offsetGridRange,
-} from "./gas-utils";
+import { makeUserEntered } from ".";
+import { colorToHex } from "./color";
+import { getColumnLetter } from "./notation";
+import { changeGridRangeSheet, createSingleCellRange, offsetGridRange } from "./range";
+import { buildCopyPasteRequest, buildTransferRequestsBackup } from "./request";
 
 describe("googleAPI Utilities", () => {
     describe("getColumnLetter", () => {
@@ -243,7 +238,7 @@ describe("googleAPI Utilities", () => {
         ];
 
         it("should return an updateCells request with correctly mapped values when adaptRange is false", () => {
-            const requests = buildTransferRequests({ destination, data, fields: "userEnteredValue", adaptRange: false });
+            const requests = buildTransferRequestsBackup({ destination, data, fields: "userEnteredValue", adaptRange: false });
             expect(requests.length).toBe(1);
 
             const updateReq = requests[0]?.updateCells;
@@ -270,12 +265,12 @@ describe("googleAPI Utilities", () => {
         });
 
         it("should return no requests if data is empty and adaptRange is true", () => {
-            const requests = buildTransferRequests({ destination, data: [], fields: "userEnteredValue", adaptRange: true });
+            const requests = buildTransferRequestsBackup({ destination, data: [], fields: "userEnteredValue", adaptRange: true });
             expect(requests.length).toBe(0);
         });
 
         it("should return no requests if destination is undefined", () => {
-            const requests = buildTransferRequests({ destination: undefined, data, fields: "userEnteredValue", adaptRange: true });
+            const requests = buildTransferRequestsBackup({ destination: undefined, data, fields: "userEnteredValue", adaptRange: true });
             expect(requests.length).toBe(0);
         });
 
@@ -289,7 +284,7 @@ describe("googleAPI Utilities", () => {
                 endColumnIndex: 1,
             };
 
-            const requests = buildTransferRequests({ destination: smallDest, data, fields: "userEnteredValue", adaptRange: true });
+            const requests = buildTransferRequestsBackup({ destination: smallDest, data, fields: "userEnteredValue", adaptRange: true });
 
             // Expected: 1 insertRows + 1 insertCols + 1 updateCells = 3 requests
             expect(requests.length).toBe(3);

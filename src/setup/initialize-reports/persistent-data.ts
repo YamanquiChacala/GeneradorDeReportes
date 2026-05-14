@@ -1,7 +1,8 @@
 import { MS_PER_DAY } from "../../common/constants";
+import { buildTransferRequestsBackup, getEpochDate, getSheetsDate } from "../../common/gas-utils";
+import { colorToHex } from "../../common/gas-utils/color";
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
 import { buildFieldsMask } from "../../common/utils/gas-types";
-import { buildTransferRequests, colorToHex, getEpochDate, getSheetsDate } from "../../common/utils/gas-utils";
 import { type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
 import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/utils/report-utils";
 import { sanitizeSheetName } from "../../common/utils/text-utils";
@@ -169,7 +170,7 @@ function getCalendarDays(
         }
     }
 
-    const requests = buildTransferRequests({
+    const requests = buildTransferRequestsBackup({
         destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.calendarDates]?.range,
         data: sheetDays,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
@@ -243,7 +244,7 @@ function getStudents(
         }
     }
 
-    const requests = buildTransferRequests({
+    const requests = buildTransferRequestsBackup({
         destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.students]?.range,
         data: studentReportData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
@@ -394,14 +395,14 @@ function buildReportFieldsAndSubjects(
         subjectsData.push(weightedSubjectDataRow);
     }
 
-    const subjectsRequests = buildTransferRequests({
+    const subjectsRequests = buildTransferRequestsBackup({
         destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.subjects]?.range,
         data: subjectsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         adaptRange: true,
     });
 
-    const fieldsRequests = buildTransferRequests({
+    const fieldsRequests = buildTransferRequestsBackup({
         destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.fields]?.range,
         data: fieldsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),

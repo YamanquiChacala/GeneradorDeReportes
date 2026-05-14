@@ -1,8 +1,8 @@
 import { DEFAULT_COMMENT, TRIMESTER_NAMES } from "../../common/constants";
 import { Dimension, MergeType } from "../../common/gas-enums";
+import { buildAddNamedRangeRequest, buildMergeCellsRequest, buildTransferRequestsBackup, getA1Notation, getColumnLetter, offsetGridRange } from "../../common/gas-utils";
 import { ReportSheetSchema } from "../../common/sheet-schema";
 import { buildFieldsMask } from "../../common/utils/gas-types";
-import { buildAddNamedRangeRequest, buildMergeCellsRequest, buildTransferRequests, getA1Notation, getColumnLetter, offsetGridRange } from "../../common/utils/gas-utils";
 import { createRequiredGetter, type ExtractRangeNames, type MappedNamedRange, type ParsedSpreadsheet } from "../../common/utils/mapped-name-range";
 import {
     type AcademicField,
@@ -234,7 +234,7 @@ function prepareInfo(namedRanges: Partial<Record<RangeName, MappedNamedRange>>, 
         ]);
     }
 
-    return buildTransferRequests({
+    return buildTransferRequestsBackup({
         destination: namedRanges[ReportSheetSchema.sheets.studentTemplate.ranges.generalInfo]?.range,
         data: dataData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
@@ -255,7 +255,7 @@ function prepareAbilities(namedRanges: Partial<Record<RangeName, MappedNamedRang
         abilitiesData.push([{ userEnteredValue: { stringValue: weightedSubject.subject } }]);
     }
 
-    return buildTransferRequests({
+    return buildTransferRequestsBackup({
         destination: abilitiesRange,
         data: abilitiesData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue"),
@@ -284,7 +284,7 @@ function prepareComments(namedRanges: Partial<Record<RangeName, MappedNamedRange
         ]);
     }
 
-    return buildTransferRequests({
+    return buildTransferRequestsBackup({
         destination: commentsRange,
         data: commentData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
@@ -384,7 +384,7 @@ function prepareSubjects(namedRanges: Partial<Record<RangeName, MappedNamedRange
         }
 
         requests.push(
-            ...buildTransferRequests({
+            ...buildTransferRequestsBackup({
                 destination: subjectRange,
                 data: subjectData,
                 fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
@@ -521,7 +521,7 @@ function prepareFields(namedRanges: Partial<Record<RangeName, MappedNamedRange>>
         }
 
         requests.push(
-            ...buildTransferRequests({
+            ...buildTransferRequestsBackup({
                 destination: fieldsRange,
                 data: fieldData,
                 fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),

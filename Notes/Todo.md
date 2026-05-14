@@ -2,6 +2,7 @@
 ## Persistent Data
 * [x] Number each student by groups
 * [x] Generate sheet name from student names.
+* [ ] Refactor to update ranges from within `buildTransferRequests` function.
 
 ## Assistance
 * [x] Unbound `Validation` and `Conditional Format` from `faltasValidFormCond` cell.
