@@ -1,4 +1,6 @@
+import { SETUP_FILE_PREFIX } from "../../common/constants";
 import { FileType } from "../../common/enums";
+import { ValueInputOption } from "../../common/gas-enums";
 import { SetupSheetSchema } from "../../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
 import { defineRangesDataConfig, type MappedInput } from "../../common/utils/gas-types";
@@ -24,7 +26,7 @@ export type SetupFileData = { folderId: string } & {
 export function createSetupFile(initData: SetupFileData) {
     // ========== Create File ============
 
-    const fileName = `__Registro Inicial - ${initData.groupName}`;
+    const fileName = `${SETUP_FILE_PREFIX}${initData.groupName}`;
 
     const newFile = Drive?.Files.copy(
         {
@@ -67,7 +69,7 @@ export function createSetupFile(initData: SetupFileData) {
 
     Sheets?.Spreadsheets.Values.batchUpdate(
         {
-            valueInputOption: "USER_ENTERED",
+            valueInputOption: ValueInputOption.USER_ENTERED,
             data: updateData,
         },
         newFileId,

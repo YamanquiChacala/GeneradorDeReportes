@@ -60,3 +60,9 @@ export enum MergeType {
     MERGE_COLUMNS = "MERGE_COLUMNS",
     MERGE_ROWS = "MERGE_ROWS",
 }
+
+export enum ValueInputOption {
+    INPUT_VALUE_OPTION_UNSPECIFIED = "INPUT_VALUE_OPTION_UNSPECIFIED",
+    RAW = "RAW",
+    USER_ENTERED = "USER_ENTERED",
+}

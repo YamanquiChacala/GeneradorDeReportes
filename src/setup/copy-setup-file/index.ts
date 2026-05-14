@@ -1,4 +1,6 @@
+import { SETUP_FILE_PREFIX } from "../../common/constants";
 import { FileType } from "../../common/enums";
+import { ValueInputOption } from "../../common/gas-enums";
 import { SetupSheetSchema } from "../../common/sheet-schema";
 import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
 
@@ -6,7 +8,7 @@ import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
  * Copies the SetupFile `fileId` changing the group name and saves it into `folderId`.
  */
 export function copySetupFile(setupFileId: string, folderId: string | undefined, groupName: string) {
-    const filename = `__Registro ${groupName}`;
+    const filename = `${SETUP_FILE_PREFIX}${groupName}`;
 
     const fileRequest: GoogleAppsScript.Drive_v3.Drive.V3.Schema.File = {
         name: filename,
@@ -26,5 +28,7 @@ export function copySetupFile(setupFileId: string, folderId: string | undefined,
 
     if (!newFileId) throw new Error("Error al crear copia del Regirsto Inicial");
 
-    Sheets?.Spreadsheets.Values.update({ values: [[groupName]] }, newFileId, SetupSheetSchema.sheets.groupData.ranges.groupName, { valueInputOption: "USER_ENTERED" });
+    Sheets?.Spreadsheets.Values.update({ values: [[groupName]] }, newFileId, SetupSheetSchema.sheets.groupData.ranges.groupName, {
+        valueInputOption: ValueInputOption.USER_ENTERED,
+    });
 }
