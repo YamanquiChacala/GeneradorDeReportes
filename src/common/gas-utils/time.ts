@@ -1,6 +1,5 @@
 import { MS_PER_DAY, SHEETS_EPOCH_OFFSET } from "../constants";
 
-//TODO: Make tests for these 2:
 /**
  * Converts a Unix Epoch into a Sheets Epoch.
  */
