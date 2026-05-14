@@ -17,17 +17,21 @@ export function fillPersistentData(
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     data: ReportPersistentData;
 } {
+    let rowOffset = 0;
+
     // Get general configuration data
     const { requests: configRequests, configData } = getConfigData(setupRanges, reportRanges);
 
-    // Get calendar days
-    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupRanges, reportRanges);
+    // Get Academic Fields and subjects
+    const { requests: subjectRequests, academicFields, subjects, newRowOffset: subjectsOffset } = getSubjects(setupRanges, reportRanges, configData.averagePerField);
+    rowOffset = subjectsOffset;
 
     // Get Students
-    const { requests: studentRequests, students } = getStudents(setupRanges, reportRanges);
+    const { requests: studentRequests, students, newRowOffset: studentOffset } = getStudents(setupRanges, reportRanges, rowOffset);
+    rowOffset = studentOffset;
 
-    // Get Academic Fields and subjects
-    const { requests: subjectRequests, academicFields, subjects } = getSubjects(setupRanges, reportRanges, configData.averagePerField);
+    // Get calendar days
+    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupRanges, reportRanges, rowOffset);
 
     // Build response
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...calendarDaysRequests, ...studentRequests, ...subjectRequests];
@@ -136,6 +140,7 @@ function getConfigData(
 function getCalendarDays(
     setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
+    rowOffset: number,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     calendar: number[];
@@ -170,12 +175,19 @@ function getCalendarDays(
         }
     }
 
+    const getRange = createRequiredGetter(reportRanges);
+
+    const originCalendarRange = getRange(ReportSheetSchema.sheets.persistentData.ranges.calendarDates);
+    const calendarRange = offsetGridRange({ origin: originCalendarRange.range, rowOffset, height: sheetDays.length });
+
     const requests = buildTransferRequestsBackup({
         destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.calendarDates]?.range,
         data: sheetDays,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
         adaptRange: true,
     });
+
+    originCalendarRange.range = calendarRange;
 
     return { requests, calendar };
 }
@@ -186,9 +198,11 @@ function getCalendarDays(
 function getStudents(
     setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
+    rowOffset: number,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     students: StudentRow[];
+    newRowOffset: number;
 } {
     const students: StudentRow[] = [];
 
@@ -244,6 +258,12 @@ function getStudents(
         }
     }
 
+    const getRange = createRequiredGetter(reportRanges);
+
+    const originStudentsRange = getRange(ReportSheetSchema.sheets.persistentData.ranges.students);
+
+    const { newRange: studentsRange, nextRowOffset } = calculateRangeShift(originStudentsRange.range, studentReportData.length, rowOffset);
+
     const requests = buildTransferRequestsBackup({
         destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.students]?.range,
         data: studentReportData,
@@ -251,7 +271,10 @@ function getStudents(
         adaptRange: true,
     });
 
-    return { requests, students };
+    // Update range in memory.
+    originStudentsRange.range = studentsRange;
+
+    return { requests, students, newRowOffset: nextRowOffset };
 }
 
 /**
@@ -265,6 +288,7 @@ function getSubjects(
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     academicFields: AcademicField[];
     subjects: WeightedSubject[];
+    newRowOffset: number;
 } {
     const academicFields: AcademicField[] = [];
     const subjects: WeightedSubject[] = [];
@@ -362,9 +386,9 @@ function getSubjects(
         }
     }
 
-    const requests = buildReportFieldsAndSubjects(reportRanges, academicFields, subjects);
+    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportRanges, academicFields, subjects, 0);
 
-    return { requests, academicFields, subjects };
+    return { requests, academicFields, subjects, newRowOffset };
 }
 
 /**
@@ -374,7 +398,13 @@ function buildReportFieldsAndSubjects(
     reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
     academicFields: AcademicField[],
     subjects: WeightedSubject[],
-): GoogleAppsScript.Sheets.Schema.Request[] {
+    rowOffset: 0,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const ranges = ReportSheetSchema.sheets.persistentData.ranges;
+    const getRange = createRequiredGetter(reportRanges);
+
+    const newRowOffset = rowOffset;
+
     const fieldsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
     const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
@@ -395,19 +425,30 @@ function buildReportFieldsAndSubjects(
         subjectsData.push(weightedSubjectDataRow);
     }
 
-    const subjectsRequests = buildTransferRequestsBackup({
-        destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.subjects]?.range,
-        data: subjectsData,
-        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        adaptRange: true,
-    });
+    const originFieldsRange = getRange(ranges.fields);
+    const originSubjectsRange = getRange(ranges.subjects);
+
+    const fieldsShift = calculateRangeShift(originFieldsRange.range, fieldsData.length, rowOffset);
 
     const fieldsRequests = buildTransferRequestsBackup({
-        destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.fields]?.range,
+        destination: originFieldsRange.range,
         data: fieldsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         adaptRange: true,
     });
 
-    return [...subjectsRequests, ...fieldsRequests];
+    originFieldsRange.range = fieldsShift.newRange;
+
+    const subjectsShift = calculateRangeShift(originSubjectsRange.range, subjectsData.length, fieldsShift.nextRowOffset);
+
+    const subjectsRequests = buildTransferRequestsBackup({
+        destination: originSubjectsRange.range,
+        data: subjectsData,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        adaptRange: true,
+    });
+
+    originSubjectsRange.range = subjectsShift.newRange;
+
+    return { requests: [...subjectsRequests, ...fieldsRequests], newRowOffset };
 }
