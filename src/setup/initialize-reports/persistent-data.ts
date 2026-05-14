@@ -1,9 +1,8 @@
 import { MS_PER_DAY } from "../../common/constants";
-import { buildTransferRequestsBackup, getEpochDate, getSheetsDate } from "../../common/gas-utils";
-import { colorToHex } from "../../common/gas-utils/color";
+import { buildTransferRequestsBackup, calculateRangeShift, colorToHex, getEpochDate, getSheetsDate, offsetGridRange } from "../../common/gas-utils";
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
 import { buildFieldsMask } from "../../common/utils/gas-types";
-import { type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
+import { createRequiredGetter, type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
 import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/utils/report-utils";
 import { sanitizeSheetName } from "../../common/utils/text-utils";
 
