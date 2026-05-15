@@ -176,9 +176,9 @@ describe("googleAPI Type Utilities", () => {
             expect("SecretData" in result.sheets).toBe(false);
 
             // Check ranges
-            expect(result.namedRanges[schema.sheets.config.ranges.users]).toBeDefined();
-            expect(result.namedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
-            expect("HiddenRange" in result.namedRanges).toBe(false);
+            expect(result.mappedRanges[schema.sheets.config.ranges.users]).toBeDefined();
+            expect(result.mappedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
+            expect("HiddenRange" in result.mappedRanges).toBe(false);
         });
     });
 });

@@ -39,20 +39,20 @@ export function generateCalendar(setupFileId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
-    const { sheets, sheetNamedRanges, namedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const { sheets, sheetNamedRanges, mappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Extract and Validate Dates
-    const dates = calculateCalendarDates(namedRanges);
+    const dates = calculateCalendarDates(mappedRanges);
     const calendarSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
 
     // Generate the Day-by-Day data and formats
-    const { rowDataArray, monthBlocks, requests: dayRequests } = buildDayDataAndFormats(dates, namedRanges, calendarSheetId);
+    const { rowDataArray, monthBlocks, requests: dayRequests } = buildDayDataAndFormats(dates, mappedRanges, calendarSheetId);
 
     // Compile all API Requests
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
         ...buildSheetSetupRequests(sheets, sheetNamedRanges, calendarSheetId, dates.totalRows),
         ...dayRequests,
-        ...buildMonthLabelRequests(monthBlocks, rowDataArray, namedRanges, calendarSheetId),
+        ...buildMonthLabelRequests(monthBlocks, rowDataArray, mappedRanges, calendarSheetId),
         ...buildFinalizationRequests(rowDataArray, dates, calendarSheetId),
     ];
 

@@ -22,22 +22,22 @@ export function prepareStudentTemplate(
     persistentData: ReportPersistentData,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     // Adapt the sheet's ranges
-    const adaptSheetRangesRequests = adaptSizeAndRanges(parsedReport.namedRanges, persistentData);
+    const adaptSheetRangesRequests = adaptSizeAndRanges(parsedReport.mappedRanges, persistentData);
 
     // Fill in data
-    const infoRequests = prepareInfo(parsedReport.namedRanges, persistentData);
+    const infoRequests = prepareInfo(parsedReport.mappedRanges, persistentData);
 
     // Prepare abilities
-    const abilitiesRequests = prepareAbilities(parsedReport.namedRanges, persistentData);
+    const abilitiesRequests = prepareAbilities(parsedReport.mappedRanges, persistentData);
 
     // Prepare comments
-    const commentsRequests = prepareComments(parsedReport.namedRanges, persistentData);
+    const commentsRequests = prepareComments(parsedReport.mappedRanges, persistentData);
 
     // Prepare Trimester 1
-    const subjectRequests = prepareSubjects(parsedReport.namedRanges, persistentData);
+    const subjectRequests = prepareSubjects(parsedReport.mappedRanges, persistentData);
 
     // Prepare Fields
-    const fieldRequests = prepareFields(parsedReport.namedRanges, persistentData);
+    const fieldRequests = prepareFields(parsedReport.mappedRanges, persistentData);
 
     // Build requests
     return [...adaptSheetRangesRequests, ...infoRequests, ...abilitiesRequests, ...commentsRequests, ...subjectRequests, ...fieldRequests];

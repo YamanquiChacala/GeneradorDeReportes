@@ -66,7 +66,7 @@ export function testSchemaValidation() {
                 expect(rawSpreadsheet).toBeTruthy();
                 expect(parsedData).toBeTruthy();
                 expect(parsedData.sheets).toBeTruthy();
-                expect(parsedData.namedRanges).toBeTruthy();
+                expect(parsedData.mappedRanges).toBeTruthy();
             });
 
             for (const [sheetKey, sheetConfig] of Object.entries(config.schema.sheets)) {
@@ -81,7 +81,7 @@ export function testSchemaValidation() {
                         if (config.skipRanges?.includes(rangeName)) continue;
 
                         test(`    [Range] "${rangeKey}" must exist`, () => {
-                            expect(parsedData.namedRanges[rangeName]).toBeTruthy();
+                            expect(parsedData.mappedRanges[rangeName]).toBeTruthy();
                         });
                     }
                 }

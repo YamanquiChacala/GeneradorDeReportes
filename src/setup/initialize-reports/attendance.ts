@@ -30,21 +30,21 @@ export function createAttendanceSheet(
 
     const attendanceSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
 
-    const { frozenCols } = getFrozenRowCols(parsedReport.namedRanges);
+    const { frozenCols } = getFrozenRowCols(parsedReport.mappedRanges);
     const trimesters = calculateTrimesters(persistentData, frozenCols);
 
     const copyTemplateRequests = copyAttendanceTemplate(parsedReport, persistentData, attendanceSheetId);
 
     // Add Attendance dates
-    const datesRequests = addDateHeaders(attendanceSheetId, parsedReport.namedRanges, persistentData.calendar);
+    const datesRequests = addDateHeaders(attendanceSheetId, parsedReport.mappedRanges, persistentData.calendar);
 
     // Add student list(s)
 
-    const { requests: studentListRequest, writableRanges } = addStudentLists(attendanceSheetId, parsedReport.namedRanges, persistentData, trimesters);
+    const { requests: studentListRequest, writableRanges } = addStudentLists(attendanceSheetId, parsedReport.mappedRanges, persistentData, trimesters);
 
     // Put format in the main edit area.
 
-    const formatRequests = formatMainArea(attendanceSheetId, writableRanges, parsedReport.namedRanges, trimesters);
+    const formatRequests = formatMainArea(attendanceSheetId, writableRanges, parsedReport.mappedRanges, trimesters);
 
     // Protect sheet.
 
@@ -81,7 +81,7 @@ function copyAttendanceTemplate(
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
-    const { frozenRows, frozenCols } = getFrozenRowCols(parsedReport.namedRanges);
+    const { frozenRows, frozenCols } = getFrozenRowCols(parsedReport.mappedRanges);
 
     const finalColumnCount = frozenCols + persistenData.calendar.length;
     let finalRowCount = frozenRows;

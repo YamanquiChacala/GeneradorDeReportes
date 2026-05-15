@@ -32,7 +32,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: setupFieldsMask });
-    const { namedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const { mappedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Create report file.
 
@@ -45,7 +45,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     // Fill Report Persistent Data
 
-    const { data: persistentData, requests: persistentDataRequests } = fillPersistentData(setupRanges, parsedReportSheet.namedRanges);
+    const { data: persistentData, requests: persistentDataRequests } = fillPersistentData(setupRanges, parsedReportSheet.mappedRanges);
 
     // Create Attendance sheet
 

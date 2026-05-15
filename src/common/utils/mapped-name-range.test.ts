@@ -230,10 +230,10 @@ describe("MappedNamedRange", () => {
             expect("SecretData" in result.sheets).toBe(false);
 
             // Check strict named ranges mapping
-            expect(result.namedRanges[schema.sheets.config.ranges.users]).toBeDefined();
-            expect(result.namedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
-            expect("HiddenRange" in result.namedRanges).toBe(false);
-            expect("OtherConfigRange" in result.namedRanges).toBe(false); // Valid for the sheet, but not in our explicit schema
+            expect(result.mappedRanges[schema.sheets.config.ranges.users]).toBeDefined();
+            expect(result.mappedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
+            expect("HiddenRange" in result.mappedRanges).toBe(false);
+            expect("OtherConfigRange" in result.mappedRanges).toBe(false); // Valid for the sheet, but not in our explicit schema
 
             // Check the new sheetNamedRanges array
             const configSheetRanges = result.sheetNamedRanges[schema.sheets.config.sheetName];
@@ -249,7 +249,7 @@ describe("MappedNamedRange", () => {
         it("should safely handle undefined data safely", () => {
             const result = parseSpreadsheet(undefined, schema);
             expect(result.sheets).toEqual({});
-            expect(result.namedRanges).toEqual({});
+            expect(result.mappedRanges).toEqual({});
             expect(result.sheetNamedRanges).toEqual({});
         });
     });

@@ -140,7 +140,7 @@ export const MappedNamedRange = {
 export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
     sheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
     sheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>>;
-    namedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
+    mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
 }
 
 /**
@@ -151,7 +151,7 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     const mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>> = {};
     const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
 
-    if (!spreadsheet?.sheets) return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, namedRanges: mappedRanges };
+    if (!spreadsheet?.sheets) return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, mappedRanges: mappedRanges };
 
     const allowedSheetNames = new Set<string>();
     const allowedRangeNames = new Set<string>();
@@ -194,7 +194,7 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
         }
     }
 
-    return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, namedRanges: mappedRanges };
+    return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, mappedRanges: mappedRanges };
 }
 
 /**
