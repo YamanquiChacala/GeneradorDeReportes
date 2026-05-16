@@ -163,12 +163,6 @@ describe("googleAPI Utilities", () => {
 
     describe("Request", () => {
         describe("buildCopyPasteRequest", () => {
-            it("should return undefined if source or destination are missing", () => {
-                const range = { sheetId: 1, startRowIndex: 0 };
-                expect(buildCopyPasteRequest(undefined, range, PasteType.PASTE_NORMAL)).toBeUndefined();
-                expect(buildCopyPasteRequest(range, undefined, PasteType.PASTE_NORMAL)).toBeUndefined();
-            });
-
             it("should build a valid copyPaste request", () => {
                 const source = { sheetId: 1, startRowIndex: 0 };
                 const destination = { sheetId: 2, startRowIndex: 5 };

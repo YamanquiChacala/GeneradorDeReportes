@@ -6,12 +6,10 @@ import { offsetGridRange, type RangeOperationResult, resizeMappedRange } from ".
  * Generates batch update `copyPaste` request to copy data from `origin` into `destination` ranges.
  */
 export function buildCopyPasteRequest(
-    source: GoogleAppsScript.Sheets.Schema.GridRange | undefined,
-    destination: GoogleAppsScript.Sheets.Schema.GridRange | undefined,
+    source: GoogleAppsScript.Sheets.Schema.GridRange,
+    destination: GoogleAppsScript.Sheets.Schema.GridRange,
     pasteType: PasteType,
-): GoogleAppsScript.Sheets.Schema.Request | undefined {
-    if (!source || !destination) return undefined;
-
+): GoogleAppsScript.Sheets.Schema.Request {
     return {
         copyPaste: {
             source,
@@ -25,11 +23,7 @@ export function buildCopyPasteRequest(
 /**
  * Generates batch upate `mergeCells` request.
  */
-export function buildMergeCellsRequest(
-    range: GoogleAppsScript.Sheets.Schema.GridRange | undefined,
-    mergeType: MergeType,
-): GoogleAppsScript.Sheets.Schema.Request | undefined {
-    if (!range) return undefined;
+export function buildMergeCellsRequest(range: GoogleAppsScript.Sheets.Schema.GridRange, mergeType: MergeType): GoogleAppsScript.Sheets.Schema.Request {
     return {
         mergeCells: {
             range,
@@ -43,9 +37,8 @@ export function buildMergeCellsRequest(
  */
 export function buildAddNamedRangeRequest<T extends NestedSheetSchema>(
     name: ExtractRangeNames<T>,
-    range?: GoogleAppsScript.Sheets.Schema.GridRange,
-): GoogleAppsScript.Sheets.Schema.Request | undefined {
-    if (!range) return undefined;
+    range: GoogleAppsScript.Sheets.Schema.GridRange,
+): GoogleAppsScript.Sheets.Schema.Request {
     return {
         addNamedRange: {
             namedRange: {

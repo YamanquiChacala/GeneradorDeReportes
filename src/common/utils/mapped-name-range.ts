@@ -20,7 +20,7 @@ export type ExtractRangeNames<T extends NestedSheetSchema> = {
 }[keyof T["sheets"]];
 
 interface GetCellParams {
-    mappedRange: MappedNamedRange | undefined;
+    mappedRange: MappedNamedRange;
     rowOffset?: number;
     columnOffset?: number;
 }
@@ -77,17 +77,17 @@ export const MappedNamedRange = {
         return result;
     },
 
-    getCellData({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData | undefined {
-        const absoluteRowIndex = (mappedRange?.range.startRowIndex ?? 0) + (rowOffset ?? 0);
-        const absoluteColIndex = (mappedRange?.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
+    getCellData({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData {
+        const absoluteRowIndex = (mappedRange.range.startRowIndex ?? 0) + (rowOffset ?? 0);
+        const absoluteColIndex = (mappedRange.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
 
-        const endRow = mappedRange?.range.endRowIndex;
-        const endColumn = mappedRange?.range.endColumnIndex;
+        const endRow = mappedRange.range.endRowIndex;
+        const endColumn = mappedRange.range.endColumnIndex;
 
-        if ((endRow && absoluteRowIndex >= endRow) || (endColumn && absoluteColIndex >= endColumn)) return undefined;
+        if ((endRow && absoluteRowIndex >= endRow) || (endColumn && absoluteColIndex >= endColumn)) return {};
 
-        const sheetData = mappedRange?.sheet.data;
-        if (!sheetData) return undefined;
+        const sheetData = mappedRange.sheet.data;
+        if (!sheetData) return {};
 
         for (const gridData of sheetData) {
             const startRow = gridData.startRow ?? 0;
@@ -100,30 +100,30 @@ export const MappedNamedRange = {
                 const rowData = gridData.rowData[relativeRow];
 
                 if (relativeCol >= 0 && rowData?.values && relativeCol < rowData.values.length) {
-                    return rowData.values[relativeCol];
+                    return rowData.values[relativeCol] ?? {};
                 }
             }
         }
 
-        return undefined;
+        return {};
     },
 
-    getCellEffectiveValue(args: GetCellParams): GoogleAppsScript.Sheets.Schema.ExtendedValue | undefined {
+    getCellEffectiveValue(args: GetCellParams): GoogleAppsScript.Sheets.Schema.ExtendedValue {
         const cellData = MappedNamedRange.getCellData(args);
 
-        return cellData?.effectiveValue;
+        return cellData.effectiveValue ?? {};
     },
 
     getCellText(args: GetCellParams): string | undefined {
         const effectiveValue = MappedNamedRange.getCellEffectiveValue(args);
 
-        return effectiveValue?.stringValue;
+        return effectiveValue.stringValue;
     },
 
     getCellNumber(args: GetCellParams): number | undefined {
         const effectiveValue = MappedNamedRange.getCellEffectiveValue(args);
 
-        return effectiveValue?.numberValue;
+        return effectiveValue.numberValue;
     },
 
     getCellUnixEpoch(args: GetCellParams): number | undefined {
