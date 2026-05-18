@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Jest Current File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "args": ["./node_modules/jest/bin/jest.js", "${fileBasenameNoExtension}", "--runInBand"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

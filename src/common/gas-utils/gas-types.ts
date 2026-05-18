@@ -1,6 +1,6 @@
 type InputType = "string" | "number" | "boolean" | "date" | "time" | "array";
 
-export type MappedInput<T extends InputType> = T extends "string"
+type MappedInput<T extends InputType> = T extends "string"
     ? string
     : T extends "number"
       ? number
@@ -20,13 +20,6 @@ type MappedParam<T extends ParamType> = T extends "string" ? string : T extends 
 
 /** The part of the event object dealing with form inputs */
 type GASFormInputs = GoogleAppsScript.Addons.CommonEventObject["formInputs"];
-
-/**
- * Helper function to define a type configuration linking a string to a {string, type}
- */
-export function defineRangesDataConfig<T extends Record<string, { range: string; type: InputType }>>(fields: T) {
-    return fields;
-}
 
 /**
  * Helper function to creating Form Input schemas for Cards and Callbacks.
@@ -150,42 +143,4 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
         }
     }
     return result as Partial<{ [K in keyof T]: MappedInput<T[K]> }>;
-}
-
-/**
- * Recursively unwraps Arrays.
- * E.g., Sheet[] becomes Sheet. Sheet[][] becomes Sheet.
- */
-type UnwrapArray<T> = T extends Array<infer U> ? UnwrapArray<U> : T;
-
-/**
- * A hardcoded tuple to limit TypeScript's recursion depth.
- * 5 levels deep is perfect for Sheets API (e.g., sheets.data.rowData.values.effectiveValue.numberValue).
- */
-type Decrement = [never, 0, 1, 2, 3, 4, 5];
-
-/**
- * The magic type. It extracts all keys, unwraps arrays, ignores optional (?) markers,
- * and recursively builds a union of all valid dot-notation paths.
- */
-type FieldPaths<T, Depth extends Decrement[number] = 5> = [Depth] extends [never]
-    ? never
-    : T extends object
-      ? {
-            [K in keyof T]-?: K extends string
-                ? UnwrapArray<NonNullable<T[K]>> extends object
-                    ? // If it's an object, we keep the parent key OR recurse deeper
-                      K | `${K}.${FieldPaths<UnwrapArray<NonNullable<T[K]>>, Decrement[Depth]>}`
-                    : // If it's a primitive (string, number), we just return the key
-                      K
-                : never;
-        }[keyof T]
-      : never;
-
-/**
- * Takes an array of type-checked dot-notation strings and joins them into a mask.
- * You pass the Google Apps Script Schema interface as the generic <T>.
- */
-export function buildFieldsMask<T>(...paths: FieldPaths<T>[]): string {
-    return paths.join(",");
 }

@@ -1,48 +1,66 @@
 import { MS_PER_DAY } from "../../common/constants";
-import { buildTransferRequestsBackup, calculateRangeShift, colorToHex, getEpochDate, getSheetsDate, offsetGridRange } from "../../common/gas-utils";
-import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
-import { buildFieldsMask } from "../../common/utils/gas-types";
-import { createRequiredGetter, type ExtractRangeNames, MappedNamedRange } from "../../common/utils/mapped-name-range";
-import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/utils/report-utils";
-import { sanitizeSheetName } from "../../common/utils/text-utils";
+import { ReportSheetSchema, SetupSheetSchema } from "../../common/gas-parts";
+import type { ExtractRangeNames } from "../../common/gas-utils";
+import {
+    buildFieldsMask,
+    buildTransferRequests,
+    colorToHex,
+    createRequiredGetter,
+    getCellBoolean,
+    getCellDataArray,
+    getCellNumber,
+    getCellUnixEpoch,
+    getSheetsDate,
+    type MappedNamedRange,
+    makeUserEntered,
+} from "../../common/gas-utils";
+import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/report-utils";
+import { sanitizeSheetName, typedEntries } from "../../common/utils";
+
+type SetupRangeName = ExtractRangeNames<typeof SetupSheetSchema>;
+type ReportRangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
 /**
  * Dumps the setup data into Persistent data in the report.
  */
 export function fillPersistentData(
-    setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
-    reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
+    setupMappedRanges: Partial<Record<SetupRangeName, MappedNamedRange>>,
+    reportMappedRanges: Partial<Record<ReportRangeName, MappedNamedRange>>,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
-    data: ReportPersistentData;
+    persistentData: ReportPersistentData;
 } {
+    // How much we've pushed or pulled rows as we move from top to buttom.
     let rowOffset = 0;
 
-    // Get general configuration data
-    const { requests: configRequests, configData } = getConfigData(setupRanges, reportRanges);
+    // Update general configuration data
+    const { requests: configRequests, configData } = getConfigData(setupMappedRanges, reportMappedRanges);
 
-    // Get Academic Fields and subjects
-    const { requests: subjectRequests, academicFields, subjects, newRowOffset: subjectsOffset } = getSubjects(setupRanges, reportRanges, configData.averagePerField);
+    // Update Academic Fields and subjects
+    const {
+        requests: subjectRequests,
+        newRowOffset: subjectsOffset,
+        academicFields,
+        subjects,
+    } = getSubjects(setupMappedRanges, reportMappedRanges, configData.averagePerField, rowOffset);
     rowOffset = subjectsOffset;
 
-    // Get Students
-    const { requests: studentRequests, students, newRowOffset: studentOffset } = getStudents(setupRanges, reportRanges, rowOffset);
+    // Update Student list
+    const { requests: studentRequests, newRowOffset: studentOffset, students } = getStudents(setupMappedRanges, reportMappedRanges, rowOffset);
     rowOffset = studentOffset;
 
-    // Get calendar days
-    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupRanges, reportRanges, rowOffset);
+    // Update calendar days
+    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupMappedRanges, reportMappedRanges, rowOffset);
 
     // Build response
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...calendarDaysRequests, ...studentRequests, ...subjectRequests];
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...subjectRequests, ...studentRequests, ...calendarDaysRequests];
 
-    const data: ReportPersistentData = {
+    // Build memory version of the sheet, for use without calling get again.
+    const persistentData: ReportPersistentData = {
         protectedSections: {
-            data: true,
             habilities: false,
             comments: false,
-            trim1: false,
-            trim2: true,
-            trim3: true,
+            trimesters: [false, true, true],
         },
         configData,
         calendar,
@@ -51,7 +69,7 @@ export function fillPersistentData(
         subjects,
     };
 
-    return { data: data, requests };
+    return { persistentData, requests };
 }
 
 /**
@@ -66,11 +84,14 @@ function getConfigData(
 } {
     type CellMapDefinition = {
         [K in keyof ConfigData]: {
-            kind: "boolean" | "number" | "date";
-            source: ExtractRangeNames<typeof SetupSheetSchema>;
-            dest: ExtractRangeNames<typeof ReportSheetSchema>;
+            kind: "boolean" | "dateArray" | "numberArray";
+            source: SetupRangeName;
+            dest: ReportRangeName;
         };
     };
+
+    const getSetupRange = createRequiredGetter(setupRanges);
+    const getReportRange = createRequiredGetter(reportRanges);
 
     const cellMapping: CellMapDefinition = {
         attendancePerClass: {
@@ -83,216 +104,90 @@ function getConfigData(
             source: SetupSheetSchema.sheets.groupData.ranges.averagePerField,
             dest: ReportSheetSchema.sheets.persistentData.ranges.averagePerField,
         },
-        dateStart: {
-            kind: "date",
-            source: SetupSheetSchema.sheets.groupData.ranges.dateStart,
-            dest: ReportSheetSchema.sheets.persistentData.ranges.dateStart,
+        dates: {
+            kind: "dateArray",
+            source: SetupSheetSchema.sheets.groupData.ranges.dates,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.dates,
         },
-        dateTrim1: {
-            kind: "date",
-            source: SetupSheetSchema.sheets.groupData.ranges.dateTrim1,
-            dest: ReportSheetSchema.sheets.persistentData.ranges.dateTrim1,
-        },
-        dateTrim2: {
-            kind: "date",
-            source: SetupSheetSchema.sheets.groupData.ranges.dateTrim2,
-            dest: ReportSheetSchema.sheets.persistentData.ranges.dateTrim2,
-        },
-        dateEnd: {
-            kind: "date",
-            source: SetupSheetSchema.sheets.groupData.ranges.dateEnd,
-            dest: ReportSheetSchema.sheets.persistentData.ranges.dateEnd,
+        subjectGradingWeights: {
+            kind: "numberArray",
+            source: SetupSheetSchema.sheets.groupData.ranges.weights,
+            dest: ReportSheetSchema.sheets.persistentData.ranges.subjectGradingWeights,
         },
     };
 
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const configData: Partial<ConfigData> = {};
 
-    const entries = Object.entries(cellMapping) as [keyof ConfigData, CellMapDefinition[keyof ConfigData]][];
-
-    for (const [name, { kind, source, dest }] of entries) {
-        const extendedValue = MappedNamedRange.getCellEffectiveValue({ mappedRange: setupRanges[source] });
+    for (const [name, { kind, source, dest }] of typedEntries(cellMapping)) {
+        const sourceMappedRange = getSetupRange(source);
+        let data: GoogleAppsScript.Sheets.Schema.CellData[][];
         switch (kind) {
             case "boolean":
-                Object.assign(configData, { [name]: extendedValue?.boolValue ?? false });
+                Object.assign(configData, { [name]: getCellBoolean({ mappedRange: sourceMappedRange }) });
+                data = makeUserEntered(getCellDataArray(sourceMappedRange), true);
                 break;
-            case "number":
-                Object.assign(configData, { [name]: extendedValue?.numberValue ?? 0 });
+            case "numberArray":
+                {
+                    const num0 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 0 });
+                    const num1 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 1 });
+                    const num2 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 2 });
+
+                    const sum = num0 + num1 + num2;
+
+                    const factor = sum > 0 ? 1 / sum : 1;
+                    Object.assign(configData, {
+                        [name]: [factor * num0, factor * num1, factor * num2],
+                    });
+                    data = [
+                        [{ userEnteredValue: { numberValue: factor * num0 } }],
+                        [{ userEnteredValue: { numberValue: factor * num1 } }],
+                        [{ userEnteredValue: { numberValue: factor * num2 } }],
+                    ];
+                }
                 break;
-            case "date":
-                Object.assign(configData, { [name]: getEpochDate(extendedValue?.numberValue ?? 0) });
+            case "dateArray":
+                Object.assign(configData, {
+                    [name]: [
+                        getCellUnixEpoch({ mappedRange: sourceMappedRange, rowOffset: 0 }),
+                        getCellUnixEpoch({ mappedRange: sourceMappedRange, rowOffset: 1 }),
+                        getCellUnixEpoch({ mappedRange: sourceMappedRange, rowOffset: 2 }),
+                        getCellUnixEpoch({ mappedRange: sourceMappedRange, rowOffset: 3 }),
+                    ],
+                });
+                data = makeUserEntered(getCellDataArray(sourceMappedRange), true);
+                break;
         }
-        requests.push({
-            repeatCell: {
-                cell: { userEnteredValue: extendedValue },
-                range: reportRanges[dest]?.range,
-                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-            },
+        const { requests } = buildTransferRequests({
+            destination: getReportRange(dest),
+            data,
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         });
+        apiRequests.push(...requests);
     }
-    return { configData: configData as ConfigData, requests };
-}
-
-/**
- * Gets the days of the calendar.
- */
-function getCalendarDays(
-    setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
-    reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
-    rowOffset: number,
-): {
-    requests: GoogleAppsScript.Sheets.Schema.Request[];
-    calendar: number[];
-} {
-    const calendar: number[] = [];
-
-    const initialMillisecond = MappedNamedRange.getCellNumber({ mappedRange: setupRanges[SetupSheetSchema.sheets.calendar.ranges.start] }) ?? 0;
-    const calendarRawData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.calendar.ranges.calendar]);
-
-    if (new Date(initialMillisecond).getUTCDay() !== 0) throw new Error("Calendario no inicia en Domingo.");
-
-    const sheetDays: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-
-    for (const [rowIndex, row] of calendarRawData.entries()) {
-        if (!row) continue;
-
-        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-            const columnIndex = dayIndex * 2 + 1;
-            const cell = row[columnIndex];
-
-            const isChecked = cell?.effectiveValue?.boolValue === true;
-
-            if (isChecked) {
-                const day = initialMillisecond + (rowIndex * 7 + dayIndex) * MS_PER_DAY;
-                calendar.push(day);
-                sheetDays.push([
-                    {
-                        userEnteredValue: { numberValue: getSheetsDate(day) },
-                    },
-                ]);
-            }
-        }
-    }
-
-    const getRange = createRequiredGetter(reportRanges);
-
-    const originCalendarRange = getRange(ReportSheetSchema.sheets.persistentData.ranges.calendarDates);
-    const calendarRange = offsetGridRange({ origin: originCalendarRange.range, rowOffset, height: sheetDays.length });
-
-    const requests = buildTransferRequestsBackup({
-        destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.calendarDates]?.range,
-        data: sheetDays,
-        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
-        adaptRange: true,
-    });
-
-    originCalendarRange.range = calendarRange;
-
-    return { requests, calendar };
-}
-
-/**
- * Gets the students with all their data.
- */
-function getStudents(
-    setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
-    reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
-    rowOffset: number,
-): {
-    requests: GoogleAppsScript.Sheets.Schema.Request[];
-    students: StudentRow[];
-    newRowOffset: number;
-} {
-    const students: StudentRow[] = [];
-
-    const studentSetupData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.groupData.ranges.students], true);
-
-    const studentReportData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-
-    let studentNumber = 0;
-    let firstTime = true;
-    let emptyBefore = false;
-    for (const studentRow of studentSetupData) {
-        const firstName = studentRow[0]?.effectiveValue?.stringValue;
-        const lastName = studentRow[1]?.effectiveValue?.stringValue;
-        if (!firstName || !lastName) {
-            emptyBefore = true;
-            studentNumber = 0;
-            continue;
-        }
-
-        studentNumber++;
-        const sheetName = sanitizeSheetName(`${firstName} ${lastName}`);
-
-        const student: Student = {
-            type: "student",
-            id: studentNumber,
-            firstName,
-            lastName,
-            sheetName,
-            sex: studentRow[2]?.effectiveValue?.stringValue ?? "",
-            level:
-                studentRow[3]?.effectiveValue?.stringValue ??
-                (studentRow[3]?.effectiveValue?.numberValue != null ? `${studentRow[3]?.effectiveValue?.numberValue}º` : ""),
-            grade: studentRow[4]?.effectiveValue?.stringValue ?? "",
-        };
-
-        const studentReportDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
-            { userEnteredValue: { numberValue: studentNumber } },
-            { userEnteredValue: { stringValue: firstName } },
-            { userEnteredValue: { stringValue: lastName } },
-            { userEnteredValue: { stringValue: sheetName } },
-        ];
-        if (emptyBefore && !firstTime) {
-            students.push({ type: "separator" });
-            studentReportData.push([]);
-            emptyBefore = false;
-        }
-
-        students.push(student);
-        studentReportData.push(studentReportDataRow);
-        if (firstTime) {
-            firstTime = false;
-            emptyBefore = false;
-        }
-    }
-
-    const getRange = createRequiredGetter(reportRanges);
-
-    const originStudentsRange = getRange(ReportSheetSchema.sheets.persistentData.ranges.students);
-
-    const { newRange: studentsRange, nextRowOffset } = calculateRangeShift(originStudentsRange.range, studentReportData.length, rowOffset);
-
-    const requests = buildTransferRequestsBackup({
-        destination: reportRanges[ReportSheetSchema.sheets.persistentData.ranges.students]?.range,
-        data: studentReportData,
-        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        adaptRange: true,
-    });
-
-    // Update range in memory.
-    originStudentsRange.range = studentsRange;
-
-    return { requests, students, newRowOffset: nextRowOffset };
+    return { configData: configData as ConfigData, requests: apiRequests };
 }
 
 /**
  * Gets the academic fields and subjects.
  */
 function getSubjects(
-    setupRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>,
-    reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
+    setupMappedRanges: Partial<Record<SetupRangeName, MappedNamedRange>>,
+    reportMappedRanges: Partial<Record<ReportRangeName, MappedNamedRange>>,
     averagePerField: boolean,
+    rowOffset: number,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     academicFields: AcademicField[];
     subjects: WeightedSubject[];
     newRowOffset: number;
 } {
+    const getSetupMappedRange = createRequiredGetter(setupMappedRanges, "rango en registro inicial");
+
     const academicFields: AcademicField[] = [];
     const subjects: WeightedSubject[] = [];
 
-    const setupSubjectData = MappedNamedRange.getCellDataArray(setupRanges[SetupSheetSchema.sheets.groupData.ranges.subjects]);
+    const setupSubjectData = getCellDataArray(getSetupMappedRange(SetupSheetSchema.sheets.groupData.ranges.subjects));
 
     let currentField: AcademicField = {
         name: "",
@@ -302,15 +197,16 @@ function getSubjects(
 
     for (const dataRow of setupSubjectData) {
         const iterator = dataRow[Symbol.iterator]();
+        // Grab first cell of the row.
         const first = iterator.next();
 
-        if (first.done) continue;
+        if (first.done) continue; // the row is empty.
 
         const fieldCell = first.value;
-        const fieldName = (fieldCell?.effectiveValue?.stringValue ?? "").trim();
+        const fieldName = (fieldCell.effectiveValue?.stringValue ?? "").trim();
 
         if (fieldName !== "") {
-            // Save previous Field
+            // Save previous Field if it's complete.
             if (currentField.name !== "" && currentField.color !== "" && currentField.subjects > 0) academicFields.push(currentField);
 
             // Start a new one
@@ -327,12 +223,14 @@ function getSubjects(
             for (const cellData of iterator) {
                 // Find weight
                 const cellNumVal = cellData.effectiveValue?.numberValue;
-                if (cellNumVal) weight = cellNumVal;
+                if (cellNumVal) {
+                    weight = cellNumVal;
+                    continue;
+                }
                 // Find subject name
                 const cellStringVal = (cellData.effectiveValue?.stringValue ?? "").trim();
                 if (cellStringVal !== "") {
                     subject = cellStringVal;
-                    break;
                 }
             }
             if (subject !== "") {
@@ -385,7 +283,7 @@ function getSubjects(
         }
     }
 
-    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportRanges, academicFields, subjects, 0);
+    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportMappedRanges, academicFields, subjects, rowOffset);
 
     return { requests, academicFields, subjects, newRowOffset };
 }
@@ -394,15 +292,13 @@ function getSubjects(
  * Creates the requests to fields and subjects into the persistent data.
  */
 function buildReportFieldsAndSubjects(
-    reportRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
+    mappedRanges: Partial<Record<ReportRangeName, MappedNamedRange>>,
     academicFields: AcademicField[],
     subjects: WeightedSubject[],
-    rowOffset: 0,
+    rowOffset: number,
 ): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
-    const ranges = ReportSheetSchema.sheets.persistentData.ranges;
-    const getRange = createRequiredGetter(reportRanges);
-
-    const newRowOffset = rowOffset;
+    const rangeNames = ReportSheetSchema.sheets.persistentData.ranges;
+    const getNamedRange = createRequiredGetter(mappedRanges);
 
     const fieldsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
     const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
@@ -424,30 +320,159 @@ function buildReportFieldsAndSubjects(
         subjectsData.push(weightedSubjectDataRow);
     }
 
-    const originFieldsRange = getRange(ranges.fields);
-    const originSubjectsRange = getRange(ranges.subjects);
-
-    const fieldsShift = calculateRangeShift(originFieldsRange.range, fieldsData.length, rowOffset);
-
-    const fieldsRequests = buildTransferRequestsBackup({
-        destination: originFieldsRange.range,
+    const { requests: fieldRequests, rowOffset: fieldsRowOffset } = buildTransferRequests({
+        destination: getNamedRange(rangeNames.fields),
         data: fieldsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         adaptRange: true,
+        rowOffset,
     });
 
-    originFieldsRange.range = fieldsShift.newRange;
-
-    const subjectsShift = calculateRangeShift(originSubjectsRange.range, subjectsData.length, fieldsShift.nextRowOffset);
-
-    const subjectsRequests = buildTransferRequestsBackup({
-        destination: originSubjectsRange.range,
+    const { requests: subjectRequests, rowOffset: subjectRowOffset } = buildTransferRequests({
+        destination: getNamedRange(rangeNames.subjects),
         data: subjectsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
         adaptRange: true,
+        rowOffset: fieldsRowOffset,
     });
 
-    originSubjectsRange.range = subjectsShift.newRange;
+    return { requests: [...fieldRequests, ...subjectRequests], newRowOffset: subjectRowOffset };
+}
 
-    return { requests: [...subjectsRequests, ...fieldsRequests], newRowOffset };
+/**
+ * Gets the students with all their data.
+ */
+function getStudents(
+    setupNamedRanges: Partial<Record<SetupRangeName, MappedNamedRange>>,
+    reportNamedRanges: Partial<Record<ReportRangeName, MappedNamedRange>>,
+    rowOffset: number,
+): {
+    requests: GoogleAppsScript.Sheets.Schema.Request[];
+    students: StudentRow[];
+    newRowOffset: number;
+} {
+    const students: StudentRow[] = [];
+
+    const getSetupNamedRange = createRequiredGetter(setupNamedRanges, "rango de registro inicial");
+    const getReportNamedRange = createRequiredGetter(reportNamedRanges, "rango de reporte");
+
+    // Unbound rows to get all students, even if the sheet grew past the range.
+    const studentSetupData = getCellDataArray(getSetupNamedRange(SetupSheetSchema.sheets.groupData.ranges.students), true);
+
+    const studentReportData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    let studentNumber = 0;
+    let firstTime = true;
+    let emptyBefore = false;
+    for (const studentRow of studentSetupData) {
+        const firstName = studentRow[0]?.effectiveValue?.stringValue;
+        const lastName = studentRow[1]?.effectiveValue?.stringValue;
+        if (!firstName || !lastName) {
+            emptyBefore = true;
+            studentNumber = 0;
+            continue;
+        }
+
+        studentNumber++;
+        const sheetName = sanitizeSheetName(`${firstName} ${lastName}`);
+
+        const student: Student = {
+            type: "student",
+            id: studentNumber,
+            firstName,
+            lastName,
+            sheetName,
+            // TODO: Maybe mark these as optional.
+            sex: studentRow[2]?.effectiveValue?.stringValue ?? "",
+            level:
+                studentRow[3]?.effectiveValue?.stringValue ??
+                (studentRow[3]?.effectiveValue?.numberValue != null ? `${studentRow[3]?.effectiveValue?.numberValue}º` : ""),
+            grade: studentRow[4]?.effectiveValue?.stringValue ?? "",
+        };
+
+        const studentReportDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { numberValue: studentNumber } },
+            { userEnteredValue: { stringValue: firstName } },
+            { userEnteredValue: { stringValue: lastName } },
+            { userEnteredValue: { stringValue: sheetName } },
+        ];
+        if (emptyBefore && !firstTime) {
+            students.push({ type: "separator" });
+            studentReportData.push([]);
+            emptyBefore = false;
+        }
+
+        students.push(student);
+        studentReportData.push(studentReportDataRow);
+        if (firstTime) {
+            firstTime = false;
+            emptyBefore = false;
+        }
+    }
+
+    const { requests, rowOffset: studentRowOffset } = buildTransferRequests({
+        destination: getReportNamedRange(ReportSheetSchema.sheets.persistentData.ranges.students),
+        data: studentReportData,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        adaptRange: true,
+        rowOffset,
+    });
+
+    return { requests, students, newRowOffset: studentRowOffset };
+}
+
+/**
+ * Gets the days of the calendar.
+ */
+function getCalendarDays(
+    setupNamedRanges: Partial<Record<SetupRangeName, MappedNamedRange>>,
+    reportNamedRanges: Partial<Record<ReportRangeName, MappedNamedRange>>,
+    rowOffset: number,
+): {
+    requests: GoogleAppsScript.Sheets.Schema.Request[];
+    calendar: number[];
+    newRowOffset: number;
+} {
+    const getSetupNamedRange = createRequiredGetter(setupNamedRanges, "rango de registro inicial");
+    const getReportNamedRange = createRequiredGetter(reportNamedRanges, "rango de reporte");
+
+    const calendar: number[] = [];
+
+    const initialMillisecond = getCellNumber({ mappedRange: getSetupNamedRange(SetupSheetSchema.sheets.calendar.ranges.start) });
+    const calendarRawData = getCellDataArray(getSetupNamedRange(SetupSheetSchema.sheets.calendar.ranges.calendar));
+
+    if (new Date(initialMillisecond).getUTCDay() !== 0) throw new Error("Calendario no inicia en Domingo.");
+
+    const sheetDays: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    for (const [rowIndex, row] of calendarRawData.entries()) {
+        if (!row) continue;
+
+        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+            const columnIndex = dayIndex * 2 + 1;
+            const cell = row[columnIndex];
+
+            const isChecked = cell?.effectiveValue?.boolValue === true;
+
+            if (isChecked) {
+                const day = initialMillisecond + (rowIndex * 7 + dayIndex) * MS_PER_DAY;
+                calendar.push(day);
+                sheetDays.push([
+                    {
+                        userEnteredValue: { numberValue: getSheetsDate(day) },
+                    },
+                ]);
+            }
+        }
+    }
+
+    const { requests, rowOffset: calendaRowOffset } = buildTransferRequests({
+        destination: getReportNamedRange(ReportSheetSchema.sheets.persistentData.ranges.calendarDates),
+        data: sheetDays,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
+        adaptRange: true,
+        rowOffset,
+    });
+
+    return { requests, calendar, newRowOffset: calendaRowOffset };
 }

@@ -1,5 +1,4 @@
-import { MONTH_NAMES } from "../constants";
-import { CssColorMap, isColorKey } from "../enums";
+import { CssColorMap, isColorKey, MONTH_NAMES } from "../constants";
 
 /**
  * Normalizes unicode, collapses multiple spaces, and trims edges.

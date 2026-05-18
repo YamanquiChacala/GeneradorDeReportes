@@ -1,12 +1,12 @@
-import { FileType } from "../../common/enums";
-import { ReportSheetSchema, SetupSheetSchema } from "../../common/sheet-schema";
-import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
-import { buildFieldsMask } from "../../common/utils/gas-types";
-import { type ExtractRangeNames, MappedNamedRange, parseSpreadsheet } from "../../common/utils/mapped-name-range";
-import { sanitizeFileName } from "../../common/utils/text-utils";
+import { FileType } from "../../common/constants";
+import { FILE_VALIDATION_KEY, ReportSheetSchema, SetupSheetSchema } from "../../common/gas-parts";
+import { buildFieldsMask, createRequiredGetter, type ExtractRangeNames, getCellText, type MappedNamedRange, parseSpreadsheet } from "../../common/gas-utils";
+import { sanitizeFileName } from "../../common/utils";
 import { createAttendanceSheet } from "./attendance";
 import { fillPersistentData } from "./persistent-data";
 import { prepareStudentTemplate } from "./student-template";
+
+type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
 
 /**
  * Initializes a Report spreadsheet in the same folder as the setupFile, with the information from the Setup file.
@@ -32,11 +32,11 @@ export function initializeReport(setupFileId: string, parentId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: setupFieldsMask });
-    const { mappedRanges: setupRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const { mappedRanges: setupMappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Create report file.
 
-    const reportFileId = createReportFile(parentId, setupRanges);
+    const reportFileId = createReportFile(parentId, setupMappedRanges);
 
     // Fetch and parse report file data
 
@@ -45,7 +45,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
 
     // Fill Report Persistent Data
 
-    const { data: persistentData, requests: persistentDataRequests } = fillPersistentData(setupRanges, parsedReportSheet.mappedRanges);
+    const { persistentData, requests: persistentDataRequests } = fillPersistentData(setupMappedRanges, parsedReportSheet.mappedRanges);
 
     // Create Attendance sheet
 
@@ -54,6 +54,10 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // Prepare Student template sheet
 
     const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet, persistentData);
+
+    // TODO: Create each Student sheet
+    // TODO: Prepare Summary sheet
+    // TODO: Prepare Status sheet
 
     // ============ Batch Changes ==============
 
@@ -67,9 +71,11 @@ export function initializeReport(setupFileId: string, parentId: string) {
 /**
  * Creates an empty report file in the given folder, with the name from the setup file.
  */
-function createReportFile(parentId: string, setupFileRanges: Partial<Record<ExtractRangeNames<typeof SetupSheetSchema>, MappedNamedRange>>): string {
-    const groupNameRange = setupFileRanges[SetupSheetSchema.sheets.groupData.ranges.groupName];
-    const groupName = MappedNamedRange.getCellText({ mappedRange: groupNameRange });
+function createReportFile(parentId: string, setupMappedRanges: Partial<Record<RangeName, MappedNamedRange>>): string {
+    const getRange = createRequiredGetter(setupMappedRanges, "rango de registro inicial");
+
+    const groupMappedRange = getRange(SetupSheetSchema.sheets.groupData.ranges.groupName);
+    const groupName = getCellText({ mappedRange: groupMappedRange });
 
     if (!groupName) throw new Error("Falta nombre del grupo.");
 

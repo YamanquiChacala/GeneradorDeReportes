@@ -1,5 +1,6 @@
-import { getA1Notation, getColumnLetter } from "../gas-utils";
-import { formatDateRange } from "./text-utils";
+import type { MappedNamedRange } from "./gas-utils";
+import { getA1Notation, getColumnLetter } from "./gas-utils";
+import { formatDateRange } from "./utils";
 
 export interface ReportPersistentData {
     configData: ConfigData;
@@ -13,19 +14,14 @@ export interface ReportPersistentData {
 export interface ConfigData {
     attendancePerClass: boolean;
     averagePerField: boolean;
-    dateStart: number;
-    dateTrim1: number;
-    dateTrim2: number;
-    dateEnd: number;
+    dates: [number, number, number, number];
+    subjectGradingWeights: [number, number, number];
 }
 
 interface ProtectedSections {
-    data: boolean;
     habilities: boolean;
     comments: boolean;
-    trim1: boolean;
-    trim2: boolean;
-    trim3: boolean;
+    trimesters: [boolean, boolean, boolean];
 }
 
 export interface AcademicField {
@@ -61,18 +57,18 @@ interface StudentSpace {
  */
 export function createStudentAsistanceFormula(
     period: 0 | 1 | 2,
-    firstNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    lastNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    assistanceSheetName: string,
+    firstNameMappedRange: MappedNamedRange,
+    lastNameMappedRange: MappedNamedRange,
+    attendanceSheetName: string,
     absences = false,
 ): string {
-    const firstNameA1 = getA1Notation(firstNameRange, true, true, true);
-    const lastNameA1 = getA1Notation(lastNameRange, true, true, true);
+    const firstNameA1 = getA1Notation({ mappedRange: firstNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const lastNameA1 = getA1Notation({ mappedRange: lastNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
     const returnColumn = getColumnLetter((absences ? 4 : 3) + period * 2);
     return `=LET(
-    first_names, ${assistanceSheetName}!B:B,
-    last_names, ${assistanceSheetName}!C:C,
-    return_data, ${assistanceSheetName}!${returnColumn}:${returnColumn},
+    first_names, '${attendanceSheetName}'!B:B,
+    last_names, '${attendanceSheetName}'!C:C,
+    return_data, '${attendanceSheetName}'!${returnColumn}:${returnColumn},
     XLOOKUP(${firstNameA1}&${lastNameA1}, ARRAYFORMULA(first_names&last_names), return_data)
 )`;
 }
@@ -82,35 +78,36 @@ export function createStudentAsistanceFormula(
  */
 export function createStudentAsistancePerSubjectFormula(
     period: 0 | 1 | 2,
-    subjectRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    firstNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    lastNameRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    assistanceSheetName: string,
+    subjectRange: MappedNamedRange,
+    rowOffset: number,
+    lastNameRange: MappedNamedRange,
+    firstNameRange: MappedNamedRange,
+    attendanceSheetName: string,
 ): string {
-    const subjectA1 = getA1Notation(subjectRange, true, false, true);
-    const firstNameA1 = getA1Notation(firstNameRange, true, true, true);
-    const lastNameA1 = getA1Notation(lastNameRange, true, true, true);
+    const subjectA1 = getA1Notation({ mappedRange: subjectRange, width: 1, height: 1, rowOffset, lockColumns: true });
+    const firstNameA1 = getA1Notation({ mappedRange: firstNameRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const lastNameA1 = getA1Notation({ mappedRange: lastNameRange, width: 1, height: 1, lockRows: true, lockColumns: true });
     const returnColum = getColumnLetter(3 + period * 2);
     return `=LET(
-    start_row, MATCH(${subjectA1}, ${assistanceSheetName}!A:A, 0),
+    start_row, MATCH(${subjectA1}, ${attendanceSheetName}!A:A, 0),
     next_subject_offset,
         IFERROR(
             MATCH(
                 TRUE,
                 ARRAYFORMULA(
                     ISTEXT(
-                        INDEX(${assistanceSheetName}!A:A, start_row + 1):
-                        INDEX(${assistanceSheetName}!A:A, ROWS(${assistanceSheetName}!A:A))
+                        INDEX(${attendanceSheetName}!A:A, start_row + 1):
+                        INDEX(${attendanceSheetName}!A:A, ROWS(${attendanceSheetName}!A:A))
                     )
                 ),
                 0
             ),
-            ROWS(${assistanceSheetName}!A:A) - start_row
+            ROWS(${attendanceSheetName}!A:A) - start_row
         ),
     height, next_subject_offset - 1,
-    first_names, OFFSET(${assistanceSheetName}!B$1, start_row, 0, height, 1),
-    last_names, OFFSET(${assistanceSheetName}!C$1, start_row, 0, height, 1),
-    return_data, OFFSET(${assistanceSheetName}!${returnColum}$1, start_row, 0, height, 2),
+    first_names, OFFSET(${attendanceSheetName}!B$1, start_row, 0, height, 1),
+    last_names, OFFSET(${attendanceSheetName}!C$1, start_row, 0, height, 1),
+    return_data, OFFSET(${attendanceSheetName}!${returnColum}$1, start_row, 0, height, 2),
     XLOOKUP(${firstNameA1} & ${lastNameA1}, ARRAYFORMULA(first_names & last_names), return_data)
 )`;
 }
@@ -121,19 +118,10 @@ export function createStudentAsistancePerSubjectFormula(
 export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 | 2): string {
     const { configData, calendar } = data;
 
-    let startBoundary: number;
-    let endBoundary: number;
+    const nextPeriod = [1, 2, 3] as const;
 
-    if (period === 0) {
-        startBoundary = configData.dateStart - 1;
-        endBoundary = configData.dateTrim1;
-    } else if (period === 1) {
-        startBoundary = configData.dateTrim1;
-        endBoundary = configData.dateTrim2;
-    } else {
-        startBoundary = configData.dateTrim2;
-        endBoundary = configData.dateEnd;
-    }
+    const startBoundary = configData.dates[period] - 1;
+    const endBoundary = configData.dates[nextPeriod[period]];
 
     // Get the indices using our single binary search function
     const startIndex = getUpperBoundIndex(calendar, startBoundary);

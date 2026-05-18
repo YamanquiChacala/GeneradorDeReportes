@@ -1,13 +1,5 @@
-import type { Icon } from "../enums";
-import { webColor } from "./text-utils";
-
-export interface IconifyParams {
-    iconName: Icon;
-    color?: string;
-    width?: number;
-    height?: number;
-    box?: boolean;
-}
+import type { IconifyParams } from ".";
+import { webColor } from "./text";
 
 /**
  * Helper method to generate the URL for an Iconify icon.

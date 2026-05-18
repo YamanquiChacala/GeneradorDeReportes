@@ -1,6 +1,6 @@
-import { headerIcon, headerImage, textButton } from "../common/card-parts";
-import { Colors, Icon } from "../common/enums";
-import { buildFieldsMask, defineActionParameters, defineInputsSchema } from "../common/utils/gas-types";
+import { Colors, Icon } from "../common/constants";
+import { headerIcon, headerImage, textButton } from "../common/gas-parts";
+import { buildFieldsMask, defineActionParameters, defineInputsSchema } from "../common/gas-utils";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar, onInitializeReport } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({

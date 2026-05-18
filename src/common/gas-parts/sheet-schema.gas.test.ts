@@ -1,7 +1,6 @@
-import { GasTestRunner } from "../testing/gas-test-runner";
+import { GasTestRunner } from "../../testing/gas-test-runner";
+import { buildFieldsMask, parseSpreadsheet } from "../gas-utils";
 import { ReportSheetSchema, SetupSheetSchema } from "./sheet-schema";
-import { buildFieldsMask } from "./utils/gas-types";
-import { parseSpreadsheet } from "./utils/mapped-name-range";
 
 interface ExpectedSchemaShape {
     readonly templateId: string;

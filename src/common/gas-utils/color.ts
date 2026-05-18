@@ -1,4 +1,4 @@
-import { type HSLColor, hslToRgb, type RGBColor, rgbToHex } from "../utils/color-utils";
+import { type HSLColor, hslToRgb, type RGBColor, rgbToHex } from "../utils";
 
 /**
  * Creates a banding for alternating cell backgrounds in a given hue [0,1]

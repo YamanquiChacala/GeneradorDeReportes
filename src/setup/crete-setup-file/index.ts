@@ -1,24 +1,20 @@
-import { SETUP_FILE_PREFIX } from "../../common/constants";
-import { FileType } from "../../common/enums";
-import { ValueInputOption } from "../../common/gas-enums";
-import { SetupSheetSchema } from "../../common/sheet-schema";
-import { key as FILE_VALIDATION_KEY } from "../../common/utils/file-validation";
-import { defineRangesDataConfig, type MappedInput } from "../../common/utils/gas-types";
+import { FileType, SETUP_FILE_PREFIX, ValueInputOption } from "../../common/constants";
+import { FILE_VALIDATION_KEY, SetupSheetSchema } from "../../common/gas-parts";
+import type { ExtractRangeNames } from "../../common/gas-utils";
 import { generateCalendar } from "../generate-calendar";
 
-const SetupFileDataConfig = defineRangesDataConfig({
-    groupName: { range: SetupSheetSchema.sheets.groupData.ranges.groupName, type: "string" },
-    attendancePerClass: { range: SetupSheetSchema.sheets.groupData.ranges.attendancePerClass, type: "boolean" },
-    averagePerField: { range: SetupSheetSchema.sheets.groupData.ranges.averagePerField, type: "boolean" },
-    dateStart: { range: SetupSheetSchema.sheets.groupData.ranges.dateStart, type: "date" },
-    dateEndTrimester1: { range: SetupSheetSchema.sheets.groupData.ranges.dateTrim1, type: "date" },
-    dateEndTrimester2: { range: SetupSheetSchema.sheets.groupData.ranges.dateTrim2, type: "date" },
-    dateEnd: { range: SetupSheetSchema.sheets.groupData.ranges.dateEnd, type: "date" },
-} as const);
+type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
 
-export type SetupFileData = { folderId: string } & {
-    [K in keyof typeof SetupFileDataConfig]: MappedInput<(typeof SetupFileDataConfig)[K]["type"]>;
-};
+export interface SetupFileData {
+    folderId: string;
+    groupName: string;
+    attendancePerClass: boolean;
+    averagePerField: boolean;
+    dateStart: number;
+    dateEndTrimester1: number;
+    dateEndTrimester2: number;
+    dateEnd: number;
+}
 
 /**
  * Creates a new Group Initialization file with the given data.
@@ -48,24 +44,32 @@ export function createSetupFile(initData: SetupFileData) {
 
     // ======== Update namedRanges ==========
 
+    const ranges = SetupSheetSchema.sheets.groupData.ranges;
+
     const updateData: GoogleAppsScript.Sheets.Schema.ValueRange[] = [];
 
-    for (const [key, config] of Object.entries(SetupFileDataConfig)) {
-        const rawValue = initData[key as keyof typeof SetupFileDataConfig];
+    const simpleCopy: Array<{ key: keyof SetupFileData; rangeName: RangeName }> = [
+        { key: "groupName", rangeName: ranges.groupName },
+        { key: "attendancePerClass", rangeName: ranges.attendancePerClass },
+        { key: "averagePerField", rangeName: ranges.averagePerField },
+    ];
 
-        if (rawValue == null) continue;
-
-        let cellValue = rawValue;
-
-        if (config.type === "date") {
-            const date = new Date(rawValue as number);
-            cellValue = Utilities.formatDate(date, "UTC", "yyyy-MM-dd");
-        }
+    for (const { key, rangeName } of simpleCopy) {
+        const rawValue = initData[key];
         updateData.push({
-            range: config.range,
-            values: [[cellValue]],
+            range: rangeName,
+            values: [[rawValue]],
         });
     }
+
+    const dates = [initData.dateStart, initData.dateEndTrimester1, initData.dateEndTrimester2, initData.dateEnd].map((ms) => [
+        Utilities.formatDate(new Date(ms), "UTC", "yyyy-MM-dd"),
+    ]);
+
+    updateData.push({
+        range: ranges.dates,
+        values: dates,
+    });
 
     Sheets?.Spreadsheets.Values.batchUpdate(
         {

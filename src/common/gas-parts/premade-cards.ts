@@ -1,6 +1,6 @@
+import { Colors, Icon } from "../constants";
 import { onAskPermission } from "./callbacks";
 import { headerImage, icon } from "./card-parts";
-import { Colors, Icon } from "./enums";
 
 interface UtilityCardParams {
     header: GoogleAppsScript.Card_Service.CardHeader;

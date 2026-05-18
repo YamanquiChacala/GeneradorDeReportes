@@ -1,5 +1,4 @@
-import { Base64Fonts, Base64Images } from "../common/base64-constants";
-import { Colors, Templates } from "../common/enums";
+import { Base64Fonts, Base64Images, Colors, Templates } from "../common/constants";
 
 interface StudentData {
     start_year: string;

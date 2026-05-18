@@ -1,6 +1,6 @@
-import { type Icon, Urls } from "./enums";
-import { type IconifyParams, iconifyUrl } from "./utils/image-utils";
-import { webColor } from "./utils/text-utils";
+import { type Icon, Urls } from "../constants";
+import type { IconifyParams } from "../utils";
+import { iconifyUrl, webColor } from "../utils";
 
 interface BaseHeaderParams {
     title: string;
@@ -74,6 +74,9 @@ export function icon(args: IconifyParams): GoogleAppsScript.Card_Service.IconIma
     return CardService.newIconImage().setIconUrl(url).setAltText(displayName);
 }
 
+/**
+ * Build a `TextButton` with the given action.
+ */
 export function textButton({ text, action, style, backgroundColor }: TextButtonParams): GoogleAppsScript.Card_Service.TextButton {
     const button = CardService.newTextButton().setText(text).setOnClickAction(action);
     if (style) button.setTextButtonStyle(style);

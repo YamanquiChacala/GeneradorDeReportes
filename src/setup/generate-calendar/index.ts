@@ -1,9 +1,21 @@
-import { MORE_THAN_A_YEAR, MS_PER_DAY } from "../../common/constants";
-import { ConditionType, MergeType, PasteType } from "../../common/gas-enums";
-import { buildAddNamedRangeRequest, buildCopyPasteRequest, buildMergeCellsRequest, createRange, createSingleCellRange, offsetGridRange } from "../../common/gas-utils";
-import { SetupSheetSchema } from "../../common/sheet-schema";
-import { buildFieldsMask } from "../../common/utils/gas-types";
-import { createRequiredGetter, type ExtractRangeNames, type ExtractSheetNames, MappedNamedRange, parseSpreadsheet } from "../../common/utils/mapped-name-range";
+import { ConditionType, MergeType, MORE_THAN_A_YEAR, MS_PER_DAY, PasteType } from "../../common/constants";
+import { SetupSheetSchema } from "../../common/gas-parts";
+import {
+    buildAddNamedRangeRequest,
+    buildCopyPasteRequest,
+    buildFieldsMask,
+    buildMergeCellsRequest,
+    createRange,
+    createRequiredGetter,
+    createSingleCellRange,
+    type ExtractRangeNames,
+    type ExtractSheetNames,
+    getCellText,
+    getCellUnixEpoch,
+    type MappedNamedRange,
+    offsetGridRange,
+    parseSpreadsheet,
+} from "../../common/gas-utils";
 
 type SheetName = ExtractSheetNames<typeof SetupSheetSchema>;
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
@@ -67,29 +79,31 @@ function calculateCalendarDates(mappedRanges: Partial<Record<RangeName, MappedNa
     const rangeNames = SetupSheetSchema.sheets.groupData.ranges;
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de modelo de calendario");
 
+    const dates = getMappedRange(rangeNames.dates);
+
     // Get user provided dates.
-    const dateStart = MappedNamedRange.getCellUnixEpoch({ mappedRange: getMappedRange(rangeNames.dateStart) });
-    const dateTrimester1 = MappedNamedRange.getCellUnixEpoch({ mappedRange: getMappedRange(rangeNames.dateTrim1) });
-    const dateTrimester2 = MappedNamedRange.getCellUnixEpoch({ mappedRange: getMappedRange(rangeNames.dateTrim2) });
-    const dateEnd = MappedNamedRange.getCellUnixEpoch({ mappedRange: getMappedRange(rangeNames.dateEnd) });
+    const date0 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 0 });
+    const date1 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 1 });
+    const date2 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 2 });
+    const date3 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 3 });
 
     // Validate user provided dates.
-    if (!dateStart || !dateTrimester1 || !dateTrimester2 || !dateEnd) throw new Error("Faltan las fechas.");
-    if (dateStart >= dateTrimester1 || dateTrimester1 >= dateTrimester2 || dateTrimester2 >= dateEnd) throw new Error("Fechas en desorden.");
-    if (dateEnd - dateStart > MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
+    if (!date0 || !date1 || !date2 || !date3) throw new Error("Faltan las fechas.");
+    if (date0 >= date1 || date1 >= date2 || date2 >= date3) throw new Error("Fechas en desorden.");
+    if (date3 - date0 > MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
 
     // Snap to first Sunday
-    const dateStartDayOfWeek = new Date(dateStart).getUTCDay();
-    const calStart = dateStart - dateStartDayOfWeek * MS_PER_DAY;
+    const dateStartDayOfWeek = new Date(date0).getUTCDay();
+    const calStart = date0 - dateStartDayOfWeek * MS_PER_DAY;
 
     // Snap to last Saturday
-    const dateEndDayOfWeek = new Date(dateEnd).getUTCDay();
-    const calEnd = dateEnd + (6 - dateEndDayOfWeek) * MS_PER_DAY;
+    const dateEndDayOfWeek = new Date(date3).getUTCDay();
+    const calEnd = date3 + (6 - dateEndDayOfWeek) * MS_PER_DAY;
 
     const totalDays = (calEnd - calStart) / MS_PER_DAY + 1;
     const totalRows = 1 + Math.ceil(totalDays / 7);
 
-    return { dateStart, dateTrimester1, dateTrimester2, dateEnd, calStart, calEnd, totalDays, totalRows };
+    return { dateStart: date0, dateTrimester1: date1, dateTrimester2: date2, dateEnd: date3, calStart, calEnd, totalDays, totalRows };
 }
 
 /**
@@ -276,7 +290,7 @@ function buildMonthLabelRequests(
         if (rowSpan === 2) monthLabelRange = getMappedRange(rangeNames.monthNames2);
         else if (rowSpan === 1) monthLabelRange = getMappedRange(rangeNames.monthNames1);
 
-        const monthName = MappedNamedRange.getCellText({ mappedRange: monthLabelRange, rowOffset: block.monthIndex }) ?? "";
+        const monthName = getCellText({ mappedRange: monthLabelRange, rowOffset: block.monthIndex }) ?? "";
         const monthYearText = `${monthName}\n${block.year}`;
 
         const sourceMonthNameRange = offsetGridRange({ origin: monthLabelRange.range, rowOffset: block.monthIndex, height: 1, width: 1 });

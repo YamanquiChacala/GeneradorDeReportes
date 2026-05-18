@@ -1,3 +1,6 @@
+import type { MappedNamedRange } from ".";
+import { offsetGridRange } from "./range";
+
 /**
  * Transforms a column number into it's corresponding column letter, using 0-based index.
  */
@@ -12,52 +15,94 @@ export function getColumnLetter(column: number): string {
     return letter;
 }
 
-// TODO: Make tests for this
+interface A1NotationParams {
+    mappedRange: MappedNamedRange;
+    includeSheetName?: boolean;
+    lockRows?: boolean;
+    lockColumns?: boolean;
+    rowOffset?: number;
+    colOffset?: number;
+    height?: number;
+    width?: number;
+}
+
 /**
  * Returns the A1 notation of a range.
  */
+export function getA1Notation({
+    mappedRange,
+    includeSheetName = false,
+    lockRows = false,
+    lockColumns = false,
+    rowOffset = 0,
+    colOffset = 0,
+    height,
+    width,
+}: A1NotationParams): string {
+    const adjustedRange = offsetGridRange({ origin: mappedRange.range, rowOffset, colOffset, height, width });
 
-export function getA1Notation(range: GoogleAppsScript.Sheets.Schema.GridRange, first = false, lockRows = false, lockColumns = false): string {
-    // 1. Define our lock prefixes
+    // Fetch sheet dimensions to cap unbounded ends
+    const gridProps = mappedRange.sheet.properties?.gridProperties;
+    const maxRows = gridProps?.rowCount ?? 1000;
+    const maxCols = gridProps?.columnCount ?? 1000;
+
+    // Identify bounded vs unbounded states
+    const startRowDefined = adjustedRange.startRowIndex !== undefined;
+    const endRowDefined = adjustedRange.endRowIndex !== undefined;
+    const startColDefined = adjustedRange.startColumnIndex !== undefined;
+    const endColDefined = adjustedRange.endColumnIndex !== undefined;
+
+    // A dimension is fully unbounded only if BOTH start and end are omitted
+    const isRowFullyUnbounded = !startRowDefined && !endRowDefined;
+    const isColFullyUnbounded = !startColDefined && !endColDefined;
+
+    // Resolve indices (0-based) to 1-based coordinates
+    // Start defaults to 0 (row 1 or col A)
+    const startRow = (adjustedRange.startRowIndex ?? 0) + 1;
+    const startColLetter = getColumnLetter(adjustedRange.startColumnIndex ?? 0);
+
+    // End defaults to the maximum bound of the sheet
+    const endRow = adjustedRange.endRowIndex ?? maxRows;
+    const endColIndex = adjustedRange.endColumnIndex ?? maxCols;
+    const endColLetter = getColumnLetter(endColIndex - 1); // Subtract 1 because endIndex is exclusive
+
+    // Build lock prefixes
     const rowPrefix = lockRows ? "$" : "";
     const colPrefix = lockColumns ? "$" : "";
 
-    // 2. Check if dimensions are bounded (undefined means unbounded in that dimension)
-    const hasRows = range.startRowIndex !== undefined || range.endRowIndex !== undefined;
-    const hasCols = range.startColumnIndex !== undefined || range.endColumnIndex !== undefined;
+    // Build coordinate strings (omit completely if fully unbounded to support A:A or 1:1)
+    const startRowStr = isRowFullyUnbounded ? "" : `${rowPrefix}${startRow}`;
+    const endRowStr = isRowFullyUnbounded ? "" : `${rowPrefix}${endRow}`;
 
-    // 3. Get initial coordinates (defaults to 0 for the 'first' flag fallback)
-    const startRow = (range.startRowIndex ?? 0) + 1;
-    const startColLetter = getColumnLetter(range.startColumnIndex ?? 0);
-
-    if (first) return `${colPrefix}${startColLetter}${rowPrefix}${startRow}`;
-
-    // 4. Build starting strings (omit entirely if the dimension is unbounded)
-    const startRowStr = hasRows ? `${rowPrefix}${startRow}` : "";
-    const startColStr = hasCols ? `${colPrefix}${startColLetter}` : "";
-
-    // 5. Build ending strings
-    // If end index is omitted on a bounded dimension, we assume it spans 1 unit (end = start + 1)
-    // Because end indices are exclusive, endRowIndex exactly matches the 1-based row number.
-    const endRow = range.endRowIndex !== undefined ? range.endRowIndex : startRow;
-    const endColIndex = range.endColumnIndex !== undefined ? range.endColumnIndex : (range.startColumnIndex ?? 0) + 1;
-
-    // For columns, we subtract 1 to get the actual final column included in the range.
-    const endColLetter = getColumnLetter(endColIndex - 1);
-
-    const endRowStr = hasRows ? `${rowPrefix}${endRow}` : "";
-    const endColStr = hasCols ? `${colPrefix}${endColLetter}` : "";
+    const startColStr = isColFullyUnbounded ? "" : `${colPrefix}${startColLetter}`;
+    const endColStr = isColFullyUnbounded ? "" : `${colPrefix}${endColLetter}`;
 
     const startA1 = `${startColStr}${startRowStr}`;
     const endA1 = `${endColStr}${endRowStr}`;
 
-    // 6. Handle single entities
-    if (startA1 === endA1) {
-        if (!hasRows) return `${startColStr}:${startColStr}`; // Unbounded single column (e.g., "$A:$A")
-        if (!hasCols) return `${startRowStr}:${startRowStr}`; // Unbounded single row (e.g., "$1:$1")
-        return startA1; // Single cell (e.g., "$A$1")
+    // Formulate the final A1 notation
+    let a1Notation = "";
+
+    if (isRowFullyUnbounded && isColFullyUnbounded) {
+        // Fallback for an entirely unbounded range (the whole sheet)
+        a1Notation = `${colPrefix}A${rowPrefix}1:${colPrefix}${endColLetter}${rowPrefix}${maxRows}`;
+    } else if (startA1 === endA1) {
+        // If start and end strings are identical, it's a single entity
+        if (isRowFullyUnbounded || isColFullyUnbounded) {
+            a1Notation = `${startA1}:${startA1}`; // Single entire row (1:1) or col (A:A)
+        } else {
+            a1Notation = startA1; // Single cell (A1)
+        }
+    } else {
+        // Standard range (A1:B2, A:B, 1:2, or C4:Z1000)
+        a1Notation = `${startA1}:${endA1}`;
     }
 
-    // 7. Return the standard range
-    return `${startA1}:${endA1}`; // e.g., "$A$1:$B$2", "A$1:A", etc.
+    // Append sheet name if requested
+    if (includeSheetName && mappedRange.sheet.properties?.title) {
+        const escapedTitle = mappedRange.sheet.properties.title.replace(/'/g, "''");
+        return `'${escapedTitle}'!${a1Notation}`;
+    }
+
+    return a1Notation;
 }

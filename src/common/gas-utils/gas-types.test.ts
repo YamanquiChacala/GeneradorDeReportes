@@ -1,18 +1,8 @@
-import { buildFieldsMask, defineActionParameters, defineInputsSchema, defineRangesDataConfig, getInputs } from "./gas-types";
-import { parseSpreadsheet } from "./mapped-name-range";
+import { defineActionParameters, defineInputsSchema, getInputs } from "./gas-types";
+import { buildFieldsMask } from "./helper";
+import { parseSpreadsheet } from "./parse";
 
 describe("googleAPI Type Utilities", () => {
-    describe("defineRangesDataConfig", () => {
-        it("should return the exact same configuration object passed to it", () => {
-            const config = {
-                myRange: { range: "A1:B2", type: "string" },
-                myNumber: { range: "C1:C10", type: "number" },
-            } as const;
-            const result = defineRangesDataConfig(config);
-            expect(result).toBe(config);
-        });
-    });
-
     describe("defineInputsSchema", () => {
         it("should return the schema and a fieldName identity function", () => {
             const schema = { name: "string", age: "number" } as const;

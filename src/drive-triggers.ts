@@ -1,6 +1,5 @@
-import { FileType } from "./common/enums";
-import { buildWrongSelectionCard } from "./common/premade-cards";
-import { getFileType } from "./common/utils/file-validation";
+import { FileType } from "./common/constants";
+import { buildWrongSelectionCard, getFileType } from "./common/gas-parts";
 import { buildCreateSetupFileCard } from "./setup/cards";
 
 /**

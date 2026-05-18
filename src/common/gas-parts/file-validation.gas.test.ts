@@ -1,5 +1,5 @@
 import { GasTestRunner } from "../../testing/gas-test-runner";
-import { FileType } from "../enums";
+import { FileType } from "../constants";
 import * as fileValidation from "./file-validation";
 
 export function testFileValidation() {

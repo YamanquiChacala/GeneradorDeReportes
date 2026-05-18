@@ -1,4 +1,4 @@
-import * as Utils from "./text-utils";
+import * as Utils from "./text";
 
 // Helper to create UTC timestamps safely
 function utcMs(year: number, monthIndex: number, day: number): number {
