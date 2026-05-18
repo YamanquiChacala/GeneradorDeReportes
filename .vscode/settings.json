@@ -8,6 +8,7 @@
   },
   "html.validate.styles": false,
   "js/ts.tsserver.experimental.enableProjectDiagnostics": true,
+  "js/ts.tsserver.maxMemory": 8192,
   "files.eol": "\n",
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {

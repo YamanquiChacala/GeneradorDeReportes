@@ -53,6 +53,24 @@ interface StudentSpace {
 }
 
 /**
+ * Helper function to build the formula for shorter comments (for the SEP).
+ */
+export function getShortCommentFormula(source: MappedNamedRange, rowOffset: number, colOffset: number): string {
+    const sourceLetter = getColumnLetter((source.range.startColumnIndex ?? 0) + colOffset);
+    const sourceNumber = (source.range.startRowIndex ?? 0) + rowOffset + 1;
+    return `=LET(
+  raw_text, ${sourceLetter}${sourceNumber},
+  lower_text, LOWER(raw_text),
+  accent_map, {"á","a"; "é","e"; "í","i"; "ó","o"; "ú","u"; "ñ","n"; "ü","u"},
+  cleaned_accents, REDUCE(lower_text, SEQUENCE(ROWS(accent_map)), LAMBDA(acc, i, SUBSTITUTE(acc, INDEX(accent_map, i, 1), INDEX(accent_map, i, 2)))),
+  truncated, LEFT(cleaned_accents, MIN(250, IFERROR(FIND(CHAR(10), cleaned_accents) - 1, 250))),
+  upper_text, UPPER(truncated),
+  final_ascii, REGEXREPLACE(upper_text, "[^ -~]", ""),
+  final_ascii
+)`;
+}
+
+/**
  * Generate a formula for the general absences.
  */
 export function createStudentAsistanceFormula(
@@ -74,14 +92,48 @@ export function createStudentAsistanceFormula(
 }
 
 /**
+ * Formula to claculate each subject's average.
+ */
+export function createSubjectAverageFormula(valuesRange: MappedNamedRange, rowOffset: number, weightsRange: MappedNamedRange): string {
+    const valuesA1 = getA1Notation({ mappedRange: valuesRange, rowOffset, height: 1, lockColumns: true });
+    const weightsA1 = getA1Notation({ mappedRange: weightsRange, includeSheetName: true, lockRows: true, lockColumns: true });
+
+    return `=IFERROR(
+    ROUND(
+        AVERAGE.WEIGHTED(
+            ${valuesA1},
+            TRANSPOSE(${weightsA1})
+        )
+    ), ""
+)`;
+}
+
+/**
+ * Formula to calculate the final subject's average.
+ */
+export function createFinalSubjectAverageFormula(trim1: MappedNamedRange, trim2: MappedNamedRange, trim3: MappedNamedRange, rowOffset: number): string {
+    const colOffset = (trim3.range.endColumnIndex ?? 0) - 2;
+
+    const trim1A1 = getA1Notation({ mappedRange: trim1, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
+    const trim2A1 = getA1Notation({ mappedRange: trim2, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
+    const trim3A1 = getA1Notation({ mappedRange: trim3, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
+
+    return `=IF(
+    COUNT(${trim1A1}, ${trim2A1}, ${trim3A1})=3,
+    ROUND(AVERAGE(${trim1A1}, ${trim2A1}, ${trim3A1}),1),
+    ""
+)`;
+}
+
+/**
  * Generate the student forumala to grab the absences per subject.
  */
 export function createStudentAsistancePerSubjectFormula(
     period: 0 | 1 | 2,
     subjectRange: MappedNamedRange,
     rowOffset: number,
-    lastNameRange: MappedNamedRange,
     firstNameRange: MappedNamedRange,
+    lastNameRange: MappedNamedRange,
     attendanceSheetName: string,
 ): string {
     const subjectA1 = getA1Notation({ mappedRange: subjectRange, width: 1, height: 1, rowOffset, lockColumns: true });

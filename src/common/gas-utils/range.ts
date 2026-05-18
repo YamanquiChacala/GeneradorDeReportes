@@ -59,21 +59,3 @@ export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, 
 
     return result;
 }
-
-// TODO: Still needed?
-/**
- * Calculates a new shifted range and the resulting offset for sequential ranges.
- */
-export function calculateRangeShift(
-    originRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    dataLength: number,
-    currentOffset: number,
-): { newRange: GoogleAppsScript.Sheets.Schema.GridRange; nextRowOffset: number } {
-    const oldHeight = (originRange.endRowIndex ?? 0) - (originRange.startRowIndex ?? 0);
-    const newRange = offsetGridRange({ origin: originRange, rowOffset: currentOffset, height: dataLength });
-
-    return {
-        newRange,
-        nextRowOffset: currentOffset + dataLength - oldHeight,
-    };
-}
