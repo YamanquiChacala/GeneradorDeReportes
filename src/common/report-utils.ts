@@ -95,7 +95,7 @@ export function createStudentAsistanceFormula(
  * Formula to claculate each subject's average.
  */
 export function createSubjectAverageFormula(valuesRange: MappedNamedRange, rowOffset: number, weightsRange: MappedNamedRange): string {
-    const valuesA1 = getA1Notation({ mappedRange: valuesRange, rowOffset, height: 1, lockColumns: true });
+    const valuesA1 = getA1Notation({ mappedRange: valuesRange, rowOffset, colOffset: 1, height: 1, width: 3, lockColumns: true });
     const weightsA1 = getA1Notation({ mappedRange: weightsRange, includeSheetName: true, lockRows: true, lockColumns: true });
 
     return `=IFERROR(

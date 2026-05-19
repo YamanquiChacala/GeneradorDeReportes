@@ -77,9 +77,30 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
         requests.push(...infoRequests);
     } else {
         // Remove individual class absences.
-        requests.push(removeRangeColumns(getMappedRange(rangeNames.trim1Absences).range));
-        requests.push(removeRangeColumns(getMappedRange(rangeNames.trim2Absences).range));
-        requests.push(removeRangeColumns(getMappedRange(rangeNames.trim3Absences).range));
+        requests.push(
+            removeRangeColumns(
+                getMappedRange(rangeNames.trim1Absences),
+                getMappedRange(rangeNames.trim1Subjects),
+                getMappedRange(rangeNames.trim1Fields),
+                getMappedRange(rangeNames.trim1Totals),
+            ),
+        );
+        requests.push(
+            removeRangeColumns(
+                getMappedRange(rangeNames.trim2Absences),
+                getMappedRange(rangeNames.trim2Subjects),
+                getMappedRange(rangeNames.trim2Fields),
+                getMappedRange(rangeNames.trim2Totals),
+            ),
+        );
+        requests.push(
+            removeRangeColumns(
+                getMappedRange(rangeNames.trim3Absences),
+                getMappedRange(rangeNames.trim3Subjects),
+                getMappedRange(rangeNames.trim3Fields),
+                getMappedRange(rangeNames.trim3Totals),
+            ),
+        );
     }
 
     const resizeOperations: Array<{ name: RangeName; count?: number }> = [
@@ -146,13 +167,32 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
 /**
  * Helper function to delete a local range's columns, not affecting the rest of the sheet.
  */
-function removeRangeColumns(range: GoogleAppsScript.Sheets.Schema.GridRange): GoogleAppsScript.Sheets.Schema.Request {
-    return {
+function removeRangeColumns(
+    absences: MappedNamedRange,
+    subjects: MappedNamedRange,
+    fields: MappedNamedRange,
+    averages: MappedNamedRange,
+): GoogleAppsScript.Sheets.Schema.Request {
+    const removedCols = (absences.range.endColumnIndex ?? 0) - (absences.range.startColumnIndex ?? 0);
+    const request: GoogleAppsScript.Sheets.Schema.Request = {
         deleteRange: {
-            range,
+            range: absences.range,
             shiftDimension: Dimension.COLUMNS,
         },
     };
+    removeCols(absences, removedCols);
+    removeCols(subjects, removedCols);
+    removeCols(fields, removedCols);
+    removeCols(averages, removedCols);
+    return request;
+}
+
+/**
+ * Helper function to edit a MappedRange, shrinking it's columns.
+ */
+function removeCols(mappedRange: MappedNamedRange, removeCols: number) {
+    const desiredWidth = Math.max(0, (mappedRange.range.endColumnIndex ?? 0) - (mappedRange.range.startColumnIndex ?? 0) - removeCols);
+    mappedRange.range = offsetGridRange({ origin: mappedRange.range, width: desiredWidth });
 }
 
 /**
