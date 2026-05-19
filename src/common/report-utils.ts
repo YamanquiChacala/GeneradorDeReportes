@@ -165,6 +165,41 @@ export function createStudentAsistancePerSubjectFormula(
 }
 
 /**
+ * Helper function to calculate the field value from the subjects.
+ */
+export function createFieldFunction(
+    field: AcademicField,
+    rowOffset: number,
+    colOffset: number,
+    subjectsOffset: number,
+    subjectsRange: MappedNamedRange,
+    weightsRange: MappedNamedRange,
+): string {
+    const valuesA1 = getA1Notation({
+        mappedRange: subjectsRange,
+        rowOffset: subjectsOffset + rowOffset,
+        colOffset,
+        width: 1,
+        height: field.subjects,
+        lockRows: true,
+    });
+    const weightsA1 = getA1Notation({
+        includeSheetName: true,
+        mappedRange: weightsRange,
+        rowOffset: subjectsOffset,
+        colOffset: 1,
+        width: 1,
+        height: field.subjects,
+        lockRows: true,
+        lockColumns: true,
+    });
+
+    return `=IFERROR(
+    AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1})
+)`;
+}
+
+/**
  * Returns a nice string for the asked period.
  */
 export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 | 2): string {

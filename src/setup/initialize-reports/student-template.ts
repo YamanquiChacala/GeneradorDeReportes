@@ -6,16 +6,13 @@ import {
     buildFieldsMask,
     buildMergeCellsRequest,
     buildTransferRequests,
-    buildUpdateCellsRequest,
     createRequiredGetter,
-    getA1Notation,
-    getColumnLetter,
     type MappedNamedRange,
     offsetGridRange,
     resizeMappedRange,
 } from "../../common/gas-utils";
 import {
-    type AcademicField,
+    createFieldFunction,
     createFinalSubjectAverageFormula,
     createStudentAsistanceFormula,
     createStudentAsistancePerSubjectFormula,
@@ -254,8 +251,6 @@ function prepareComments(mappedRanges: Partial<Record<RangeName, MappedNamedRang
  * Prepares the subject lists and formulas
  */
 function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistenData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-
     const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
     const getMappedRange = createRequiredGetter(mappedRanges, "template de estudiante");
 
@@ -263,11 +258,15 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
     const lastNameMappedRange = getMappedRange(rangeNames.lastName);
     const gradingWeightsMappedRange = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGradingWeights);
 
-    const persistentDataSheetName = ReportSheetSchema.sheets.persistentData.sheetName;
-
     const attendancePerClass = persistenData.configData.attendancePerClass;
 
-    const subjects: MappedNamedRange[] = [getMappedRange(rangeNames.trim1Subjects), getMappedRange(rangeNames.trim2Subjects), getMappedRange(rangeNames.trim3Subjects)];
+    const subjects: [MappedNamedRange, MappedNamedRange, MappedNamedRange] = [
+        getMappedRange(rangeNames.trim1Subjects),
+        getMappedRange(rangeNames.trim2Subjects),
+        getMappedRange(rangeNames.trim3Subjects),
+    ];
+
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     for (const [periodIndex, subjectRange] of subjects.entries()) {
         const period = periodIndex as 0 | 1 | 2;
@@ -312,125 +311,86 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             subjectData.push(subjectRow);
         }
 
-        requests.push(
-            ...buildUpdateCellsRequest({
-                destination: subjectRange,
-                data: subjectData,
-                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
-            }),
-        );
+        const { requests } = buildTransferRequests({
+            destination: subjectRange,
+            data: subjectData,
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
+        });
+
+        apiRequests.push(...requests);
     }
 
-    return requests;
+    return apiRequests;
 }
 
 /**
  * Prepares the fields list and formulas
  */
-function prepareFields(namedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistenData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+function prepareFields(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistenData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
     if (!persistenData.configData.averagePerField) return [];
 
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     const attendancePerClass = persistenData.configData.attendancePerClass;
 
-    const ranges = ReportSheetSchema.sheets.studentTemplate.ranges;
-    const getMappedRange = createRequiredGetter(namedRanges, "template de estudiante");
+    const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
+    const getMappedRange = createRequiredGetter(mappedRanges, "template de estudiante");
 
-    const weightsSheetName = ReportSheetSchema.sheets.persistentData.sheetName;
-    const weightsRange = offsetGridRange({ origin: getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjects).range, colOffset: 1, width: 1 });
+    const weightedSubjectsRange = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjects);
+    const gradingWeithgtsRange = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGradingWeights);
 
-    const gradingWeight1 = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGrading1).range;
-    const gradingWeight2 = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGrading2).range;
-    const gradingWeight3 = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjectGrading3).range;
+    interface SubjectField {
+        academidFieldRange: MappedNamedRange;
+        subjectsRange: MappedNamedRange;
+    }
 
-    const trim1SubbjectsRange = getMappedRange(ranges.trim1Subjects).range;
-    const trim2SubbjectsRange = getMappedRange(ranges.trim2Subjects).range;
-    const trim3SubbjectsRange = getMappedRange(ranges.trim3Subjects).range;
-
-    const trim1FieldsRange = getMappedRange(ranges.trim1Fields).range;
-    const trim2FieldsRange = getMappedRange(ranges.trim2Fields).range;
-    const trim3FieldsRange = getMappedRange(ranges.trim3Fields).range;
-
-    const fieldGroups: Array<{ fieldsRange: GoogleAppsScript.Sheets.Schema.GridRange; subjectsRange: GoogleAppsScript.Sheets.Schema.GridRange }> = [
-        { fieldsRange: trim1FieldsRange, subjectsRange: trim1SubbjectsRange },
-        { fieldsRange: trim2FieldsRange, subjectsRange: trim2SubbjectsRange },
-        { fieldsRange: trim3FieldsRange, subjectsRange: trim3SubbjectsRange },
+    const periodOperations: [SubjectField, SubjectField, SubjectField] = [
+        { academidFieldRange: getMappedRange(rangeNames.trim1Fields), subjectsRange: getMappedRange(rangeNames.trim1Subjects) },
+        { academidFieldRange: getMappedRange(rangeNames.trim2Fields), subjectsRange: getMappedRange(rangeNames.trim2Subjects) },
+        { academidFieldRange: getMappedRange(rangeNames.trim3Fields), subjectsRange: getMappedRange(rangeNames.trim3Subjects) },
     ];
 
-    for (const [periodIndex, { fieldsRange, subjectsRange }] of fieldGroups.entries()) {
+    for (const [periodIndex, { academidFieldRange, subjectsRange }] of periodOperations.entries()) {
         const period = periodIndex as 0 | 1 | 2;
+        let subjectOffset = 0;
 
         const fieldData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
-        let subjectOffset = 0;
         for (const [index, field] of persistenData.academicFields.entries()) {
             const fieldRow: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: field.name } }];
-            for (let i = 1; i < 4; i++) {
-                fieldRow.push({
-                    userEnteredValue: {
-                        formulaValue: createFieldFunction(
-                            field,
-                            offsetGridRange({ origin: subjectsRange, colOffset: i, width: 1 }),
-                            weightsSheetName,
-                            weightsRange,
-                            subjectOffset,
-                        ),
-                    },
-                });
+            const colOffsets = [1, 2, 3];
+            for (const colOffset of colOffsets) {
+                fieldRow.push({ userEnteredValue: { formulaValue: createFieldFunction(field, index, colOffset, subjectOffset, subjectsRange, weightedSubjectsRange) } });
             }
-
             if (attendancePerClass) {
                 fieldRow.push({});
             }
-            // Average
-            const valuesRange = offsetGridRange({ origin: fieldsRange, rowOffset: index, colOffset: 1, height: 1, width: 3 });
-            fieldRow.push({
-                userEnteredValue: { formulaValue: createSubjectAverageFormula(valuesRange, weightsSheetName, gradingWeight1, gradingWeight2, gradingWeight3) },
-            });
+            fieldRow.push({ userEnteredValue: { formulaValue: createSubjectAverageFormula(academidFieldRange, index, gradingWeithgtsRange) } });
 
-            // Final average
             if (period === 2) {
-                const trim1Prom = offsetGridRange({ origin: trim1FieldsRange, rowOffset: index, colOffset: attendancePerClass ? 5 : 4, height: 1, width: 1 });
-                const trim2Prom = offsetGridRange({ origin: trim2FieldsRange, rowOffset: index, colOffset: attendancePerClass ? 5 : 4, height: 1, width: 1 });
-                const trim3Prom = offsetGridRange({ origin: trim3FieldsRange, rowOffset: index, colOffset: attendancePerClass ? 5 : 4, height: 1, width: 1 });
-
-                fieldRow.push({ userEnteredValue: { formulaValue: createFinalSubjectAverageFormula(trim1Prom, trim2Prom, trim3Prom) } });
+                fieldRow.push({
+                    userEnteredValue: {
+                        formulaValue: createFinalSubjectAverageFormula(
+                            periodOperations[0].academidFieldRange,
+                            periodOperations[1].academidFieldRange,
+                            periodOperations[2].academidFieldRange,
+                            index,
+                        ),
+                    },
+                });
             }
 
             subjectOffset += field.subjects;
             fieldData.push(fieldRow);
         }
 
-        requests.push(
-            ...buildUpdateCellsRequest({
-                destination: fieldsRange,
-                data: fieldData,
-                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
-            }),
-        );
+        const { requests } = buildTransferRequests({
+            destination: academidFieldRange,
+            data: fieldData,
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
+        });
+        apiRequests.push(...requests);
     }
 
-    return requests;
-}
-
-/**
- * Helper function to calculate the field value from the subjects.
- */
-function createFieldFunction(
-    field: AcademicField,
-    subjectsRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    weightsSheetName: string,
-    weightsRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    subjectOffset: number,
-): string {
-    const valuesRange = offsetGridRange({ origin: subjectsRange, rowOffset: subjectOffset, height: field.subjects });
-    const valuesA1 = getA1Notation(valuesRange, false, true, false);
-
-    const weights = offsetGridRange({ origin: weightsRange, rowOffset: subjectOffset, height: field.subjects });
-    const weightsA1 = getA1Notation(weights, false, true, true);
-
-    return `=IFERROR(
-    AVERAGE.WEIGHTED(${valuesA1}, '${weightsSheetName}'!${weightsA1})
-)`;
+    return apiRequests;
 }
