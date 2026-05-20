@@ -100,20 +100,29 @@ span.cline-neutral {
     background: #c79a00 !important;
 }
 
-/* Missing coverage */
+/* ===== Missing coverage ===== */
+
+/* 1. Missing Line (Original: Light Red -> Dark Red) */
 .low,
 .cline-no {
     background: #4a2025 !important;
     color: #d4d4d4 !important;
 }
 
+/* 2. Missing Statement/Function (Original: Pink -> Dark Magenta/Pink) */
 .cstat-no,
-.fstat-no,
-.cbranch-no {
-    background: #7a313d !important;
+.fstat-no {
+    background: #7a2553 !important;
     color: #ffffff !important;
 }
 
+/* 3. Missing Branch (Original: Yellow -> Dark Mustard/Gold) */
+.cbranch-no {
+    background: #7a661c !important;
+    color: #ffffff !important;
+}
+
+/* Status line colors for the summary table */
 .status-line.low,
 .low .cover-fill {
     background: #d16969 !important;
@@ -137,10 +146,22 @@ span.cline-neutral {
     background: #333 !important;
 }
 
-/* Highlighted line */
+/* Highlighted line (when pressing 'n' or 'j') */
 .highlighted,
 .highlighted .cstat-no,
 .highlighted .fstat-no,
 .highlighted .cbranch-no {
-    background: #6b2f3a !important;
+    /* Use a brighter, much more distinct crimson */
+    background: #901a2c !important;
+
+    /* Force text to pure white for high contrast */
+    color: #ffffff !important;
+
+    /* Add a bright red outline to make the currently selected block pop */
+    outline: 1px solid #ff4d4d !important;
+}
+
+/* Ensure that any spans inside the highlighted block also get pure white text */
+.highlighted span {
+    color: #ffffff !important;
 }

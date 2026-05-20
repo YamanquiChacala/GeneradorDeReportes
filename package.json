@@ -17,7 +17,7 @@
   },
   "scripts": {
     "test": "jest",
-    "test:coverage": "jest --coverage && cat dark-coverage.css >> coverage/base.css",
+    "test:coverage": "jest --coverage && node append-theme.cjs",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",
