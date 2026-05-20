@@ -19,8 +19,7 @@ export function hexToRgb(hex: string): RGBColor | null {
     const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!match) return null;
 
-    const [, r, g, b] = match;
-    if (!r || !g || !b) return null;
+    const [, r, g, b] = match as RegExpExecArray & [string, string, string, string];
 
     return {
         r: parseInt(r, 16) / 255,

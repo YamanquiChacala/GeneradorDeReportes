@@ -53,6 +53,15 @@ describe("Color Conversion Utilities", () => {
             expect(rgbToHsl({ r: 0, g: 0, b: 0 })).toEqual({ h: 0, s: 0, l: 0 }); // Black
             expect(rgbToHsl({ r: 1, g: 1, b: 1 })).toEqual({ h: 0, s: 0, l: 1 }); // White
         });
+
+        it("should correctly calculate hue when red is max and green is less than blue", () => {
+            // r=1, g=0, b=0.5 (Magenta/Pink-ish)
+            const hsl = rgbToHsl({ r: 1, g: 0, b: 0.5 });
+
+            expect(hsl.h).toBeCloseTo(5.5 / 6); // (0 - 0.5) / 1 + 6 = 5.5, then divided by 6
+            expect(hsl.s).toBe(1);
+            expect(hsl.l).toBe(0.5);
+        });
     });
 
     describe("hslToRgb", () => {

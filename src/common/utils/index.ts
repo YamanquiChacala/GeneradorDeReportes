@@ -1,7 +1,7 @@
 import type { Icon } from "../constants";
 
 export * from "./color";
-export * from "./helper";
+export * from "./helpers";
 export * from "./iconify";
 export * from "./math";
 export * from "./text";
