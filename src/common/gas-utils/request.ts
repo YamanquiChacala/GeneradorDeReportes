@@ -49,6 +49,48 @@ export function buildAddNamedRangeRequest<T extends NestedSheetSchema>(
     };
 }
 
+interface BuildUpdateCellsRequestParams {
+    destination: GoogleAppsScript.Sheets.Schema.GridRange;
+    data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    fields: string;
+}
+
+/**
+ * Generates a batch update requests to put `data` into the range defined by `destination`.
+ * @param fields Mask to see what to copy.
+ */
+export function buildUpdateCellsRequest({ destination, data, fields }: BuildUpdateCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
+    const startRow = destination.startRowIndex ?? 0;
+    const endRow = destination.endRowIndex ?? 0;
+    const startCol = destination.startColumnIndex ?? 0;
+    const endCol = destination.endColumnIndex ?? 0;
+
+    const finalRows = endRow - startRow;
+    const finalCols = endCol - startCol;
+
+    if (!finalRows || !finalCols) return undefined;
+    const finalRowData: GoogleAppsScript.Sheets.Schema.RowData[] = [];
+    for (let r = 0; r < finalRows; r++) {
+        const rowValues: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+        const sourceRow = data[r] ?? [];
+
+        for (let c = 0; c < finalCols; c++) {
+            rowValues.push(sourceRow[c] ?? {});
+        }
+
+        finalRowData.push({ values: rowValues });
+    }
+
+    // Write the data
+    return {
+        updateCells: {
+            range: destination,
+            rows: finalRowData,
+            fields: fields,
+        },
+    };
+}
+
 interface BuildTransferRequestParams {
     destination: MappedNamedRange;
     data: GoogleAppsScript.Sheets.Schema.CellData[][];
@@ -130,47 +172,5 @@ export function buildTransferRequests({ destination, data, fields, adaptRange = 
         requests,
         rowOffset: currentRowOffset,
         colOffset: currentColOffset,
-    };
-}
-
-interface BuildUpdateCellsRequestParams {
-    destination: GoogleAppsScript.Sheets.Schema.GridRange;
-    data: GoogleAppsScript.Sheets.Schema.CellData[][];
-    fields: string;
-}
-
-/**
- * Generates batch update requests to put `data` into the range defined by `destination`.
- * @param fields Mask to see what to copy.
- */
-export function buildUpdateCellsRequest({ destination, data, fields }: BuildUpdateCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
-    const startRow = destination.startRowIndex ?? 0;
-    const endRow = destination.endRowIndex ?? 0;
-    const startCol = destination.startColumnIndex ?? 0;
-    const endCol = destination.endColumnIndex ?? 0;
-
-    const finalRows = endRow - startRow;
-    const finalCols = endCol - startCol;
-
-    if (!finalRows || !finalCols) return undefined;
-    const finalRowData: GoogleAppsScript.Sheets.Schema.RowData[] = [];
-    for (let r = 0; r < finalRows; r++) {
-        const rowValues: GoogleAppsScript.Sheets.Schema.CellData[] = [];
-        const sourceRow = data[r] ?? [];
-
-        for (let c = 0; c < finalCols; c++) {
-            rowValues.push(sourceRow[c] ?? {});
-        }
-
-        finalRowData.push({ values: rowValues });
-    }
-
-    // Write the data
-    return {
-        updateCells: {
-            range: destination,
-            rows: finalRowData,
-            fields: fields,
-        },
     };
 }
