@@ -34,9 +34,8 @@ export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = fa
             if (absoluteRow < startRow || absoluteRow >= endRow) continue;
 
             const values = rowDataArray[r]?.values ?? [];
-            const targetRow = result[absoluteRow - startRow];
-
-            if (!targetRow) continue;
+            // biome-ignore lint/style/noNonNullAssertion: Math proves this must exist.
+            const targetRow = result[absoluteRow - startRow]!;
 
             for (let c = 0; c < values.length; c++) {
                 const absoluteCol = gridStartCol + c;
