@@ -20,3 +20,11 @@ export const DEFAULT_COMMENT =
     "FORTALEZAS:\n" +
     "ÁREAS DE OPORTUNIDAD:\n" +
     "SUGERENCIAS";
+
+// Banding coloring
+export const LIGHT_GREY_COLOR: GoogleAppsScript.Sheets.Schema.Color = { red: 0.98, green: 0.98, blue: 0.98 };
+export const BAND_LIGHT = 0.95;
+export const HEADER_SAT = 0.75;
+export const HEADER_LIGH = 0.2;
+export const FOOTER_SAT = 0.5;
+export const FOOTER_LIGH = 0.7;

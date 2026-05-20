@@ -116,8 +116,8 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
         if (expectedType === "time") {
             if (rawField.timeInput) {
                 result[key] = {
-                    hours: rawField.timeInput.hours ?? 0,
-                    minutes: rawField.timeInput.minutes ?? 0,
+                    hours: rawField.timeInput.hours,
+                    minutes: rawField.timeInput.minutes,
                 };
             }
             // No TimePicker, so we ignore.
@@ -138,7 +138,7 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
                 break;
             }
             case "array":
-                result[key] = stringVals ?? [];
+                result[key] = stringVals;
                 break;
         }
     }

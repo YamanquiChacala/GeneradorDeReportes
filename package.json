@@ -16,8 +16,8 @@
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "test": "jest --passWithNoTests",
-    "test:coverage": "jest --passWithNoTests --coverage",
+    "test": "jest",
+    "test:coverage": "jest --coverage && cat dark-coverage.css >> coverage/base.css",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",

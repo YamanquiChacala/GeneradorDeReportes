@@ -1,6 +1,6 @@
 export * from "./color";
 export * from "./gas-types";
-export * from "./helper";
+export * from "./helpers";
 export * from "./mapped-range";
 export * from "./notation";
 export * from "./parse";

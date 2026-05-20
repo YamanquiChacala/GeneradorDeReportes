@@ -13,13 +13,12 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     const allowedSheetNames = new Set<string>();
     const allowedRangeNames = new Set<string>();
 
-    for (const key of Object.keys(schema.sheets)) {
-        const sheetConfig = schema.sheets[key];
-        if (sheetConfig) allowedSheetNames.add(sheetConfig.sheetName);
+    for (const sheetConfig of Object.values(schema.sheets)) {
+        allowedSheetNames.add(sheetConfig.sheetName);
 
-        if (sheetConfig?.ranges) {
-            for (const rangeKey of Object.keys(sheetConfig.ranges)) {
-                if (sheetConfig.ranges[rangeKey]) allowedRangeNames.add(sheetConfig.ranges[rangeKey]);
+        if (sheetConfig.ranges) {
+            for (const rangeName of Object.values(sheetConfig.ranges)) {
+                allowedRangeNames.add(rangeName);
             }
         }
     }

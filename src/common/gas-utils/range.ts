@@ -46,13 +46,13 @@ export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, 
     }
 
     if (height != null) {
-        if (height > 0) result.endRowIndex = startRow + height;
+        if (height >= 0) result.endRowIndex = startRow + height;
     } else if (origin.endRowIndex != null) {
         result.endRowIndex = Math.max(startRow, origin.endRowIndex + rowOffset);
     }
 
     if (width != null) {
-        if (width > 0) result.endColumnIndex = startCol + width;
+        if (width >= 0) result.endColumnIndex = startCol + width;
     } else if (origin.endColumnIndex != null) {
         result.endColumnIndex = Math.max(startCol, origin.endColumnIndex + colOffset);
     }

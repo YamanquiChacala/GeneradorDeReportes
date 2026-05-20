@@ -1,6 +1,5 @@
 import { Dimension } from "../constants";
-import { getEpochDate, type MappedNamedRange, type RangeOperationResult, type ResizeRangeParams } from ".";
-import { offsetGridRange } from "./range";
+import { getEpochDate, type MappedNamedRange, offsetGridRange, type RangeOperationResult, type ResizeRangeParams } from ".";
 
 interface GetCellParams {
     mappedRange: MappedNamedRange;
@@ -10,8 +9,6 @@ interface GetCellParams {
 
 export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = false, unboundColumns = false): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const { range, sheet } = mappedRange;
-
-    if (!range || !sheet) return [];
 
     const startRow = range.startRowIndex ?? 0;
     const startCol = range.startColumnIndex ?? 0;

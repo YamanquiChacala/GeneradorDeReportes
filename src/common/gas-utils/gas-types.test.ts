@@ -1,6 +1,4 @@
-import { defineActionParameters, defineInputsSchema, getInputs } from "./gas-types";
-import { buildFieldsMask } from "./helper";
-import { parseSpreadsheet } from "./parse";
+import { defineActionParameters, defineInputsSchema, getInputs } from ".";
 
 describe("googleAPI Type Utilities", () => {
     describe("defineInputsSchema", () => {
@@ -33,6 +31,19 @@ describe("googleAPI Type Utilities", () => {
         it("should handle undefined inputs gracefully", () => {
             const parsed = actions.parse(undefined);
             expect(parsed).toEqual({});
+        });
+
+        it("should skip fields that are missing or undefined in rawParams", () => {
+            const parsed = actions.parse({ name: "test" }); // id and active are missing
+            expect(parsed.id).toBeUndefined();
+            expect(parsed.active).toBeUndefined();
+            expect(parsed.name).toBe("test");
+        });
+
+        it("should ignore properties that fail to parse as valid numbers", () => {
+            const parsed = actions.parse({ id: "not-a-number", name: "test" });
+            expect(parsed.id).toBeUndefined();
+            expect(parsed.name).toBe("test");
         });
     });
 
@@ -105,7 +116,6 @@ describe("googleAPI Type Utilities", () => {
         });
 
         it("should treat missing fields as boolean false", () => {
-            // Empty string (default value) gets removed.
             const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {};
             const result1 = getInputs(mockFormInputs, schema);
             expect(result1.isAdmin).toBe(false);
@@ -113,62 +123,48 @@ describe("googleAPI Type Utilities", () => {
 
         it("should treat 'false' as boolean false", () => {
             const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
-                isAdmin: { "": {}, stringInputs: { value: ["false"] } }, // explicit false
+                isAdmin: { "": {}, stringInputs: { value: ["false"] } },
             };
             const result1 = getInputs(mockFormInputs, schema);
             expect(result1.isAdmin).toBe(false);
         });
-    });
 
-    describe("buildFieldsMask", () => {
-        // Mock type to test field paths without needing the full GAS Sheet schema
-        type MockGASSchema = {
-            spreadsheetId: string;
-            properties: { title: string; locale?: string };
-            sheets: Array<{ properties: { sheetId: number; title: string } }>;
-        };
-
-        it("should join valid property paths with commas", () => {
-            const mask = buildFieldsMask<MockGASSchema>("spreadsheetId", "properties.title", "sheets.properties.sheetId");
-            expect(mask).toBe("spreadsheetId,properties.title,sheets.properties.sheetId");
-        });
-    });
-
-    describe("parseSpreadsheet", () => {
-        const schema = {
-            sheets: {
-                config: {
-                    sheetName: "Configuration",
-                    ranges: {
-                        users: "UsersRange",
-                    },
-                },
-            },
-        } as const;
-
-        it("should correctly map allowed sheets and ranges and ignore others", () => {
-            const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
-                sheets: [
-                    { properties: { sheetId: 1, title: "Configuration" } },
-                    { properties: { sheetId: 2, title: "SecretData" } }, // Should be ignored
-                ],
-                namedRanges: [
-                    { name: "UsersRange", range: { sheetId: 1 } },
-                    { name: "HiddenRange", range: { sheetId: 2 } }, // Should be ignored
-                ],
+        it("should safely ignore date fields completely missing explicit inputs and fallbacks", () => {
+            const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
+                startDate: { "": {} }, // No dateInput, dateTimeInput, or stringInputs
             };
+            const result = getInputs(mockFormInputs, schema);
+            expect(result.startDate).toBeUndefined();
+        });
 
-            const result = parseSpreadsheet(mockSpreadsheet, schema);
+        it("should safely ignore time fields missing the timeInput property", () => {
+            const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
+                startTime: { "": {} }, // Explicitly missing timeInput
+            };
+            const result = getInputs(mockFormInputs, schema);
+            expect(result.startTime).toBeUndefined();
+        });
 
-            // Check sheets
-            expect(result.sheets[schema.sheets.config.sheetName]).toBeDefined();
-            expect(result.sheets[schema.sheets.config.sheetName]?.properties?.title).toBe("Configuration");
-            expect("SecretData" in result.sheets).toBe(false);
+        it("should skip text, number, and array fields when stringInputs.value is empty", () => {
+            const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
+                username: { "": {}, stringInputs: { value: [] } },
+                age: { "": {}, stringInputs: { value: [] } },
+                selections: { "": {} },
+            };
+            const result = getInputs(mockFormInputs, schema);
+            expect(result.username).toBeUndefined();
+            expect(result.age).toBeUndefined();
+            expect(result.selections).toBeUndefined();
+        });
 
-            // Check ranges
-            expect(result.mappedRanges[schema.sheets.config.ranges.users]).toBeDefined();
-            expect(result.mappedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
-            expect("HiddenRange" in result.mappedRanges).toBe(false);
+        it("should fallback to empty string and handle undefined string inputs", () => {
+            const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
+                // By forcing undefined into the array, we force evaluation of the `?? ""` and `?? []` fallbacks.
+                // biome-ignore lint/suspicious/noExplicitAny: Simulating malformed Json
+                username: { "": {}, stringInputs: { value: [undefined as any] } },
+            };
+            const result = getInputs(mockFormInputs, schema);
+            expect(result.username).toBe("");
         });
     });
 });

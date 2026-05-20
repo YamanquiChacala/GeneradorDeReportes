@@ -1,0 +1,146 @@
+/* ===== Dark theme overrides for Jest/Istanbul coverage ===== */
+/** biome-ignore-all lint/complexity/noImportantStyles: Needed to override generated rules */
+
+html,
+body {
+    background: #1e1e1e !important;
+    color: #d4d4d4 !important;
+}
+
+/* General text */
+body,
+td,
+th,
+pre,
+h1,
+h2,
+span,
+div {
+    color: #d4d4d4 !important;
+}
+
+/* Links */
+a,
+div.path a:link,
+div.path a:visited {
+    color: #4fc1ff !important;
+}
+
+/* Secondary text */
+.quiet,
+.quiet a,
+.ignore-none,
+.com {
+    color: #909090 !important;
+    opacity: 1 !important;
+}
+
+/* Small boxes like "23/25" */
+.fraction {
+    background: #333 !important;
+    color: #ddd !important;
+}
+
+/* Tables */
+.coverage-summary {
+    background: #252526 !important;
+}
+
+.coverage-summary tr {
+    border-bottom: 1px solid #444 !important;
+}
+
+.coverage-summary tbody,
+.coverage-summary td,
+.coverage-summary th,
+.keyline-all {
+    border-color: #444 !important;
+}
+
+.coverage-summary td,
+.coverage-summary th {
+    background: #252526 !important;
+    color: #d4d4d4 !important;
+}
+
+/* Source code area */
+pre.prettyprint {
+    background: #1e1e1e !important;
+}
+
+span.cline-neutral {
+    background: #2a2a2a !important;
+}
+
+/* Covered lines */
+.high,
+.cline-yes {
+    background: #264f2f !important;
+    color: #d4d4d4 !important;
+}
+
+.cstat-yes {
+    background: #38763f !important;
+    color: #ffffff !important;
+}
+
+.status-line.high,
+.high .cover-fill {
+    background: #4caf50 !important;
+}
+
+/* Partial coverage */
+.medium {
+    background: #5c4b1f !important;
+    color: #d4d4d4 !important;
+}
+
+.status-line.medium,
+.medium .cover-fill {
+    background: #c79a00 !important;
+}
+
+/* Missing coverage */
+.low,
+.cline-no {
+    background: #4a2025 !important;
+    color: #d4d4d4 !important;
+}
+
+.cstat-no,
+.fstat-no,
+.cbranch-no {
+    background: #7a313d !important;
+    color: #ffffff !important;
+}
+
+.status-line.low,
+.low .cover-fill {
+    background: #d16969 !important;
+}
+
+/* Branch indicators */
+.missing-if-branch {
+    background: #5a5a00 !important;
+    color: #ffffff !important;
+}
+
+/* Skipped */
+.cstat-skip,
+.fstat-skip,
+.cbranch-skip {
+    background: #444 !important;
+    color: #ccc !important;
+}
+
+.cover-empty {
+    background: #333 !important;
+}
+
+/* Highlighted line */
+.highlighted,
+.highlighted .cstat-no,
+.highlighted .fstat-no,
+.highlighted .cbranch-no {
+    background: #6b2f3a !important;
+}

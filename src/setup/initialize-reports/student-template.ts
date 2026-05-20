@@ -12,7 +12,7 @@ import {
     resizeMappedRange,
 } from "../../common/gas-utils";
 import {
-    createFieldFunction,
+    createFieldFormula,
     createFinalSubjectAverageFormula,
     createStudentAsistanceFormula,
     createStudentAsistancePerSubjectFormula,
@@ -400,7 +400,7 @@ function prepareFields(mappedRanges: Partial<Record<RangeName, MappedNamedRange>
             const fieldRow: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: field.name } }];
             const colOffsets = [1, 2, 3];
             for (const colOffset of colOffsets) {
-                fieldRow.push({ userEnteredValue: { formulaValue: createFieldFunction(field, index, colOffset, subjectOffset, subjectsRange, weightedSubjectsRange) } });
+                fieldRow.push({ userEnteredValue: { formulaValue: createFieldFormula(field, colOffset, subjectOffset, subjectsRange, weightedSubjectsRange) } });
             }
             if (attendancePerClass) {
                 fieldRow.push({});
