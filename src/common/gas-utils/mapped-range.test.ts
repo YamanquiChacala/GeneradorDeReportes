@@ -95,34 +95,6 @@ describe("MappedNamedRange Utilities", () => {
             expect(result[4]?.[4]).toStrictEqual({});
         });
 
-        // NEW: Covers `if (cellData != null)` else path by handling missing or null items inside a sparse row values list
-        it("should safely bypass null or undefined elements within sparse row values arrays", () => {
-            const sparseRange: MappedNamedRange = {
-                range: { sheetId: 1, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 3 },
-                sheet: {
-                    data: [
-                        {
-                            startRow: 0,
-                            startColumn: 0,
-                            rowData: [
-                                {
-                                    values: [
-                                        { effectiveValue: { stringValue: "Valid" } },
-                                        null as any, // Forces evaluation of the `!= null` check rule
-                                        undefined as any,
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            };
-            const result = getCellDataArray(sparseRange);
-            expect(result[0]?.[0]).toEqual({ effectiveValue: { stringValue: "Valid" } });
-            expect(result[0]?.[1]).toEqual({}); // Remained standard empty default object block
-            expect(result[0]?.[2]).toEqual({});
-        });
-
         it("should return an empty result matrix if the sheet lacks a data array", () => {
             const emptyDataRange: MappedNamedRange = {
                 range: { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 },
@@ -206,24 +178,6 @@ describe("MappedNamedRange Utilities", () => {
         it("should handle unbounded ranges without throwing out-of-bounds errors", () => {
             const data = getCellData({ mappedRange: mockUnboundedRange, rowOffset: 99, columnOffset: 25 });
             expect(data?.effectiveValue?.stringValue).toBe("Bottom Right Cell");
-        });
-
-        // NEW: Covers `return rowData.values[relativeCol] ?? {};` when cell evaluates explicitly to null
-        it("should fallback to an empty object if the values array entry is missing or null", () => {
-            const missingCellRange: MappedNamedRange = {
-                range: { sheetId: 1, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 },
-                sheet: {
-                    data: [
-                        {
-                            startRow: 0,
-                            startColumn: 0,
-                            rowData: [{ values: [null as any] }],
-                        },
-                    ],
-                },
-            };
-            const data = getCellData({ mappedRange: missingCellRange, rowOffset: 0, columnOffset: 0 });
-            expect(data).toStrictEqual({});
         });
     });
 

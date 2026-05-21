@@ -79,8 +79,10 @@ export function formatDateRange(startMs: number, endMs: number): string {
     const startDate = new Date(startMs);
     const endDate = new Date(endMs);
 
-    const startMonth = MONTH_NAMES[startDate.getUTCMonth()] ?? "";
-    const endMonth = MONTH_NAMES[endDate.getUTCMonth()] ?? "";
+    // biome-ignore lint/style/noNonNullAssertion: `getUTCMont` always returns [0-11]
+    const startMonth = MONTH_NAMES[startDate.getUTCMonth()]!;
+    // biome-ignore lint/style/noNonNullAssertion: `getUTCMont` always returns [0-11]
+    const endMonth = MONTH_NAMES[endDate.getUTCMonth()]!;
 
     const startDay = startDate.getUTCDate();
     const endDay = endDate.getUTCDate();

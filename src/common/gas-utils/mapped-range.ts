@@ -44,11 +44,10 @@ export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = fa
                 if (absoluteCol < startCol || absoluteCol >= endCol) continue;
 
                 const resultColIndex = absoluteCol - startCol; // Where in the result this will end.
-                const cellData = values[c];
+                // biome-ignore lint/style/noNonNullAssertion: `c` iterates on the lenght of values.
+                const cellData = values[c]!;
 
-                if (cellData != null) {
-                    targetRow[resultColIndex] = cellData;
-                }
+                targetRow[resultColIndex] = cellData;
             }
         }
     }
@@ -78,7 +77,8 @@ export function getCellData({ mappedRange, rowOffset, columnOffset }: GetCellPar
             const rowData = gridData.rowData[relativeRow];
 
             if (relativeCol >= 0 && rowData?.values && relativeCol < rowData.values.length) {
-                return rowData.values[relativeCol] ?? {};
+                // biome-ignore lint/style/noNonNullAssertion: The if avobe ensures it's in range
+                return rowData.values[relativeCol]!;
             }
         }
     }

@@ -25,7 +25,8 @@ export function iconifyUrl({ iconName, color, width, height, box }: IconifyParam
 
     // Extract the alt text from the last element of the name
     const nameParts = iconName.split("/");
-    const name = nameParts[nameParts.length - 1] || "";
+    // biome-ignore lint/style/noNonNullAssertion: `split` returns at least 1 element always.
+    const name = nameParts[nameParts.length - 1]!;
 
     return { url, name };
 }

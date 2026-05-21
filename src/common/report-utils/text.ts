@@ -4,13 +4,12 @@ import type { ReportPersistentData } from ".";
 /**
  * Returns a nice string for the asked period.
  */
-export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 | 2): string {
+export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 | 2): string | undefined {
     const { configData, calendar } = data;
 
-    const nextPeriod = [1, 2, 3] as const;
-
-    const startBoundary = configData.dates[period] - 1;
-    const endBoundary = configData.dates[nextPeriod[period]];
+    const startBoundary = configData.dates[period] - (period === 0 ? 1 : 0);
+    // biome-ignore lint/style/noNonNullAssertion: dates has 4 elements.
+    const endBoundary = configData.dates[period + 1]!;
 
     // Get the indices using our single binary search function
     const startIndex = getUpperBoundIndex(calendar, startBoundary);
@@ -21,7 +20,7 @@ export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 |
     const actualEnd = calendar[endIndex - 1];
 
     // Exit if dates weren't found, or if the boundaries resulted in crossed dates
-    if (!actualStart || !actualEnd || actualStart > actualEnd) return "No hay fechas";
+    if (!actualStart || !actualEnd || actualStart > actualEnd) return undefined;
 
     return formatDateRange(actualStart, actualEnd);
 }
@@ -29,18 +28,15 @@ export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 |
 /**
  * Returns the index of the first element in the calendar strictly greater than the threshold.
  */
-function getUpperBoundIndex(calendar: readonly number[], threshold: number): number {
+export function getUpperBoundIndex(calendar: readonly number[], threshold: number): number {
     let left = 0;
     let right = calendar.length - 1;
     let bestIndex = calendar.length;
 
     while (left <= right) {
         const mid = Math.floor((left + right) / 2);
-        const midVal = calendar[mid];
-
-        if (midVal === undefined) {
-            break;
-        }
+        // biome-ignore lint/style/noNonNullAssertion: By definition in the middle of the array.
+        const midVal = calendar[mid]!;
 
         if (midVal > threshold) {
             bestIndex = mid;
