@@ -18,7 +18,6 @@ module.exports = {
         "!src/common/**/*.test.ts", // Exclude standard Jest test files from the report
         "!src/common/**/*.gas.test.ts", // Exclude GAS test files from the report
         "!src/common/**/*.d.ts", // Exclude TypeScript definition files
-        "!src/common/constants/*",
         "!src/common/gas-parts/*",
     ],
     // 'text' gives the terminal output. 'html' gives the browser report.

@@ -1,10 +1,11 @@
 import { Colors, Icon, MORE_THAN_A_YEAR } from "../common/constants";
 import { buildUtilityCard, headerIcon, headerImage, onPopCardStack, textButton } from "../common/gas-parts";
 import { getInputs } from "../common/gas-utils";
+import type { SetupFileData } from "../common/setup-utils";
 import { sanitizeFileName } from "../common/utils";
 import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams, GenerateCalendarParams, InitializeReportParams } from "./cards";
 import { copySetupFile } from "./copy-setup-file";
-import { createSetupFile, type SetupFileData } from "./crete-setup-file";
+import { createSetupFile } from "./crete-setup-file";
 import { generateCalendar } from "./generate-calendar";
 import { initializeReport } from "./initialize-reports";
 

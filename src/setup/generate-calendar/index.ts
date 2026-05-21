@@ -1,4 +1,4 @@
-import { ConditionType, MergeType, MORE_THAN_A_YEAR, MS_PER_DAY, PasteType } from "../../common/constants";
+import { ConditionType, MergeType, PasteType } from "../../common/constants";
 import { SetupSheetSchema } from "../../common/gas-parts";
 import {
     buildAddNamedRangeRequest,
@@ -16,27 +16,10 @@ import {
     offsetGridRange,
     parseSpreadsheet,
 } from "../../common/gas-utils";
+import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, type MonthBlock } from "../../common/setup-utils";
 
 type SheetName = ExtractSheetNames<typeof SetupSheetSchema>;
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
-
-interface CalendarDates {
-    dateStart: number;
-    dateTrimester1: number;
-    dateTrimester2: number;
-    dateEnd: number;
-    calStart: number;
-    calEnd: number;
-    totalDays: number;
-    totalRows: number;
-}
-
-interface MonthBlock {
-    startRow: number;
-    endRow: number;
-    monthIndex: number;
-    year: number;
-}
 
 /**
  * Generates a Calendar in the given Spreadsheet
@@ -54,7 +37,7 @@ export function generateCalendar(setupFileId: string) {
     const { sheets, sheetNamedRanges, mappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Extract and Validate Dates
-    const dates = calculateCalendarDates(mappedRanges);
+    const dates = getCalendarDates(mappedRanges);
     const calendarSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
 
     // Generate the Day-by-Day data and formats
@@ -75,35 +58,20 @@ export function generateCalendar(setupFileId: string) {
 /**
  * Extracts dates from named ranges, validates them, and calculates grid boundaries.
  */
-function calculateCalendarDates(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>): CalendarDates {
+function getCalendarDates(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>): CalendarDates {
     const rangeNames = SetupSheetSchema.sheets.groupData.ranges;
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de modelo de calendario");
 
-    const dates = getMappedRange(rangeNames.dates);
+    const datesRange = getMappedRange(rangeNames.dates);
 
-    // Get user provided dates.
-    const date0 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 0 });
-    const date1 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 1 });
-    const date2 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 2 });
-    const date3 = getCellUnixEpoch({ mappedRange: dates, rowOffset: 3 });
+    const dates: [number, number, number, number] = [
+        getCellUnixEpoch({ mappedRange: datesRange, rowOffset: 0 }),
+        getCellUnixEpoch({ mappedRange: datesRange, rowOffset: 1 }),
+        getCellUnixEpoch({ mappedRange: datesRange, rowOffset: 2 }),
+        getCellUnixEpoch({ mappedRange: datesRange, rowOffset: 3 }),
+    ];
 
-    // Validate user provided dates.
-    if (!date0 || !date1 || !date2 || !date3) throw new Error("Faltan las fechas.");
-    if (date0 >= date1 || date1 >= date2 || date2 >= date3) throw new Error("Fechas en desorden.");
-    if (date3 - date0 > MORE_THAN_A_YEAR) throw new Error("Calendario demasiado grande.");
-
-    // Snap to first Sunday
-    const dateStartDayOfWeek = new Date(date0).getUTCDay();
-    const calStart = date0 - dateStartDayOfWeek * MS_PER_DAY;
-
-    // Snap to last Saturday
-    const dateEndDayOfWeek = new Date(date3).getUTCDay();
-    const calEnd = date3 + (6 - dateEndDayOfWeek) * MS_PER_DAY;
-
-    const totalDays = (calEnd - calStart) / MS_PER_DAY + 1;
-    const totalRows = 1 + Math.ceil(totalDays / 7);
-
-    return { dateStart: date0, dateTrimester1: date1, dateTrimester2: date2, dateEnd: date3, calStart, calEnd, totalDays, totalRows };
+    return calculateCalendarDates(dates);
 }
 
 /**
@@ -123,72 +91,47 @@ function buildDayDataAndFormats(
 
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const rowDataArray: GoogleAppsScript.Sheets.Schema.RowData[] = [];
-    const monthBlocks: MonthBlock[] = [];
 
-    let currentMs = dates.calStart; // The day we're processing (we advance by week rows, so 7 days)
-    let currentRowNumber = 1; // 0 Is headers.
-    let currentMonthIndex = -1; // undefined, 0-11 for month.
-    let currentYear = -1; // undefined
-    let monthStartRow = 1; // undefined. What row did this month started on, used to merge the full month label.
+    const grid = calculateCalendarGrid(dates);
 
-    while (currentMs <= dates.calEnd) {
-        // Wednesday (day 3) defines what month the week "belongs" to.
-        const wednesdayMs = currentMs + 3 * MS_PER_DAY;
-        const wednesdayDate = new Date(wednesdayMs);
-        const monthIndex = wednesdayDate.getUTCMonth();
-        const year = wednesdayDate.getUTCFullYear();
-
-        // If this week is the start of a new month.
-        if (currentMonthIndex !== monthIndex) {
-            if (currentMonthIndex !== -1) {
-                // Don't close a month before even starting.
-                monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
-            }
-            currentMonthIndex = monthIndex;
-            currentYear = year;
-            monthStartRow = currentRowNumber;
-        }
-
+    grid.weeks.forEach((week) => {
         const rowCells: GoogleAppsScript.Sheets.Schema.CellData[] = [{}]; // Empty Col A for month label
 
-        // Process each day of the week
-        for (let i = 0; i < 7; i++) {
-            const dayDate = new Date(currentMs);
-            const dayOfWeek = dayDate.getUTCDay();
-            const isWeekday = dayOfWeek !== 0 && dayOfWeek !== 6;
-            const inBounds = currentMs >= dates.dateStart && currentMs <= dates.dateEnd;
+        week.days.forEach((day, i) => {
+            // Day number
+            rowCells.push({ userEnteredValue: { numberValue: day.dateNumber } });
 
-            // Day number at the left
-            rowCells.push({ userEnteredValue: { numberValue: dayDate.getUTCDate() } });
-            // Checkmark at the rigth
+            // Checkmark
             rowCells.push({
-                userEnteredValue: { boolValue: inBounds && isWeekday },
+                userEnteredValue: { boolValue: day.inBounds && day.isWeekday },
                 dataValidation: { condition: { type: ConditionType.BOOLEAN }, strict: true, showCustomUi: true },
             });
 
-            // Format of our number and checkmark
+            // Format
             let formatSource: MappedNamedRange;
-            if (isWeekday && inBounds) {
-                formatSource = getMappedRange(rangeNames.trimester1Day);
-                if (currentMs > dates.dateTrimester2) formatSource = getMappedRange(rangeNames.trimester3Day);
-                else if (currentMs > dates.dateTrimester1) formatSource = getMappedRange(rangeNames.trimester2Day);
-            } else {
-                formatSource = getMappedRange(rangeNames.restDay);
+            switch (day.dayType) {
+                case "trimester1":
+                    formatSource = getMappedRange(rangeNames.trimester1Day);
+                    break;
+                case "trimester2":
+                    formatSource = getMappedRange(rangeNames.trimester2Day);
+                    break;
+                case "trimester3":
+                    formatSource = getMappedRange(rangeNames.trimester3Day);
+                    break;
+                case "rest":
+                    formatSource = getMappedRange(rangeNames.restDay);
+                    break;
             }
 
-            const destinationRange = createSingleCellRange(calendarSheetId, currentRowNumber, 2 * i + 1);
+            const destinationRange = createSingleCellRange(calendarSheetId, week.rowNumber, 2 * i + 1);
             requests.push(buildCopyPasteRequest(formatSource.range, destinationRange, PasteType.PASTE_FORMAT));
+        });
 
-            currentMs += MS_PER_DAY;
-        }
         rowDataArray.push({ values: rowCells });
-        currentRowNumber++;
-    }
+    });
 
-    // Close final month block
-    monthBlocks.push({ startRow: monthStartRow, endRow: currentRowNumber, monthIndex: currentMonthIndex, year: currentYear });
-
-    return { rowDataArray, monthBlocks, requests };
+    return { rowDataArray, monthBlocks: grid.monthBlocks, requests };
 }
 
 /**
