@@ -23,8 +23,8 @@ export function normalizeTrimesterWeights(w0: number, w1: number, w2: number): [
         (_, newWeight) => newWeight,
     );
 
-    // Safely fallback to 0 to satisfy noUncheckedIndexedAccess
-    return [result[0] ?? 0, result[1] ?? 0, result[2] ?? 0];
+    // biome-ignore lint/style/noNonNullAssertion: normalizeItems returns the same number of inputs.
+    return [result[0]!, result[1]!, result[2]!];
 }
 
 /**

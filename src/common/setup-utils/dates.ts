@@ -30,7 +30,7 @@ export function calculateCalendarDates(dates: [number, number, number, number]):
     const calEnd = dates[3] + (6 - dateEndDayOfWeek) * MS_PER_DAY;
 
     const totalDays = (calEnd - calStart) / MS_PER_DAY + 1;
-    const totalRows = 1 + Math.ceil(totalDays / 7);
+    const totalRows = 1 + Math.ceil(totalDays / 7); // Header + weeks
 
     return { dateStart: dates[0], dateTrimester1: dates[1], dateTrimester2: dates[2], dateEnd: dates[3], calStart, calEnd, totalDays, totalRows };
 }
