@@ -1,22 +1,19 @@
-import { MS_PER_DAY } from "../../common/constants";
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames } from "../../common/gas-utils";
 import {
     buildFieldsMask,
     buildTransferRequests,
-    colorToHex,
     createRequiredGetter,
     getCellBoolean,
     getCellDataArray,
     getCellNumber,
     getCellUnixEpoch,
-    getSheetsDate,
     type MappedNamedRange,
     makeUserEntered,
 } from "../../common/gas-utils";
-import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/report-utils";
-import { normalizeSubjectWeights, normalizeTrimesterWeights, parseAcademicFieldsAndSubjects } from "../../common/setup-utils";
-import { sanitizeSheetName, typedEntries } from "../../common/utils";
+import type { AcademicField, ConfigData, ReportPersistentData, StudentRow, WeightedSubject } from "../../common/report-utils";
+import { normalizeSubjectWeights, normalizeTrimesterWeights, parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from "../../common/setup-utils";
+import { typedEntries } from "../../common/utils";
 
 type SetupRangeName = ExtractRangeNames<typeof SetupSheetSchema>;
 type ReportRangeName = ExtractRangeNames<typeof ReportSheetSchema>;
@@ -202,25 +199,16 @@ function buildReportFieldsAndSubjects(
     const rangeNames = ReportSheetSchema.sheets.persistentData.ranges;
     const getNamedRange = createRequiredGetter(mappedRanges);
 
-    const fieldsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-    const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    const fieldsData = academicFields.map((field): GoogleAppsScript.Sheets.Schema.CellData[] => [
+        { userEnteredValue: { stringValue: field.color } },
+        { userEnteredValue: { stringValue: field.name } },
+        { userEnteredValue: { numberValue: field.subjects } },
+    ]);
 
-    for (const field of academicFields) {
-        const fieldsDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
-            { userEnteredValue: { stringValue: field.color } },
-            { userEnteredValue: { stringValue: field.name } },
-            { userEnteredValue: { numberValue: field.subjects } },
-        ];
-        fieldsData.push(fieldsDataRow);
-    }
-
-    for (const weightedSubject of subjects) {
-        const weightedSubjectDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
-            { userEnteredValue: { stringValue: weightedSubject.subject } },
-            { userEnteredValue: { numberValue: weightedSubject.weight } },
-        ];
-        subjectsData.push(weightedSubjectDataRow);
-    }
+    const subjectsData = subjects.map((weightedSubject): GoogleAppsScript.Sheets.Schema.CellData[] => [
+        { userEnteredValue: { stringValue: weightedSubject.subject } },
+        { userEnteredValue: { numberValue: weightedSubject.weight } },
+    ]);
 
     const { requests: fieldRequests, rowOffset: fieldsRowOffset } = buildTransferRequests({
         destination: getNamedRange(rangeNames.fields),
@@ -253,64 +241,13 @@ function getStudents(
     students: StudentRow[];
     newRowOffset: number;
 } {
-    const students: StudentRow[] = [];
-
     const getSetupNamedRange = createRequiredGetter(setupNamedRanges, "rango de registro inicial");
     const getReportNamedRange = createRequiredGetter(reportNamedRanges, "rango de reporte");
 
     // Unbound rows to get all students, even if the sheet grew past the range.
     const studentSetupData = getCellDataArray(getSetupNamedRange(SetupSheetSchema.sheets.groupData.ranges.students), true);
 
-    const studentReportData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-
-    let studentNumber = 0;
-    let firstTime = true;
-    let emptyBefore = false;
-    for (const studentRow of studentSetupData) {
-        const firstName = studentRow[0]?.effectiveValue?.stringValue;
-        const lastName = studentRow[1]?.effectiveValue?.stringValue;
-        if (!firstName || !lastName) {
-            emptyBefore = true;
-            studentNumber = 0;
-            continue;
-        }
-
-        studentNumber++;
-        const sheetName = sanitizeSheetName(`${firstName} ${lastName}`);
-
-        const student: Student = {
-            type: "student",
-            id: studentNumber,
-            firstName,
-            lastName,
-            sheetName,
-            // TODO: Maybe mark these as optional.
-            sex: studentRow[2]?.effectiveValue?.stringValue ?? "",
-            level:
-                studentRow[3]?.effectiveValue?.stringValue ??
-                (studentRow[3]?.effectiveValue?.numberValue != null ? `${studentRow[3]?.effectiveValue?.numberValue}º` : ""),
-            grade: studentRow[4]?.effectiveValue?.stringValue ?? "",
-        };
-
-        const studentReportDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
-            { userEnteredValue: { numberValue: studentNumber } },
-            { userEnteredValue: { stringValue: firstName } },
-            { userEnteredValue: { stringValue: lastName } },
-            { userEnteredValue: { stringValue: sheetName } },
-        ];
-        if (emptyBefore && !firstTime) {
-            students.push({ type: "separator" });
-            studentReportData.push([]);
-            emptyBefore = false;
-        }
-
-        students.push(student);
-        studentReportData.push(studentReportDataRow);
-        if (firstTime) {
-            firstTime = false;
-            emptyBefore = false;
-        }
-    }
+    const { studentReportData, students } = parseStudentList(studentSetupData);
 
     const { requests, rowOffset: studentRowOffset } = buildTransferRequests({
         destination: getReportNamedRange(ReportSheetSchema.sheets.persistentData.ranges.students),
@@ -338,35 +275,10 @@ function getCalendarDays(
     const getSetupNamedRange = createRequiredGetter(setupNamedRanges, "rango de registro inicial");
     const getReportNamedRange = createRequiredGetter(reportNamedRanges, "rango de reporte");
 
-    const calendar: number[] = [];
-
     const initialMillisecond = getCellNumber({ mappedRange: getSetupNamedRange(SetupSheetSchema.sheets.calendar.ranges.start) });
     const calendarRawData = getCellDataArray(getSetupNamedRange(SetupSheetSchema.sheets.calendar.ranges.calendar));
 
-    if (new Date(initialMillisecond).getUTCDay() !== 0) throw new Error("Calendario no inicia en Domingo.");
-
-    const sheetDays: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-
-    for (const [rowIndex, row] of calendarRawData.entries()) {
-        if (!row) continue;
-
-        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-            const columnIndex = dayIndex * 2 + 1;
-            const cell = row[columnIndex];
-
-            const isChecked = cell?.effectiveValue?.boolValue === true;
-
-            if (isChecked) {
-                const day = initialMillisecond + (rowIndex * 7 + dayIndex) * MS_PER_DAY;
-                calendar.push(day);
-                sheetDays.push([
-                    {
-                        userEnteredValue: { numberValue: getSheetsDate(day) },
-                    },
-                ]);
-            }
-        }
-    }
+    const { days, sheetDays } = parseCalendarDays(initialMillisecond, calendarRawData);
 
     const { requests, rowOffset: calendaRowOffset } = buildTransferRequests({
         destination: getReportNamedRange(ReportSheetSchema.sheets.persistentData.ranges.calendarDates),
@@ -376,5 +288,5 @@ function getCalendarDays(
         rowOffset,
     });
 
-    return { requests, calendar, newRowOffset: calendaRowOffset };
+    return { requests, calendar: days, newRowOffset: calendaRowOffset };
 }
