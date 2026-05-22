@@ -15,6 +15,7 @@ import {
     makeUserEntered,
 } from "../../common/gas-utils";
 import type { AcademicField, ConfigData, ReportPersistentData, Student, StudentRow, WeightedSubject } from "../../common/report-utils";
+import { normalizeSubjectWeights, normalizeTrimesterWeights, parseAcademicFieldsAndSubjects } from "../../common/setup-utils";
 import { sanitizeSheetName, typedEntries } from "../../common/utils";
 
 type SetupRangeName = ExtractRangeNames<typeof SetupSheetSchema>;
@@ -127,25 +128,19 @@ function getConfigData(
                 Object.assign(configData, { [name]: getCellBoolean({ mappedRange: sourceMappedRange }) });
                 data = makeUserEntered(getCellDataArray(sourceMappedRange), true);
                 break;
-            case "numberArray":
-                {
-                    const num0 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 0 });
-                    const num1 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 1 });
-                    const num2 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 2 });
+            case "numberArray": {
+                const num0 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 0 });
+                const num1 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 1 });
+                const num2 = getCellNumber({ mappedRange: sourceMappedRange, rowOffset: 2 });
 
-                    const sum = num0 + num1 + num2;
+                const [norm0, norm1, norm2] = normalizeTrimesterWeights(num0, num1, num2);
 
-                    const factor = sum > 0 ? 1 / sum : 1;
-                    Object.assign(configData, {
-                        [name]: [factor * num0, factor * num1, factor * num2],
-                    });
-                    data = [
-                        [{ userEnteredValue: { numberValue: factor * num0 } }],
-                        [{ userEnteredValue: { numberValue: factor * num1 } }],
-                        [{ userEnteredValue: { numberValue: factor * num2 } }],
-                    ];
-                }
+                Object.assign(configData, {
+                    [name]: [norm0, norm1, norm2],
+                });
+                data = [[{ userEnteredValue: { numberValue: norm0 } }], [{ userEnteredValue: { numberValue: norm1 } }], [{ userEnteredValue: { numberValue: norm2 } }]];
                 break;
+            }
             case "dateArray":
                 Object.assign(configData, {
                     [name]: [
@@ -184,106 +179,13 @@ function getSubjects(
 } {
     const getSetupMappedRange = createRequiredGetter(setupMappedRanges, "rango en registro inicial");
 
-    const academicFields: AcademicField[] = [];
-    const subjects: WeightedSubject[] = [];
-
     const setupSubjectData = getCellDataArray(getSetupMappedRange(SetupSheetSchema.sheets.groupData.ranges.subjects));
 
-    let currentField: AcademicField = {
-        name: "",
-        color: "",
-        subjects: 0,
-    };
+    const { academicFields, rawSubjects } = parseAcademicFieldsAndSubjects(setupSubjectData);
 
-    for (const dataRow of setupSubjectData) {
-        const iterator = dataRow[Symbol.iterator]();
-        // Grab first cell of the row.
-        const first = iterator.next();
+    const subjects = normalizeSubjectWeights(rawSubjects, academicFields, averagePerField);
 
-        if (first.done) continue; // the row is empty.
-
-        const fieldCell = first.value;
-        const fieldName = (fieldCell.effectiveValue?.stringValue ?? "").trim();
-
-        if (fieldName !== "") {
-            // Save previous Field if it's complete.
-            if (currentField.name !== "" && currentField.color !== "" && currentField.subjects > 0) academicFields.push(currentField);
-
-            // Start a new one
-            const bgColor = fieldCell?.effectiveFormat?.backgroundColor;
-            currentField = {
-                name: fieldName,
-                color: colorToHex(bgColor),
-                subjects: 0,
-            };
-        }
-        if (currentField.name !== "") {
-            let weight = 1;
-            let subject = "";
-            for (const cellData of iterator) {
-                // Find weight
-                const cellNumVal = cellData.effectiveValue?.numberValue;
-                if (cellNumVal) {
-                    weight = cellNumVal;
-                    continue;
-                }
-                // Find subject name
-                const cellStringVal = (cellData.effectiveValue?.stringValue ?? "").trim();
-                if (cellStringVal !== "") {
-                    subject = cellStringVal;
-                }
-            }
-            if (subject !== "") {
-                currentField.subjects++;
-                subjects.push({ weight, subject });
-            }
-        }
-    }
-    // Save last Field
-    if (currentField.name !== "" && currentField.color !== "" && currentField.subjects > 0) academicFields.push(currentField);
-
-    // Normalize weights
-    if (averagePerField) {
-        // Normalize weights per field
-        let subjectIndex = 0; // Keep track of where we are in the flat subjects array
-
-        for (const field of academicFields) {
-            const fieldSubjectCount = field.subjects;
-            let totalFieldWeight = 0;
-
-            // 1. Calculate the total weight for this specific block of subjects
-            for (let i = 0; i < fieldSubjectCount; i++) {
-                const currentSubject = subjects[subjectIndex + i];
-                if (currentSubject) {
-                    totalFieldWeight += currentSubject.weight;
-                }
-            }
-
-            // 2. Normalize the weights for this block
-            if (totalFieldWeight > 0) {
-                for (let i = 0; i < fieldSubjectCount; i++) {
-                    const currentSubject = subjects[subjectIndex + i];
-                    if (currentSubject) {
-                        currentSubject.weight /= totalFieldWeight;
-                    }
-                }
-            }
-
-            // 3. Move the index forward to the start of the next field's subjects
-            subjectIndex += fieldSubjectCount;
-        }
-    } else {
-        // Normalize weights globally across the entire flat array
-        const grandTotalWeight = subjects.reduce((sum, subj) => sum + subj.weight, 0);
-
-        if (grandTotalWeight > 0) {
-            for (const subj of subjects) {
-                subj.weight /= grandTotalWeight;
-            }
-        }
-    }
-
-    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportMappedRanges, academicFields, subjects, rowOffset);
+    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportMappedRanges, academicFields, rawSubjects, rowOffset);
 
     return { requests, academicFields, subjects, newRowOffset };
 }

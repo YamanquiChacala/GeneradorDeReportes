@@ -35,24 +35,19 @@ export function initializeReport(setupFileId: string, parentId: string) {
     const { mappedRanges: setupMappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Create report file.
-
     const reportFileId = createReportFile(parentId, setupMappedRanges);
 
     // Fetch and parse report file data
-
     const reportSpreadsheet = Sheets?.Spreadsheets.get(reportFileId, { fields: reportFieldsMask });
     const parsedReportSheet = parseSpreadsheet(reportSpreadsheet, ReportSheetSchema);
 
     // Fill Report Persistent Data
-
     const { persistentData, requests: persistentDataRequests } = fillPersistentData(setupMappedRanges, parsedReportSheet.mappedRanges);
 
     // Create Attendance sheet
-
     const attendanceRequests = createAttendanceSheet(parsedReportSheet, persistentData);
 
     // Prepare Student template sheet
-
     const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet, persistentData);
 
     // TODO: Create each Student sheet
@@ -60,11 +55,9 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // TODO: Prepare Status sheet
 
     // ============ Batch Changes ==============
-
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests, ...studentTemplateSetup];
 
     // ============ Execute Batch update ===========
-
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
 }
 

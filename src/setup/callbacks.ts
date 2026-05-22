@@ -1,7 +1,7 @@
-import { Colors, Icon, MORE_THAN_A_YEAR } from "../common/constants";
+import { Colors, Icon } from "../common/constants";
 import { buildUtilityCard, headerIcon, headerImage, onPopCardStack, textButton } from "../common/gas-parts";
 import { getInputs } from "../common/gas-utils";
-import type { SetupFileData } from "../common/setup-utils";
+import { type SetupFileData, validateDates } from "../common/setup-utils";
 import { sanitizeFileName } from "../common/utils";
 import { CopySetupFileInputs, CopySetupFileParams, CreateSetupFileInputs, CreateSetupFileParams, GenerateCalendarParams, InitializeReportParams } from "./cards";
 import { copySetupFile } from "./copy-setup-file";
@@ -35,15 +35,10 @@ export function onCreateSetupFile(e: GoogleAppsScript.Addons.EventObject): Googl
 
     const groupNameSanitized = sanitizeFileName(groupName);
 
-    if (!(dateStart < dateEndTrimester1 && dateEndTrimester1 < dateEndTrimester2 && dateEndTrimester2 < dateEnd)) {
+    const dateError = validateDates([dateStart, dateEndTrimester1, dateEndTrimester2, dateEnd]);
+    if (dateError) {
         return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Las fechas deben estar en orden ascendente.`))
-            .build();
-    }
-
-    if (dateEnd - dateStart > MORE_THAN_A_YEAR) {
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Periodo demasiado largo.`))
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${dateError}`))
             .build();
     }
 

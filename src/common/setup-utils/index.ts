@@ -1,4 +1,6 @@
 export * from "./dates";
+export * from "./math";
+export * from "./parse";
 export * from "./requests";
 
 export type DayType = "trimester1" | "trimester2" | "trimester3" | "rest";
