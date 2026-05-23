@@ -17,6 +17,37 @@ const BLUE_BG = { red: 0, green: 0, blue: 1 };
 
 describe("Setup Parse Utils", () => {
     describe("parseAcademicFieldsAndSubjects", () => {
+        it("handles simple input correctly", () => {
+            const simpleSubjectData: readonly CellData[][] = [
+                [str("field1", RED_BG), num(2), str("subject1")],
+                [empty(), empty(), str("subject2")],
+                [str("field2", BLUE_BG), empty(), str("subject3")],
+            ];
+
+            const { academicFields, rawSubjects } = parseAcademicFieldsAndSubjects(simpleSubjectData);
+
+            expect(academicFields).toEqual([
+                expect.objectContaining({
+                    name: "field1",
+                    subjects: 2,
+                }),
+                expect.objectContaining({
+                    name: "field2",
+                    subjects: 1,
+                }),
+            ]);
+
+            expect(academicFields).toHaveLength(2);
+
+            expect(rawSubjects).toEqual([
+                { subject: "subject1", weight: 2 },
+                { subject: "subject2", weight: 1 }, // Default weight fallback
+                { subject: "subject3", weight: 1 },
+            ]);
+
+            expect(rawSubjects).toHaveLength(3);
+        });
+
         it("handles messy user input correctly: creating fields, subjects, and skipping empty/invalid data", () => {
             const setupSubjectData: readonly CellData[][] = [
                 /* 0 */ [empty(), empty(), empty(), empty(), empty(), empty()],

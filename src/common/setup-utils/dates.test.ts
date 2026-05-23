@@ -90,27 +90,29 @@ describe("Setup Date Utilities", () => {
     describe("calculateCalendarGrid", () => {
         // Mock a strict period for predictable grid testing
         const baseDates: CalendarDates = {
-            dateStart: Date.UTC(2026, 3, 27), // Monday, Apr 27, 2026
-            dateTrimester1: Date.UTC(2026, 3, 28), // Tuesday, Apr 28, 2026
+            dateStart: Date.UTC(2026, 3, 20), // Monday, Apr 20, 2026
+            dateTrimester1: Date.UTC(2026, 3, 24), // Friday, Apr 24, 2026
             dateTrimester2: Date.UTC(2026, 3, 29), // Wednesday, Apr 29, 2026
             dateEnd: Date.UTC(2026, 4, 5), // Tuesday, May 5, 2026
-            calStart: Date.UTC(2026, 3, 26), // Sunday, Apr 26, 2026
+            calStart: Date.UTC(2026, 3, 19), // Sunday, Apr 19, 2026
             calEnd: Date.UTC(2026, 4, 9), // Saturday, May 9, 2026
-            totalDays: 14,
-            totalRows: 3,
+            totalDays: 21,
+            totalRows: 4,
         };
 
         it("generates the correct number of weeks and days", () => {
             const grid = calculateCalendarGrid(baseDates);
-            expect(grid.weeks).toHaveLength(2); // 14 total days = 2 weeks
+            expect(grid.weeks).toHaveLength(3);
 
-            const firstWeek = grid.weeks[0];
-            expect(firstWeek).toBeDefined();
-            expect(firstWeek?.days).toHaveLength(7);
+            for (const week of grid.weeks) {
+                expect(week.days).toBeDefined();
+                expect(week.days).toHaveLength(7);
+            }
         });
 
         it("correctly identifies month transitions based on Wednesdays", () => {
             const grid = calculateCalendarGrid(baseDates);
+            // Week 1 Wed = Apr 22 -> Month 3 (April)
             // Week 1 Wed = Apr 29 -> Month 3 (April)
             // Week 2 Wed = May 6 -> Month 4 (May)
             expect(grid.monthBlocks).toHaveLength(2);
@@ -118,35 +120,40 @@ describe("Setup Date Utilities", () => {
             const firstBlock = grid.monthBlocks[0];
             expect(firstBlock?.monthIndex).toBe(3);
             expect(firstBlock?.startRow).toBe(1);
-            expect(firstBlock?.endRow).toBe(2);
+            expect(firstBlock?.endRow).toBe(3);
 
             const secondBlock = grid.monthBlocks[1];
             expect(secondBlock?.monthIndex).toBe(4);
-            expect(secondBlock?.startRow).toBe(2);
-            expect(secondBlock?.endRow).toBe(3);
+            expect(secondBlock?.startRow).toBe(3);
+            expect(secondBlock?.endRow).toBe(4);
         });
 
         it("assigns the correct day types based on date bounds", () => {
             const grid = calculateCalendarGrid(baseDates);
             const week1 = grid.weeks[0];
+            const week2 = grid.weeks[1];
             expect(week1).toBeDefined();
+            expect(week2).toBeDefined();
 
             if (week1) {
-                const sunday = week1.days[0]; // Apr 26 (Out of user bounds)
+                const sunday = week1.days[0]; // Apr 19 (Out of user bounds)
                 expect(sunday?.dayType).toBe("rest");
                 expect(sunday?.inBounds).toBe(false);
 
-                const monday = week1.days[1]; // Apr 27 (dateStart -> tr1)
+                const monday = week1.days[1]; // Apr 20 (dateStart -> tr1)
                 expect(monday?.dayType).toBe("trimester1");
                 expect(monday?.inBounds).toBe(true);
 
-                const tuesday = week1.days[2]; // Apr 28 (dateTrimester1 boundary -> tr1)
-                expect(tuesday?.dayType).toBe("trimester1");
+                const friday = week1.days[5]; // Apr 24 (dateTrimester1 boundary -> tr1)
+                expect(friday?.dayType).toBe("trimester1");
+                expect(friday?.inBounds).toBe(true);
+            }
 
-                const wednesday = week1.days[3]; // Apr 29 (> dateTrimester1 -> tr2)
+            if (week2) {
+                const wednesday = week2.days[3]; // Apr 29 (> end trimester2)
                 expect(wednesday?.dayType).toBe("trimester2");
 
-                const thursday = week1.days[4]; // Apr 30 (> dateTrimester2 -> tr3)
+                const thursday = week2.days[4]; // Apr 30 (> dateTrimester2 -> tr3)
                 expect(thursday?.dayType).toBe("trimester3");
             }
         });
@@ -156,7 +163,7 @@ describe("Setup Date Utilities", () => {
             const week1 = grid.weeks[0];
 
             if (week1) {
-                const saturday = week1.days[6]; // May 2 (in bounds, but is a weekend)
+                const saturday = week1.days[6]; // Aprl 25 (in bounds, but is a weekend)
 
                 expect(saturday?.isWeekday).toBe(false);
                 expect(saturday?.inBounds).toBe(true);
