@@ -1,6 +1,6 @@
 import { MergeType, PasteOrientation, PasteType } from "../constants";
 import type { MappedNamedRange } from ".";
-import { buildAddNamedRangeRequest, buildCopyPasteRequest, buildMergeCellsRequest, buildTransferRequests, buildUpdateCellsRequest } from ".";
+import { buildAddBandingRequest, buildAddNamedRangeRequest, buildCopyPasteRequest, buildMergeCellsRequest, buildTransferRequests, buildUpdateCellsRequest } from ".";
 
 describe("Request Utilities", () => {
     describe("buildCopyPasteRequest", () => {
@@ -40,7 +40,53 @@ describe("Request Utilities", () => {
         });
     });
 
+    describe("buildAddBandingRequest", () => {
+        it("should correctly build an addBanding request with the provided range and properties", () => {
+            const mockRange = {
+                sheetId: 12345,
+                startRowIndex: 0,
+                endRowIndex: 10,
+                startColumnIndex: 0,
+                endColumnIndex: 5,
+            };
+
+            const mockBandingProperties = {
+                headerColor: { red: 0.8, green: 0.8, blue: 0.8 },
+                firstBandColor: { red: 1, green: 1, blue: 1 },
+                secondBandColor: { red: 0.9, green: 0.9, blue: 0.9 },
+            };
+
+            const result = buildAddBandingRequest(mockRange, mockBandingProperties);
+
+            expect(result).toEqual({
+                addBanding: {
+                    bandedRange: {
+                        range: mockRange,
+                        rowProperties: mockBandingProperties,
+                    },
+                },
+            });
+        });
+
+        it("should handle empty objects if provided", () => {
+            const mockRange = {};
+            const mockBandingProperties = {};
+
+            const result = buildAddBandingRequest(mockRange, mockBandingProperties);
+
+            expect(result).toEqual({
+                addBanding: {
+                    bandedRange: {
+                        range: {},
+                        rowProperties: {},
+                    },
+                },
+            });
+        });
+    });
+
     describe("buildUpdateCellsRequest", () => {
+        // TODO: Test returns undefined with negative inputs
         it("should return undefined if the range has no rows or columns", () => {
             const zeroRange = { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 };
             const request = buildUpdateCellsRequest({ destination: zeroRange, data: [], fields: "*" });

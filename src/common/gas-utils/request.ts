@@ -49,6 +49,23 @@ export function buildAddNamedRangeRequest<T extends NestedSheetSchema>(
     };
 }
 
+/**
+ * Generate batch update `addBanding` request.
+ */
+export function buildAddBandingRequest(
+    range: GoogleAppsScript.Sheets.Schema.GridRange,
+    bandingProperties: GoogleAppsScript.Sheets.Schema.BandingProperties,
+): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        addBanding: {
+            bandedRange: {
+                range,
+                rowProperties: bandingProperties,
+            },
+        },
+    };
+}
+
 interface BuildUpdateCellsRequestParams {
     destination: GoogleAppsScript.Sheets.Schema.GridRange;
     data: GoogleAppsScript.Sheets.Schema.CellData[][];

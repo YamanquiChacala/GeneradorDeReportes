@@ -28,3 +28,29 @@ export function gcd(a: number, b: number) {
     }
     return a;
 }
+
+/**
+ * Binary search
+ * Returns the index of the first element in the array strictly greater than the threshold.
+ * If no element is greater than threshold, returns the lenght of the array.
+ */
+export function getUpperBoundIndex(orderedArray: readonly number[], threshold: number): number {
+    let left = 0;
+    let right = orderedArray.length - 1;
+    let bestIndex = orderedArray.length;
+
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        // biome-ignore lint/style/noNonNullAssertion: By definition in the middle of the array.
+        const midVal = orderedArray[mid]!;
+
+        if (midVal > threshold) {
+            bestIndex = mid;
+            right = mid - 1; // It's strictly greater, but look left to find an earlier one
+        } else {
+            left = mid + 1; // It's <= threshold, look right
+        }
+    }
+
+    return bestIndex;
+}

@@ -1,4 +1,4 @@
-import { formatDateRange } from "../utils";
+import { formatDateRange, getUpperBoundIndex } from "../utils";
 import type { ReportPersistentData } from ".";
 
 /**
@@ -23,28 +23,4 @@ export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 |
     if (!actualStart || !actualEnd || actualStart > actualEnd) return undefined;
 
     return formatDateRange(actualStart, actualEnd);
-}
-
-/**
- * Returns the index of the first element in the calendar strictly greater than the threshold.
- */
-export function getUpperBoundIndex(calendar: readonly number[], threshold: number): number {
-    let left = 0;
-    let right = calendar.length - 1;
-    let bestIndex = calendar.length;
-
-    while (left <= right) {
-        const mid = Math.floor((left + right) / 2);
-        // biome-ignore lint/style/noNonNullAssertion: By definition in the middle of the array.
-        const midVal = calendar[mid]!;
-
-        if (midVal > threshold) {
-            bestIndex = mid;
-            right = mid - 1; // It's strictly greater, but look left to find an earlier one
-        } else {
-            left = mid + 1; // It's <= threshold, look right
-        }
-    }
-
-    return bestIndex;
 }

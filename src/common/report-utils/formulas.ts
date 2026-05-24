@@ -2,6 +2,23 @@ import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-ut
 import type { AcademicField } from ".";
 
 /**
+ * Define the formala for calculating the attendance percent.
+ */
+export function createAttendaceFormulas(row: number, startCol: number, endCol: number): { percent: string; count: string } {
+    if (startCol === -1 || startCol > endCol) return { percent: '="ND"', count: '=""' };
+
+    const str = getColumnLetter(startCol);
+    const end = getColumnLetter(endCol);
+
+    const range = `$${str}${row + 1}:$${end}${row + 1}`;
+
+    const percent = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, (COUNTA(${range}) - SUM(${range})) / COUNTA(${range}), "ND")`;
+    const count = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, SUM(${range}), "")`;
+
+    return { percent, count };
+}
+
+/**
  * Helper function to build the formula for shorter comments (for the SEP).
  */
 export function getShortCommentFormula(source: MappedNamedRange, rowOffset: number, colOffset: number): string {

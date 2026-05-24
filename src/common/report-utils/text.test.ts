@@ -1,37 +1,23 @@
 import { formatDateRange } from "../utils";
 import type { ReportPersistentData } from ".";
-import { generatePeriodString, getUpperBoundIndex } from "."; // Update path as needed
+import { generatePeriodString } from ".";
 
 // Mock the external date formatting utility
-jest.mock("../utils", () => ({
-    formatDateRange: jest.fn(),
-}));
+jest.mock("../utils", () => {
+    // 1. Grab the real module
+    const originalModule = jest.requireActual("../utils");
+
+    // 2. Return the real module, but overwrite the one function you want to mock
+    return {
+        __esModule: true,
+        ...originalModule,
+        formatDateRange: jest.fn(),
+    };
+});
 
 describe("Period Utilities", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-    });
-
-    describe("getUpperBoundIndex", () => {
-        const calendar = [10, 20, 30, 40, 50];
-
-        it("should return the index of the first element strictly greater than the threshold", () => {
-            expect(getUpperBoundIndex(calendar, 25)).toBe(2); // 30 is at index 2
-            expect(getUpperBoundIndex(calendar, 9)).toBe(0); // 10 is at index 0
-        });
-
-        it("should skip exact matches and find the strictly greater value", () => {
-            expect(getUpperBoundIndex(calendar, 30)).toBe(3); // 40 is at index 3
-        });
-
-        it("should return calendar.length if the threshold is greater than or equal to the max element", () => {
-            expect(getUpperBoundIndex(calendar, 50)).toBe(5); // threshold equals max
-            expect(getUpperBoundIndex(calendar, 100)).toBe(5); // threshold exceeds max
-        });
-
-        it("should return 0 if the calendar is empty", () => {
-            expect(getUpperBoundIndex([], 10)).toBe(0);
-        });
     });
 
     describe("generatePeriodString", () => {

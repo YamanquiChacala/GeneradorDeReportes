@@ -1,6 +1,7 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
 import type { AcademicField } from ".";
 import {
+    createAttendaceFormulas,
     createFieldFormula,
     createFinalSubjectAverageFormula,
     createStudentAsistanceFormula,
@@ -29,6 +30,61 @@ describe("Formula Generators", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    describe("createAttendaceFormulas", () => {
+        it('should return default "ND" strings if startCol is -1', () => {
+            // Arrange
+            const row = 0;
+            const startCol = -1;
+            const endCol = 5;
+
+            // Act
+            const result = createAttendaceFormulas(row, startCol, endCol);
+
+            // Assert
+            expect(result).toEqual({ percent: '="ND"', count: '=""' });
+            expect(getColumnLetter).not.toHaveBeenCalled();
+        });
+
+        it('should return default "ND" strings if startCol is greater than endCol', () => {
+            // Arrange
+            const row = 0;
+            const startCol = 5;
+            const endCol = 2; // startCol > endCol
+
+            // Act
+            const result = createAttendaceFormulas(row, startCol, endCol);
+
+            // Assert
+            expect(result).toEqual({ percent: '="ND"', count: '=""' });
+            expect(getColumnLetter).not.toHaveBeenCalled();
+        });
+
+        it("should calculate the correct formulas with A1 notation when valid inputs are provided", () => {
+            // Arrange
+            const row = 4; // Remember the function does row + 1, so this will be row 5 in the formula
+            const startCol = 1;
+            const endCol = 5;
+
+            // Set up our mocked returns for getColumnLetter
+            // First call gets 'A', second call gets 'E'
+            (getColumnLetter as jest.Mock).mockReturnValueOnce("A").mockReturnValueOnce("E");
+
+            // Act
+            const result = createAttendaceFormulas(row, startCol, endCol);
+
+            // Assert
+            expect(getColumnLetter).toHaveBeenCalledTimes(2);
+            expect(getColumnLetter).toHaveBeenNthCalledWith(1, startCol);
+            expect(getColumnLetter).toHaveBeenNthCalledWith(2, endCol);
+
+            // Check that the range ($A5:$E5) was correctly injected into the formulas
+            expect(result).toEqual({
+                percent: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, (COUNTA($A5:$E5) - SUM($A5:$E5)) / COUNTA($A5:$E5), "ND")',
+                count: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, SUM($A5:$E5), "")',
+            });
+        });
     });
 
     describe("getShortCommentFormula", () => {

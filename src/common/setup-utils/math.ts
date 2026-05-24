@@ -1,4 +1,55 @@
 import type { AcademicField, WeightedSubject } from "../report-utils";
+import type { SubjectBlockLayout } from ".";
+
+/**
+ * Generates a random 30 bit integer ID
+ */
+export function getRandomId(): number {
+    return Math.floor(Math.random() * (2 ** 31 - 1));
+}
+
+/**
+ * Calculate the size of the Attendance sheet.
+ */
+export function calculateAttendanceGridSize(
+    frozenRows: number,
+    frozenCols: number,
+    calendarLength: number,
+    studentsCount: number,
+    subjectsCount: number,
+    attendancePerClass: boolean,
+): { finalRowCount: number; finalColumnCount: number } {
+    const finalColumnCount = frozenCols + calendarLength;
+    let finalRowCount = frozenRows;
+
+    if (attendancePerClass) {
+        finalRowCount += (2 + studentsCount) * subjectsCount;
+    } else {
+        finalRowCount += 1 + studentsCount;
+    }
+
+    return { finalRowCount, finalColumnCount };
+}
+
+/**
+ * Calculates the sizes for each class block for attendance.
+ */
+export function calculatePerClassLayout(subjectCount: number, studentCount: number, frozenRows: number): SubjectBlockLayout[] {
+    const space = studentCount + 2;
+    const layouts: SubjectBlockLayout[] = [];
+
+    for (let index = 0; index < subjectCount; index++) {
+        layouts.push({
+            subjectIndex: index,
+            titleFormatStartRow: frozenRows + index * space,
+            studentStartRow: frozenRows + 2 + index * space,
+            bandingStartRow: frozenRows + 1 + index * space,
+            bandingNumRows: studentCount + 1,
+        });
+    }
+
+    return layouts;
+}
 
 /**
  * Generically normalizes the weights of any array of items.

@@ -1,9 +1,29 @@
+export * from "./data";
 export * from "./dates";
 export * from "./math";
 export * from "./parse";
 export * from "./requests";
 
 export type DayType = "trimester1" | "trimester2" | "trimester3" | "rest";
+
+export interface Range {
+    start: number;
+    end: number;
+}
+
+export interface Trimesters {
+    trim1Range: Range;
+    trim2Range: Range;
+    trim3Range: Range;
+}
+
+export interface SubjectBlockLayout {
+    subjectIndex: number;
+    titleFormatStartRow: number;
+    studentStartRow: number;
+    bandingStartRow: number;
+    bandingNumRows: number;
+}
 
 export interface CalendarGrid {
     monthBlocks: MonthBlock[];
