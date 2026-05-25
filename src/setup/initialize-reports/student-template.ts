@@ -135,11 +135,8 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
     const userCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).range, colOffset: 1, width: 3 });
     const simpleCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).range, colOffset: 4, width: 3 });
 
-    const userCommentRangeMerge = buildMergeCellsRequest(userCommentRange, MergeType.MERGE_ROWS);
-    if (userCommentRangeMerge) requests.push(userCommentRangeMerge);
-
-    const simpleCommentRangeMerge = buildMergeCellsRequest(simpleCommentRange, MergeType.MERGE_ROWS);
-    if (simpleCommentRangeMerge) requests.push(simpleCommentRangeMerge);
+    requests.push(buildMergeCellsRequest(userCommentRange, MergeType.MERGE_ROWS));
+    requests.push(buildMergeCellsRequest(simpleCommentRange, MergeType.MERGE_ROWS));
 
     // Add ranges for unprotected parts of the sheet
     const unprotectedRangeOperations: Array<{ origin: RangeName; width: number; name: RangeName }> = [
@@ -153,8 +150,7 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
     for (const op of unprotectedRangeOperations) {
         const origin = getMappedRange(op.origin);
         const newRange = offsetGridRange({ origin: origin.range, colOffset: 1, width: op.width });
-        const request = buildAddNamedRangeRequest<typeof ReportSheetSchema>(op.name, newRange);
-        if (request) requests.push(request);
+        requests.push(buildAddNamedRangeRequest<typeof ReportSheetSchema>(op.name, newRange));
         mappedRanges[op.name] = {
             range: newRange,
             sheet: origin.sheet,
