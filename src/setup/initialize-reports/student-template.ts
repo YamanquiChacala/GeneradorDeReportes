@@ -12,6 +12,8 @@ import {
     resizeMappedRange,
 } from "../../common/gas-utils";
 import {
+    createAllSubjectsAverageFormula,
+    createFieldAverageFormula,
     createFieldFormula,
     createFinalSubjectAverageFormula,
     createStudentAsistanceFormula,
@@ -49,8 +51,11 @@ export function prepareStudentTemplate(
     // Prepare Fields
     const fieldRequests = prepareFields(parsedReport.mappedRanges, persistentData);
 
+    // Prepare averages
+    const averageRequests = prepareAverages(parsedReport.mappedRanges, persistentData);
+
     // Build requests
-    return [...adaptSheetRangesRequests, ...infoRequests, ...abilitiesRequests, ...commentsRequests, ...subjectRequests, ...fieldRequests];
+    return [...adaptSheetRangesRequests, ...infoRequests, ...abilitiesRequests, ...commentsRequests, ...subjectRequests, ...fieldRequests, ...averageRequests];
 }
 
 /**
@@ -426,6 +431,71 @@ function prepareFields(mappedRanges: Partial<Record<RangeName, MappedNamedRange>
             fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
         });
         apiRequests.push(...requests);
+    }
+
+    return apiRequests;
+}
+
+/**
+ * Prepares the period and final averages
+ */
+function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistenData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+    const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
+    const getMappedRange = createRequiredGetter(mappedRanges, "template de estudiante");
+
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    if (persistenData.configData.averagePerField) {
+        const trimOperations: Array<{ grades: RangeName; dest: RangeName }> = [
+            { grades: rangeNames.trim1Fields, dest: rangeNames.trim1Totals },
+            { grades: rangeNames.trim2Fields, dest: rangeNames.trim2Totals },
+            { grades: rangeNames.trim3Fields, dest: rangeNames.trim3Totals },
+        ];
+
+        for (const { grades, dest } of trimOperations) {
+            const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+            const gradesRange = getMappedRange(grades);
+            const destRange = getMappedRange(dest);
+
+            const totalColumns = (destRange.range.endColumnIndex ?? 0) - (destRange.range.startColumnIndex ?? 0);
+            for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
+                rowData.push({ userEnteredValue: { formulaValue: createFieldAverageFormula(gradesRange, colOffset + 1) } });
+            }
+
+            const { requests } = buildTransferRequests({
+                destination: destRange,
+                data: [rowData],
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.formulaValue"),
+            });
+
+            apiRequests.push(...requests);
+        }
+    } else {
+        const trimOperations: Array<{ grades: RangeName; dest: RangeName }> = [
+            { grades: rangeNames.trim1Subjects, dest: rangeNames.trim1Totals },
+            { grades: rangeNames.trim2Subjects, dest: rangeNames.trim2Totals },
+            { grades: rangeNames.trim3Subjects, dest: rangeNames.trim3Totals },
+        ];
+
+        for (const { grades, dest } of trimOperations) {
+            const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+            const gradesRange = getMappedRange(grades);
+            const destRange = getMappedRange(dest);
+            const weightsRange = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjects);
+
+            const totalColumns = (destRange.range.endColumnIndex ?? 0) - (destRange.range.startColumnIndex ?? 0);
+            for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
+                rowData.push({ userEnteredValue: { formulaValue: createAllSubjectsAverageFormula(gradesRange, weightsRange, colOffset + 1) } });
+            }
+
+            const { requests } = buildTransferRequests({
+                destination: destRange,
+                data: [rowData],
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.formulaValue"),
+            });
+
+            apiRequests.push(...requests);
+        }
     }
 
     return apiRequests;
