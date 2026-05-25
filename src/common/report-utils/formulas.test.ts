@@ -112,6 +112,7 @@ describe("Formula Generators", () => {
     });
 
     describe("createStudentAsistanceFormula", () => {
+        // TODO: add tests for assistance true/false
         it("should generate attendance formula and calculate correct column offsets for Period 0", () => {
             (getA1Notation as jest.Mock)
                 .mockReturnValueOnce("$A$1") // firstName

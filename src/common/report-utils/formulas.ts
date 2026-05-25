@@ -53,7 +53,8 @@ export function createStudentAsistanceFormula(
     first_names, '${attendanceSheetName}'!B:B,
     last_names, '${attendanceSheetName}'!C:C,
     return_data, '${attendanceSheetName}'!${returnColumn}:${returnColumn},
-    XLOOKUP(${firstNameA1}&${lastNameA1}, ARRAYFORMULA(first_names&last_names), return_data)
+    raw_result, XLOOKUP(${firstNameA1}&${lastNameA1}, ARRAYFORMULA(first_names&last_names), return_data),
+    ARRAYFORMULA(raw_result * { ${absences ? 1 : 10} })
 )`;
 }
 
@@ -126,7 +127,8 @@ export function createStudentAsistancePerSubjectFormula(
     first_names, OFFSET(${attendanceSheetName}!B$1, start_row, 0, height, 1),
     last_names, OFFSET(${attendanceSheetName}!C$1, start_row, 0, height, 1),
     return_data, OFFSET(${attendanceSheetName}!${returnColum}$1, start_row, 0, height, 2),
-    XLOOKUP(${firstNameA1} & ${lastNameA1}, ARRAYFORMULA(first_names & last_names), return_data)
+    raw_result, XLOOKUP(${firstNameA1} & ${lastNameA1}, ARRAYFORMULA(first_names & last_names), return_data),
+    ARRAYFORMULA(raw_result * { 10, 1 })
 )`;
 }
 
