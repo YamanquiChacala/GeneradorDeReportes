@@ -182,7 +182,7 @@ function getSubjects(
 
     const subjects = normalizeSubjectWeights(rawSubjects, academicFields, averagePerField);
 
-    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportMappedRanges, academicFields, rawSubjects, rowOffset);
+    const { requests, newRowOffset } = buildReportFieldsAndSubjects(reportMappedRanges, academicFields, subjects, rowOffset);
 
     return { requests, academicFields, subjects, newRowOffset };
 }

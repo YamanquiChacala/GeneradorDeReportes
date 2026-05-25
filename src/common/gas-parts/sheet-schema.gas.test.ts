@@ -64,7 +64,7 @@ export function testSchemaValidation() {
             test("Should successfully fetch and parse the spreadsheet data", () => {
                 expect(rawSpreadsheet).toBeTruthy();
                 expect(parsedData).toBeTruthy();
-                expect(parsedData.sheets).toBeTruthy();
+                expect(parsedData.mappedSheets).toBeTruthy();
                 expect(parsedData.mappedRanges).toBeTruthy();
             });
 
@@ -72,7 +72,7 @@ export function testSchemaValidation() {
                 if (config.skipSheets?.includes(sheetConfig.sheetName)) continue;
 
                 test(`[Sheet] "${sheetKey}" must exist`, () => {
-                    expect(parsedData.sheets[sheetConfig.sheetName]).toBeTruthy();
+                    expect(parsedData.mappedSheets[sheetConfig.sheetName]).toBeTruthy();
                 });
 
                 if (sheetConfig.ranges) {

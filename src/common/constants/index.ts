@@ -8,8 +8,6 @@ export const SHEETS_EPOCH_OFFSET = 25569; // Days from Dec 30, 1899 (Sheets) to 
 
 export const SETUP_FILE_PREFIX = "__Registro Inicial - ";
 
-export const BASE_ASSISTANCE_PROTECTED_RANGE = "asist_per";
-
 export const MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] as const;
 export const TRIMESTER_NAMES = ["1er Momento", "2do Momento", "3er Momento"] as const;
 export const DEFAULT_COMMENT =

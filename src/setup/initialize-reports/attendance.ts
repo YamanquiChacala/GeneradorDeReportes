@@ -1,4 +1,4 @@
-import { BASE_ASSISTANCE_PROTECTED_RANGE, MergeType, PasteType } from "../../common/constants";
+import { MergeType, PasteType } from "../../common/constants";
 import { ReportSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
@@ -51,10 +51,10 @@ export function createAttendanceSheet(
     const datesRequests = addDateHeaders(attendanceSheetId, parsedReport.mappedRanges, persistentData.calendar);
 
     // Add student list(s)
-    const { requests: studentListRequest, writableRanges } = addStudentLists(attendanceSheetId, parsedReport.mappedRanges, persistentData, trimesters);
+    const { requests: studentListRequest, formatRanges, writableRanges } = addStudentLists(attendanceSheetId, parsedReport.mappedRanges, persistentData, trimesters);
 
     // Put format in the main edit area.
-    const formatRequests = formatMainArea(attendanceSheetId, writableRanges, parsedReport.mappedRanges, trimesters);
+    const formatRequests = formatMainArea(attendanceSheetId, formatRanges, parsedReport.mappedRanges, trimesters);
 
     // Protect sheet.
     const protectRequests = protectSheet(attendanceSheetId, writableRanges);
@@ -114,13 +114,13 @@ function copyAttendanceTemplate(
     );
 
     // Temporarly remove namedRanges so they don't get copied.
-    const templateNamedRanges = parsedReport.sheetNamedRanges[ReportSheetSchema.sheets.attendanceTemplate.sheetName] ?? [];
+    const templateNamedRanges = parsedReport.mappedSheetNamedRanges[ReportSheetSchema.sheets.attendanceTemplate.sheetName] ?? [];
     for (const namedRange of templateNamedRanges) requests.push({ deleteNamedRange: { namedRangeId: namedRange.namedRangeId } });
 
     // Make the new sheet
     requests.push({
         duplicateSheet: {
-            sourceSheetId: parsedReport.sheets[ReportSheetSchema.sheets.attendanceTemplate.sheetName]?.properties?.sheetId,
+            sourceSheetId: parsedReport.mappedSheets[ReportSheetSchema.sheets.attendanceTemplate.sheetName]?.properties?.sheetId,
             newSheetId: attendaceSheetId,
             newSheetName: ReportSheetSchema.sheets.attendance.sheetName,
         },
@@ -254,6 +254,18 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
     return requests;
 }
 
+interface AddStrudentListResponse {
+    requests: GoogleAppsScript.Sheets.Schema.Request[];
+    formatRanges: FormatRanges;
+    writableRanges: GoogleAppsScript.Sheets.Schema.GridRange[];
+}
+
+interface FormatRanges {
+    trim1: GoogleAppsScript.Sheets.Schema.GridRange[];
+    trim2: GoogleAppsScript.Sheets.Schema.GridRange[];
+    trim3: GoogleAppsScript.Sheets.Schema.GridRange[];
+}
+
 /**
  * Adds the subject and student list.
  */
@@ -262,9 +274,10 @@ function addStudentLists(
     mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
     data: ReportPersistentData,
     trimesters: Trimesters,
-): { requests: GoogleAppsScript.Sheets.Schema.Request[]; writableRanges: GoogleAppsScript.Sheets.Schema.GridRange[] } {
+): AddStrudentListResponse {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const writableRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+    const formatRanges: FormatRanges = { trim1: [], trim2: [], trim3: [] };
 
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de asistencia");
 
@@ -309,20 +322,23 @@ function addStudentLists(
             // Named ranges
             const strIndex = String(layout.subjectIndex).padStart(2, "0");
             if (trim1Range.start !== -1) {
-                const rangeName = `${BASE_ASSISTANCE_PROTECTED_RANGE}0_Mat_${strIndex}`;
+                const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1}_Mat${strIndex}`;
                 const range = createRange(sheetId, layout.studentStartRow, trim1Range.start, data.students.length, trim1Range.end - trim1Range.start + 1);
                 namedRangesRequests.push(buildAddNamedRangeRequest(rangeName, range));
+                formatRanges.trim1.push(range);
                 writableRanges.push(range);
             }
             if (trim2Range.start !== -1) {
-                const rangeName = `${BASE_ASSISTANCE_PROTECTED_RANGE}1_Mat_${strIndex}`;
+                const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2}_Mat${strIndex}`;
                 const range = createRange(sheetId, layout.studentStartRow, trim2Range.start, data.students.length, trim2Range.end - trim2Range.start + 1);
                 namedRangesRequests.push(buildAddNamedRangeRequest(rangeName, range));
+                formatRanges.trim2.push(range);
             }
             if (trim3Range.start !== -1) {
-                const rangeName = `${BASE_ASSISTANCE_PROTECTED_RANGE}2_Mat_${strIndex}`;
+                const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3}_Mat${strIndex}`;
                 const range = createRange(sheetId, layout.studentStartRow, trim3Range.start, data.students.length, trim3Range.end - trim3Range.start + 1);
                 namedRangesRequests.push(buildAddNamedRangeRequest(rangeName, range));
+                formatRanges.trim3.push(range);
             }
         }
 
@@ -343,16 +359,19 @@ function addStudentLists(
         // Named Ranges
         if (trim1Range.start !== -1) {
             const range = createRange(sheetId, frozenRows + 1, trim1Range.start, data.students.length, trim1Range.end - trim1Range.start + 1);
-            namedRangesRequests.push(buildAddNamedRangeRequest(`${BASE_ASSISTANCE_PROTECTED_RANGE}0_General`, range));
+            namedRangesRequests.push(buildAddNamedRangeRequest(`${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1}_General`, range));
+            formatRanges.trim1.push(range);
             writableRanges.push(range);
         }
         if (trim2Range.start !== -1) {
             const range = createRange(sheetId, frozenRows + 1, trim2Range.start, data.students.length, trim2Range.end - trim2Range.start + 1);
-            namedRangesRequests.push(buildAddNamedRangeRequest(`${BASE_ASSISTANCE_PROTECTED_RANGE}1_General`, range));
+            namedRangesRequests.push(buildAddNamedRangeRequest(`${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2}_General`, range));
+            formatRanges.trim2.push(range);
         }
         if (trim3Range.start !== -1) {
             const range = createRange(sheetId, frozenRows + 1, trim3Range.start, data.students.length, trim3Range.end - trim3Range.start + 1);
-            namedRangesRequests.push(buildAddNamedRangeRequest(`${BASE_ASSISTANCE_PROTECTED_RANGE}2_General`, range));
+            namedRangesRequests.push(buildAddNamedRangeRequest(`${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3}_General`, range));
+            formatRanges.trim3.push(range);
         }
 
         const subjectStudentListDataTransferRequest = buildUpdateCellsRequest({
@@ -370,7 +389,7 @@ function addStudentLists(
     }
 
     requests.push(...studentListDataRequests, ...studentListFormatRequests, ...namedRangesRequests);
-    return { requests, writableRanges };
+    return { requests, formatRanges, writableRanges };
 }
 
 /**
@@ -378,7 +397,7 @@ function addStudentLists(
  */
 function formatMainArea(
     sheetId: number,
-    editableRanges: GoogleAppsScript.Sheets.Schema.GridRange[],
+    formatRanges: FormatRanges,
     mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
     trimesters: Trimesters,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
@@ -387,28 +406,25 @@ function formatMainArea(
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de asistencia");
 
     const { frozenRows, frozenCols } = getFrozenRowCols(mappedRanges);
-    const { trim1Range, trim2Range, trim3Range } = trimesters;
-
-    const trim1FormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod1).range;
-    const trim2FormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod2).range;
-    const trim3FormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod3).range;
 
     // Clean up format
     const noFormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatAttendanceCell).range;
     const noFormatDest = createRange(sheetId, frozenRows, frozenCols);
     requests.push(buildCopyPasteRequest(noFormatSource, noFormatDest, PasteType.PASTE_NORMAL));
 
-    // Add format to the editable ranges
-    for (const fullRange of editableRanges) {
-        const trim1FormatDest = offsetGridRange({ origin: fullRange, colOffset: trim1Range.start - frozenCols, width: trim1Range.end - trim1Range.start + 1 });
-        const trim2FormatDest = offsetGridRange({ origin: fullRange, colOffset: trim2Range.start - frozenCols, width: trim2Range.end - trim2Range.start + 1 });
-        const trim3FormatDest = offsetGridRange({ origin: fullRange, colOffset: trim3Range.start - frozenCols, width: trim3Range.end - trim3Range.start + 1 });
+    const trimesterConfig = [
+        { schemaRange: ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod1, targetRanges: formatRanges.trim1, trimStart: trimesters.trim1Range.start },
+        { schemaRange: ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod2, targetRanges: formatRanges.trim2, trimStart: trimesters.trim2Range.start },
+        { schemaRange: ReportSheetSchema.sheets.attendanceTemplate.ranges.formatPeriod3, targetRanges: formatRanges.trim3, trimStart: trimesters.trim3Range.start },
+    ];
 
-        if (trim1Range.start !== -1) requests.push(buildCopyPasteRequest(trim1FormatSource, trim1FormatDest, PasteType.PASTE_FORMAT));
-
-        if (trim2Range.start !== -1) requests.push(buildCopyPasteRequest(trim2FormatSource, trim2FormatDest, PasteType.PASTE_FORMAT));
-
-        if (trim3Range.start !== -1) requests.push(buildCopyPasteRequest(trim3FormatSource, trim3FormatDest, PasteType.PASTE_FORMAT));
+    for (const config of trimesterConfig) {
+        if (config.trimStart !== 1) {
+            const formatSource = getMappedRange(config.schemaRange).range;
+            for (const range of config.targetRanges) {
+                requests.push(buildCopyPasteRequest(formatSource, range, PasteType.PASTE_FORMAT));
+            }
+        }
     }
 
     return requests;

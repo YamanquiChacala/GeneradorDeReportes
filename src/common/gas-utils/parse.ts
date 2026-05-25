@@ -1,4 +1,4 @@
-import type { ExtractRangeNames, ExtractSheetNames, MappedNamedRange, NestedSheetSchema, ParsedSpreadsheet } from ".";
+import type { ExtractDynamicRangeKeys, ExtractRangeNames, ExtractSheetNames, MappedNamedRange, NestedSheetSchema, ParsedSpreadsheet } from ".";
 
 /**
  * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.
@@ -7,11 +7,13 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     const mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>> = {};
     const mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>> = {};
     const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
+    const dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>> = {};
 
-    if (!spreadsheet?.sheets) return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, mappedRanges: mappedRanges };
+    if (!spreadsheet?.sheets) return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges };
 
     const allowedSheetNames = new Set<string>();
     const allowedRangeNames = new Set<string>();
+    const dynamicRangePrefixes = new Map<string, ExtractDynamicRangeKeys<T>>();
 
     for (const sheetConfig of Object.values(schema.sheets)) {
         allowedSheetNames.add(sheetConfig.sheetName);
@@ -19,6 +21,12 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
         if (sheetConfig.ranges) {
             for (const rangeName of Object.values(sheetConfig.ranges)) {
                 allowedRangeNames.add(rangeName);
+            }
+        }
+
+        if (sheetConfig.dynamicRanges) {
+            for (const [key, prefix] of Object.entries(sheetConfig.dynamicRanges)) {
+                dynamicRangePrefixes.set(prefix, key as ExtractDynamicRangeKeys<T>);
             }
         }
     }
@@ -41,14 +49,28 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
             if (namedRange.name == null || namedRange.range == null) continue;
             const linkedSheet = sheetIdLookup[namedRange.range.sheetId ?? 0];
 
-            if (linkedSheet && allowedRangeNames.has(namedRange.name)) {
+            if (!linkedSheet) continue;
+
+            if (allowedRangeNames.has(namedRange.name)) {
                 mappedRanges[namedRange.name as ExtractRangeNames<T>] = {
                     range: namedRange.range,
                     sheet: linkedSheet,
                 };
+                continue;
+            }
+
+            for (const [prefix, dynamicKey] of dynamicRangePrefixes.entries()) {
+                if (namedRange.name.startsWith(prefix)) {
+                    if (!dynamicMappedRanges[dynamicKey]) dynamicMappedRanges[dynamicKey] = [];
+                    dynamicMappedRanges[dynamicKey].push({
+                        range: namedRange.range,
+                        sheet: linkedSheet,
+                    });
+                    break;
+                }
             }
         }
     }
 
-    return { sheets: mappedSheets, sheetNamedRanges: mappedSheetNamedRanges, mappedRanges: mappedRanges };
+    return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges };
 }

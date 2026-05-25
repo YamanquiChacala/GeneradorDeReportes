@@ -34,7 +34,7 @@ export function generateCalendar(setupFileId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
-    const { sheets, sheetNamedRanges, mappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const { mappedSheets: sheets, mappedSheetNamedRanges: sheetNamedRanges, mappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Extract and Validate Dates
     const dates = getCalendarDates(mappedRanges);
