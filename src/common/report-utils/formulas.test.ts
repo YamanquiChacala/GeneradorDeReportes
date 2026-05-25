@@ -33,7 +33,7 @@ describe("Formula Generators", () => {
     });
 
     describe("createAttendaceFormulas", () => {
-        it('should return default "ND" strings if startCol is -1', () => {
+        it("should return empty strings if startCol is -1", () => {
             // Arrange
             const row = 0;
             const startCol = -1;
@@ -43,11 +43,11 @@ describe("Formula Generators", () => {
             const result = createAttendaceFormulas(row, startCol, endCol);
 
             // Assert
-            expect(result).toEqual({ percent: '="ND"', count: '=""' });
+            expect(result).toEqual({ percent: '=""', count: '=""' });
             expect(getColumnLetter).not.toHaveBeenCalled();
         });
 
-        it('should return default "ND" strings if startCol is greater than endCol', () => {
+        it("should return empty strings if startCol is greater than endCol", () => {
             // Arrange
             const row = 0;
             const startCol = 5;
@@ -57,7 +57,7 @@ describe("Formula Generators", () => {
             const result = createAttendaceFormulas(row, startCol, endCol);
 
             // Assert
-            expect(result).toEqual({ percent: '="ND"', count: '=""' });
+            expect(result).toEqual({ percent: '=""', count: '=""' });
             expect(getColumnLetter).not.toHaveBeenCalled();
         });
 
@@ -81,7 +81,7 @@ describe("Formula Generators", () => {
 
             // Check that the range ($A5:$E5) was correctly injected into the formulas
             expect(result).toEqual({
-                percent: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, (COUNTA($A5:$E5) - SUM($A5:$E5)) / COUNTA($A5:$E5), "ND")',
+                percent: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, (COUNTA($A5:$E5) - SUM($A5:$E5)) / COUNTA($A5:$E5), "")',
                 count: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, SUM($A5:$E5), "")',
             });
         });

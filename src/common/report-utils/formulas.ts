@@ -5,14 +5,14 @@ import type { AcademicField } from ".";
  * Define the formala for calculating the attendance percent.
  */
 export function createAttendaceFormulas(row: number, startCol: number, endCol: number): { percent: string; count: string } {
-    if (startCol === -1 || startCol > endCol) return { percent: '="ND"', count: '=""' };
+    if (startCol === -1 || startCol > endCol) return { percent: '=""', count: '=""' };
 
     const str = getColumnLetter(startCol);
     const end = getColumnLetter(endCol);
 
     const range = `$${str}${row + 1}:$${end}${row + 1}`;
 
-    const percent = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, (COUNTA(${range}) - SUM(${range})) / COUNTA(${range}), "ND")`;
+    const percent = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, (COUNTA(${range}) - SUM(${range})) / COUNTA(${range}), "")`;
     const count = `=IF(COUNTA(${range}) >= COLUMNS(${range}) / 10, SUM(${range}), "")`;
 
     return { percent, count };
