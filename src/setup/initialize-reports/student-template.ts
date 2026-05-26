@@ -16,9 +16,9 @@ import {
     createFieldAverageFormula,
     createFieldFormula,
     createFinalSubjectAverageFormula,
-    createStudentAsistanceFormula,
-    createStudentAsistancePerSubjectFormula,
-    createSubjectAverageFormula,
+    createIndividualSubjectAverageFormula,
+    createStudentGeneralAttendanceFormula,
+    createStudentPerSubjectAttendanceFormula,
     generatePeriodString,
     getShortCommentFormula,
     type ReportPersistentData,
@@ -217,7 +217,7 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
         dataData.push([
             {
                 userEnteredValue: {
-                    formulaValue: createStudentAsistanceFormula(period, firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName, true),
+                    formulaValue: createStudentGeneralAttendanceFormula(period, firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName, true),
                 },
             },
         ]);
@@ -320,7 +320,7 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
                 subjectRow.push(
                     {
                         userEnteredValue: {
-                            formulaValue: createStudentAsistancePerSubjectFormula(
+                            formulaValue: createStudentPerSubjectAttendanceFormula(
                                 period,
                                 subjectRange,
                                 index,
@@ -335,13 +335,18 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             } else {
                 subjectRow.push({
                     userEnteredValue: {
-                        formulaValue: createStudentAsistanceFormula(period, firstNameMappedRange, lastNameMappedRange, ReportSheetSchema.sheets.attendance.sheetName),
+                        formulaValue: createStudentGeneralAttendanceFormula(
+                            period,
+                            firstNameMappedRange,
+                            lastNameMappedRange,
+                            ReportSheetSchema.sheets.attendance.sheetName,
+                        ),
                     },
                 });
             }
             // Average for every subject
             subjectRow.push({
-                userEnteredValue: { formulaValue: createSubjectAverageFormula(subjectRange, index, gradingWeightsMappedRange) },
+                userEnteredValue: { formulaValue: createIndividualSubjectAverageFormula(subjectRange, index, gradingWeightsMappedRange) },
             });
 
             // Average for the last trimester
@@ -406,7 +411,7 @@ function prepareFields(mappedRanges: Partial<Record<RangeName, MappedNamedRange>
             if (attendancePerClass) {
                 fieldRow.push({});
             }
-            fieldRow.push({ userEnteredValue: { formulaValue: createSubjectAverageFormula(academidFieldRange, index, gradingWeithgtsRange) } });
+            fieldRow.push({ userEnteredValue: { formulaValue: createIndividualSubjectAverageFormula(academidFieldRange, index, gradingWeithgtsRange) } });
 
             if (period === 2) {
                 fieldRow.push({

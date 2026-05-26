@@ -4,9 +4,9 @@ import {
     createAttendaceFormulas,
     createFieldFormula,
     createFinalSubjectAverageFormula,
-    createStudentAsistanceFormula,
-    createStudentAsistancePerSubjectFormula,
-    createSubjectAverageFormula,
+    createIndividualSubjectAverageFormula,
+    createStudentGeneralAttendanceFormula,
+    createStudentPerSubjectAttendanceFormula,
     getShortCommentFormula,
 } from ".";
 
@@ -119,7 +119,7 @@ describe("Formula Generators", () => {
                 .mockReturnValueOnce("$B$1"); // lastName
             (getColumnLetter as jest.Mock).mockReturnValue("C"); // 3 + 0*2 = 3
 
-            const formula = createStudentAsistanceFormula(0, mockRange, mockRange, "Attendance", false);
+            const formula = createStudentGeneralAttendanceFormula(0, mockRange, mockRange, "Attendance", false);
 
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("return_data, 'Attendance'!C:C");
@@ -130,7 +130,7 @@ describe("Formula Generators", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("D"); // 4 + 0*2 = 4
 
-            const formula = createStudentAsistanceFormula(0, mockRange, mockRange, "Attendance", true);
+            const formula = createStudentGeneralAttendanceFormula(0, mockRange, mockRange, "Attendance", true);
 
             expect(getColumnLetter).toHaveBeenCalledWith(4);
             expect(formula).toContain("return_data, 'Attendance'!D:D");
@@ -140,7 +140,7 @@ describe("Formula Generators", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("G"); // 3 + 2*2 = 7
 
-            createStudentAsistanceFormula(2, mockRange, mockRange, "Attendance", false);
+            createStudentGeneralAttendanceFormula(2, mockRange, mockRange, "Attendance", false);
 
             expect(getColumnLetter).toHaveBeenCalledWith(7);
         });
@@ -150,7 +150,7 @@ describe("Formula Generators", () => {
             (getColumnLetter as jest.Mock).mockReturnValue("C"); // Default false: 3 + 0*2 = 3
 
             // Notice: completely omitting the 5th `absences` argument here
-            const formula = createStudentAsistanceFormula(0, mockRange, mockRange, "Attendance");
+            const formula = createStudentGeneralAttendanceFormula(0, mockRange, mockRange, "Attendance");
 
             // It should calculate as if absences was false
             expect(getColumnLetter).toHaveBeenCalledWith(3);
@@ -164,7 +164,7 @@ describe("Formula Generators", () => {
                 .mockReturnValueOnce("B2:D2") // values
                 .mockReturnValueOnce("'Weights'!$B$1:$D$1"); // weights
 
-            const formula = createSubjectAverageFormula(mockRange, 2, mockRange);
+            const formula = createIndividualSubjectAverageFormula(mockRange, 2, mockRange);
 
             // Verify configuration for values
             expect(getA1Notation).toHaveBeenNthCalledWith(1, {
@@ -217,7 +217,7 @@ describe("Formula Generators", () => {
                 .mockReturnValueOnce("$B$1"); // lastNameA1
             (getColumnLetter as jest.Mock).mockReturnValue("E"); // 3 + 1*2 = 5
 
-            const formula = createStudentAsistancePerSubjectFormula(1, mockRange, 2, mockRange, mockRange, "AttData");
+            const formula = createStudentPerSubjectAttendanceFormula(1, mockRange, 2, mockRange, mockRange, "AttData");
 
             expect(getColumnLetter).toHaveBeenCalledWith(5);
             expect(formula).toContain("MATCH($A$5, AttData!A:A, 0)");
