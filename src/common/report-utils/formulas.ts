@@ -162,23 +162,23 @@ export function createFieldFormula(
     });
 
     return `=IFERROR(
-    AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1})
+    ROUND(AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1}), 3)
 )`;
 }
 
 /**
  * Helper to calculate the average of the academic fields
  */
-export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOffset: number): string {
+export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOffset: number, decimals: number): string {
     const valuesA1 = getA1Notation({ mappedRange: mappedFields, colOffset, width: 1, lockRows: true });
-    return `=IFERROR(ROUND(AVERAGE(${valuesA1}), 1))`;
+    return `=IFERROR(ROUND(AVERAGE(${valuesA1}), ${decimals}))`;
 }
 
 /**
  * Helper to crete the average of all the subjects
  */
-export function createAllSubjectsAverageFormula(mappedSubjects: MappedNamedRange, mappedWeights: MappedNamedRange, colOffset: number): string {
+export function createAllSubjectsAverageFormula(mappedSubjects: MappedNamedRange, mappedWeights: MappedNamedRange, colOffset: number, decimals: number): string {
     const valuesA1 = getA1Notation({ mappedRange: mappedSubjects, colOffset, width: 1, lockRows: true });
     const weightsA1 = getA1Notation({ mappedRange: mappedWeights, colOffset: 1, width: 1, includeSheetName: true, lockRows: true, lockColumns: true });
-    return `=IFERROR(ROUND(AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1}), 1))`;
+    return `=IFERROR(ROUND(AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1}), ${decimals}))`;
 }

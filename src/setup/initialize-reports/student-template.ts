@@ -451,20 +451,22 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     if (persistenData.configData.averagePerField) {
-        const trimOperations: Array<{ grades: RangeName; dest: RangeName }> = [
-            { grades: rangeNames.trim1Fields, dest: rangeNames.trim1Totals },
-            { grades: rangeNames.trim2Fields, dest: rangeNames.trim2Totals },
-            { grades: rangeNames.trim3Fields, dest: rangeNames.trim3Totals },
+        const trimOperations: Array<{ grades: RangeName; dest: RangeName; lastBig: boolean }> = [
+            { grades: rangeNames.trim1Fields, dest: rangeNames.trim1Totals, lastBig: false },
+            { grades: rangeNames.trim2Fields, dest: rangeNames.trim2Totals, lastBig: false },
+            { grades: rangeNames.trim3Fields, dest: rangeNames.trim3Totals, lastBig: true },
         ];
 
-        for (const { grades, dest } of trimOperations) {
+        for (const { grades, dest, lastBig } of trimOperations) {
             const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
             const gradesRange = getMappedRange(grades);
             const destRange = getMappedRange(dest);
 
             const totalColumns = (destRange.range.endColumnIndex ?? 0) - (destRange.range.startColumnIndex ?? 0);
             for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
-                rowData.push({ userEnteredValue: { formulaValue: createFieldAverageFormula(gradesRange, colOffset + 1) } });
+                rowData.push({
+                    userEnteredValue: { formulaValue: createFieldAverageFormula(gradesRange, colOffset + 1, colOffset === totalColumns - 1 && lastBig ? 2 : 1) },
+                });
             }
 
             const { requests } = buildTransferRequests({
@@ -476,13 +478,13 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             apiRequests.push(...requests);
         }
     } else {
-        const trimOperations: Array<{ grades: RangeName; dest: RangeName }> = [
-            { grades: rangeNames.trim1Subjects, dest: rangeNames.trim1Totals },
-            { grades: rangeNames.trim2Subjects, dest: rangeNames.trim2Totals },
-            { grades: rangeNames.trim3Subjects, dest: rangeNames.trim3Totals },
+        const trimOperations: Array<{ grades: RangeName; dest: RangeName; lastBig: boolean }> = [
+            { grades: rangeNames.trim1Subjects, dest: rangeNames.trim1Totals, lastBig: false },
+            { grades: rangeNames.trim2Subjects, dest: rangeNames.trim2Totals, lastBig: false },
+            { grades: rangeNames.trim3Subjects, dest: rangeNames.trim3Totals, lastBig: true },
         ];
 
-        for (const { grades, dest } of trimOperations) {
+        for (const { grades, dest, lastBig } of trimOperations) {
             const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
             const gradesRange = getMappedRange(grades);
             const destRange = getMappedRange(dest);
@@ -490,7 +492,11 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
 
             const totalColumns = (destRange.range.endColumnIndex ?? 0) - (destRange.range.startColumnIndex ?? 0);
             for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
-                rowData.push({ userEnteredValue: { formulaValue: createAllSubjectsAverageFormula(gradesRange, weightsRange, colOffset + 1) } });
+                rowData.push({
+                    userEnteredValue: {
+                        formulaValue: createAllSubjectsAverageFormula(gradesRange, weightsRange, colOffset + 1, colOffset === totalColumns - 1 && lastBig ? 2 : 1),
+                    },
+                });
             }
 
             const { requests } = buildTransferRequests({
