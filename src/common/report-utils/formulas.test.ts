@@ -1,7 +1,9 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
 import type { AcademicField } from ".";
 import {
+    createAllSubjectsAverageFormula,
     createAttendaceFormulas,
+    createFieldAverageFormula,
     createFieldFormula,
     createFinalSubjectAverageFormula,
     createIndividualSubjectAverageFormula,
@@ -111,9 +113,8 @@ describe("Formula Generators", () => {
         });
     });
 
-    describe("createStudentAsistanceFormula", () => {
-        // TODO: add tests for assistance true/false
-        it("should generate attendance formula and calculate correct column offsets for Period 0", () => {
+    describe("createStudentGeneralAttendanceFormula", () => {
+        it("should generate attendance formula and calculate correct column offsets for Period 0 with false absences multiplier", () => {
             (getA1Notation as jest.Mock)
                 .mockReturnValueOnce("$A$1") // firstName
                 .mockReturnValueOnce("$B$1"); // lastName
@@ -124,9 +125,10 @@ describe("Formula Generators", () => {
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("return_data, 'Attendance'!C:C");
             expect(formula).toContain("XLOOKUP($A$1&$B$1");
+            expect(formula).toContain("ROUND(raw_result * { 10 }"); // Checking the false absences array multiplier
         });
 
-        it("should shift the return column by 1 if absences is true", () => {
+        it("should shift the return column by 1 and change multiplier if absences is true", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("D"); // 4 + 0*2 = 4
 
@@ -134,6 +136,7 @@ describe("Formula Generators", () => {
 
             expect(getColumnLetter).toHaveBeenCalledWith(4);
             expect(formula).toContain("return_data, 'Attendance'!D:D");
+            expect(formula).toContain("ROUND(raw_result * { 1 }"); // Checking the true absences array multiplier
         });
 
         it("should shift the return column by 2 for each period", () => {
@@ -145,7 +148,7 @@ describe("Formula Generators", () => {
             expect(getColumnLetter).toHaveBeenCalledWith(7);
         });
 
-        it("should default absences to false if omitted, calculating the correct column offset", () => {
+        it("should default absences to false if omitted, calculating the correct column offset and multiplier", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("C"); // Default false: 3 + 0*2 = 3
 
@@ -155,10 +158,11 @@ describe("Formula Generators", () => {
             // It should calculate as if absences was false
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("return_data, 'Attendance'!C:C");
+            expect(formula).toContain("ROUND(raw_result * { 10 }");
         });
     });
 
-    describe("createSubjectAverageFormula", () => {
+    describe("createIndividualSubjectAverageFormula", () => {
         it("should format the weighted average formula and pass correct constraints to A1 utility", () => {
             (getA1Notation as jest.Mock)
                 .mockReturnValueOnce("B2:D2") // values
@@ -209,7 +213,7 @@ describe("Formula Generators", () => {
         });
     });
 
-    describe("createStudentAsistancePerSubjectFormula", () => {
+    describe("createStudentPerSubjectAttendanceFormula", () => {
         it("should calculate correct return column based on period and build complex LET formula", () => {
             (getA1Notation as jest.Mock)
                 .mockReturnValueOnce("$A$5") // subjectA1
@@ -259,6 +263,53 @@ describe("Formula Generators", () => {
             );
 
             expect(formula).toContain("AVERAGE.WEIGHTED(C2:C5, 'Weights'!$D$2:$D$5)");
+        });
+    });
+
+    describe("createFieldAverageFormula", () => {
+        it("should request correct constraints from A1 utility and build the rounded average formula", () => {
+            (getA1Notation as jest.Mock).mockReturnValueOnce("C$2:C$5");
+
+            const formula = createFieldAverageFormula(mockRange, 3, 2);
+
+            expect(getA1Notation).toHaveBeenCalledWith({
+                mappedRange: mockRange,
+                colOffset: 3,
+                width: 1,
+                lockRows: true,
+            });
+
+            expect(formula).toBe("=IFERROR(ROUND(AVERAGE(C$2:C$5), 2))");
+        });
+    });
+
+    describe("createAllSubjectsAverageFormula", () => {
+        it("should request values and weights from A1 utility and build the weighted average formula", () => {
+            (getA1Notation as jest.Mock)
+                .mockReturnValueOnce("E$2:E$10") // valuesA1
+                .mockReturnValueOnce("'Weights'!F$2:F$10"); // weightsA1
+
+            const formula = createAllSubjectsAverageFormula(mockRange, mockRange, 4, 1);
+
+            // Values configuration check
+            expect(getA1Notation).toHaveBeenNthCalledWith(1, {
+                mappedRange: mockRange,
+                colOffset: 4,
+                width: 1,
+                lockRows: true,
+            });
+
+            // Weights configuration check
+            expect(getA1Notation).toHaveBeenNthCalledWith(2, {
+                mappedRange: mockRange,
+                colOffset: 1,
+                width: 1,
+                includeSheetName: true,
+                lockRows: true,
+                lockColumns: true,
+            });
+
+            expect(formula).toBe("=IFERROR(ROUND(AVERAGE.WEIGHTED(E$2:E$10, 'Weights'!F$2:F$10), 1))");
         });
     });
 });
