@@ -171,7 +171,7 @@ export function createFieldFormula(
  */
 export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOffset: number, decimals: number): string {
     const valuesA1 = getA1Notation({ mappedRange: mappedFields, colOffset, width: 1, lockRows: true });
-    return `=IFERROR(ROUND(AVERAGE(${valuesA1}), ${decimals}))`;
+    return `=IF(COUNT(${valuesA1}) <> ROWS(${valuesA1}),"", ROUND(AVERAGE(${valuesA1}), ${decimals}))`;
 }
 
 /**

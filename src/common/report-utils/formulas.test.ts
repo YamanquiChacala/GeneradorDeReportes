@@ -279,7 +279,7 @@ describe("Formula Generators", () => {
                 lockRows: true,
             });
 
-            expect(formula).toBe("=IFERROR(ROUND(AVERAGE(C$2:C$5), 2))");
+            expect(formula).toBe('=IF(COUNT(C$2:C$5) <> ROWS(C$2:C$5),"", ROUND(AVERAGE(C$2:C$5), 2))');
         });
     });
 
