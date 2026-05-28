@@ -4,6 +4,7 @@ import { buildFieldsMask, createRequiredGetter, type ExtractRangeNames, getCellT
 import { sanitizeFileName } from "../../common/utils";
 import { createAttendanceSheet } from "./attendance";
 import { fillPersistentData } from "./persistent-data";
+import { createStudentSheets } from "./student-sheets";
 import { prepareStudentTemplate } from "./student-template";
 
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
@@ -50,12 +51,14 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // Prepare Student template sheet
     const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet, persistentData);
 
+    const studentSheetsCreation = createStudentSheets(parsedReportSheet, persistentData);
+
     // TODO: Create each Student sheet
     // TODO: Prepare Summary sheet
     // TODO: Prepare Status sheet
 
     // ============ Batch Changes ==============
-    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests, ...studentTemplateSetup];
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests, ...studentTemplateSetup, ...studentSheetsCreation];
 
     // ============ Execute Batch update ===========
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
