@@ -51,9 +51,9 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // Prepare Student template sheet
     const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet, persistentData);
 
+    // Create each Student sheet
     const studentSheetsCreation = createStudentSheets(parsedReportSheet, persistentData);
 
-    // TODO: Create each Student sheet
     // TODO: Prepare Summary sheet
     // TODO: Prepare Status sheet
 
