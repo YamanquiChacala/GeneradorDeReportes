@@ -7,9 +7,12 @@ import {
     buildMergeCellsRequest,
     buildTransferRequests,
     createRequiredGetter,
+    getRangeHeight,
+    getRangeWidth,
     type MappedNamedRange,
     offsetGridRange,
     resizeMappedRange,
+    shrinkRangeWidth,
 } from "../../common/gas-utils";
 import {
     createAllSubjectsAverageFormula,
@@ -76,7 +79,7 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
     if (persistentData.configData.attendancePerClass) {
         // Remove general absences.
         const info = getMappedRange(rangeNames.generalInfo);
-        const height = (info.range.endRowIndex ?? 0) - (info.range.startRowIndex ?? 0) || 1;
+        const height = getRangeHeight(info.range) || 1;
         const { requests: infoRequests, rowOffset: infoRowOffset } = resizeMappedRange({ target: info, targetRows: height - 1, rowOffset });
         rowOffset = infoRowOffset;
         requests.push(...infoRequests);
@@ -174,26 +177,21 @@ function removeRangeColumns(
     fields: MappedNamedRange,
     averages: MappedNamedRange,
 ): GoogleAppsScript.Sheets.Schema.Request {
-    const removedCols = (absences.range.endColumnIndex ?? 0) - (absences.range.startColumnIndex ?? 0);
+    const removedCols = getRangeWidth(absences.range);
+
     const request: GoogleAppsScript.Sheets.Schema.Request = {
         deleteRange: {
             range: absences.range,
             shiftDimension: Dimension.COLUMNS,
         },
     };
-    removeCols(absences, removedCols);
-    removeCols(subjects, removedCols);
-    removeCols(fields, removedCols);
-    removeCols(averages, removedCols);
-    return request;
-}
 
-/**
- * Helper function to edit a MappedRange, shrinking it's columns.
- */
-function removeCols(mappedRange: MappedNamedRange, removeCols: number) {
-    const desiredWidth = Math.max(0, (mappedRange.range.endColumnIndex ?? 0) - (mappedRange.range.startColumnIndex ?? 0) - removeCols);
-    mappedRange.range = offsetGridRange({ origin: mappedRange.range, width: desiredWidth });
+    absences.range = shrinkRangeWidth(absences.range, removedCols);
+    subjects.range = shrinkRangeWidth(subjects.range, removedCols);
+    fields.range = shrinkRangeWidth(fields.range, removedCols);
+    averages.range = shrinkRangeWidth(averages.range, removedCols);
+
+    return request;
 }
 
 /**
@@ -462,7 +460,7 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             const gradesRange = getMappedRange(grades);
             const destRange = getMappedRange(dest);
 
-            const totalColumns = (destRange.range.endColumnIndex ?? 0) - (destRange.range.startColumnIndex ?? 0);
+            const totalColumns = getRangeWidth(destRange.range);
             for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
                 rowData.push({
                     userEnteredValue: { formulaValue: createFieldAverageFormula(gradesRange, colOffset + 1, colOffset === totalColumns - 1 && lastBig ? 2 : 1) },
@@ -490,7 +488,7 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             const destRange = getMappedRange(dest);
             const weightsRange = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjects);
 
-            const totalColumns = (destRange.range.endColumnIndex ?? 0) - (destRange.range.startColumnIndex ?? 0);
+            const totalColumns = getRangeWidth(destRange.range);
             for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
                 rowData.push({
                     userEnteredValue: {

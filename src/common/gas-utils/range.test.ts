@@ -1,4 +1,4 @@
-import { changeGridRangeSheet, createRange, createSingleCellRange, offsetGridRange } from ".";
+import { changeGridRangeSheet, createRange, createSingleCellRange, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from ".";
 
 describe("Range", () => {
     describe("createRange", () => {
@@ -8,6 +8,17 @@ describe("Range", () => {
                 sheetId: 10,
                 startRowIndex: 5,
                 startColumnIndex: 2,
+            });
+        });
+
+        it("should create a bounded range when height and width are provided", () => {
+            const range = createRange(10, 5, 2, 3, 4);
+            expect(range).toEqual({
+                sheetId: 10,
+                startRowIndex: 5,
+                startColumnIndex: 2,
+                endRowIndex: 8,
+                endColumnIndex: 6,
             });
         });
     });
@@ -115,6 +126,82 @@ describe("Range", () => {
                 endColumnIndex: 5,
             });
             expect(result.endRowIndex).toBeUndefined();
+        });
+    });
+
+    describe("getRangeWidth", () => {
+        it("should correctly calculate the width of a bounded range", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startColumnIndex: 2, endColumnIndex: 5 };
+            expect(getRangeWidth(range)).toBe(3);
+        });
+
+        it("should default to 0 if end bounds are missing", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startColumnIndex: 2 };
+            expect(getRangeWidth(range)).toBe(0);
+        });
+
+        it("should default startColumnIndex to 0 if missing", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, endColumnIndex: 4 };
+            expect(getRangeWidth(range)).toBe(4);
+        });
+
+        it("should return 0 if the start index is greater than the end index", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startColumnIndex: 5, endColumnIndex: 2 };
+            expect(getRangeWidth(range)).toBe(0);
+        });
+    });
+
+    describe("getRangeHeight", () => {
+        it("should correctly calculate the height of a bounded range", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startRowIndex: 2, endRowIndex: 6 };
+            expect(getRangeHeight(range)).toBe(4);
+        });
+
+        it("should default to 0 if end bounds are missing", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startRowIndex: 2 };
+            expect(getRangeHeight(range)).toBe(0);
+        });
+
+        it("should default startRowIndex to 0 if missing", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, endRowIndex: 4 };
+            expect(getRangeHeight(range)).toBe(4);
+        });
+
+        it("should return 0 if the start index is greater than the end index", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startRowIndex: 5, endRowIndex: 2 };
+            expect(getRangeHeight(range)).toBe(0);
+        });
+    });
+
+    describe("shrinkRangeWidth", () => {
+        it("should shrink the width by the specified number of columns", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startColumnIndex: 2, endColumnIndex: 7 };
+            const result = shrinkRangeWidth(range, 2);
+            expect(result).toEqual({
+                sheetId: 1,
+                startColumnIndex: 2,
+                endColumnIndex: 5, // Width was 5, 5 - 2 = 3. New end is 2 + 3 = 5.
+            });
+        });
+
+        it("should clamp the width to 0 if shrunk by more than the current width", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startColumnIndex: 2, endColumnIndex: 4 };
+            const result = shrinkRangeWidth(range, 5);
+            expect(result).toEqual({
+                sheetId: 1,
+                startColumnIndex: 2,
+                endColumnIndex: 2, // Width becomes 0
+            });
+        });
+
+        it("should handle ranges with missing bounds safely", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1, startColumnIndex: 2 };
+            const result = shrinkRangeWidth(range, 1);
+            expect(result).toEqual({
+                sheetId: 1,
+                startColumnIndex: 2,
+                endColumnIndex: 2, // Original width calculated as 0, remains 0.
+            });
         });
     });
 });

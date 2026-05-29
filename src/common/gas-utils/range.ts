@@ -59,3 +59,26 @@ export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, 
 
     return result;
 }
+
+/**
+ * Safely calculates the width of a GridRange, defaulting to 0 if bounds are missing.
+ */
+export function getRangeWidth(range: GoogleAppsScript.Sheets.Schema.GridRange): number {
+    return Math.max(0, (range.endColumnIndex ?? 0) - (range.startColumnIndex ?? 0));
+}
+
+/**
+ * Safely calculates the height of a GridRange, defaulting to 0 if bounds are missing.
+ */
+export function getRangeHeight(range: GoogleAppsScript.Sheets.Schema.GridRange): number {
+    return Math.max(0, (range.endRowIndex ?? 0) - (range.startRowIndex ?? 0));
+}
+
+/**
+ * Shrinks a range by the given number of columns.
+ */
+export function shrinkRangeWidth(range: GoogleAppsScript.Sheets.Schema.GridRange, colsToRemove: number): GoogleAppsScript.Sheets.Schema.GridRange {
+    const currentWidth = getRangeWidth(range);
+    const desiredWidth = Math.max(0, currentWidth - colsToRemove);
+    return offsetGridRange({ origin: range, width: desiredWidth });
+}
