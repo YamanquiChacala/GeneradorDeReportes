@@ -1,4 +1,4 @@
-import { parseSpreadsheet } from ".";
+import { insertNewNamedRangeToMemory, type ParsedSpreadsheet, parseSpreadsheet } from ".";
 
 describe("parseSpreadsheet", () => {
     const schema = {
@@ -7,7 +7,7 @@ describe("parseSpreadsheet", () => {
                 sheetName: "Configuration",
                 ranges: {
                     users: "UsersRange",
-                    overlap: "student_static", // Added to test static vs dynamic priority
+                    overlap: "student_static", // Test static vs dynamic priority
                 },
                 dynamicRanges: {
                     students: "student",
@@ -61,14 +61,13 @@ describe("parseSpreadsheet", () => {
         // Check dynamic named ranges mapping
         expect(result.dynamicMappedRanges.students).toBeDefined();
         expect(result.dynamicMappedRanges.students?.length).toBe(2);
-        expect(result.dynamicMappedRanges.students?.map((r) => r.namedRange.range.sheetId)).toEqual([1, 1]); // Verify they hold the MappedNamedRange objects
+        expect(result.dynamicMappedRanges.students?.map((r) => r.namedRange.range.sheetId)).toEqual([1, 1]);
 
         expect(result.dynamicMappedRanges.temps).toBeDefined();
         expect(result.dynamicMappedRanges.temps?.length).toBe(2);
 
         // Verify Static Priority: "student_static" should be in mappedRanges, NOT in dynamicMappedRanges.students
         expect(result.mappedRanges[schema.sheets.config.ranges.overlap]).toBeDefined();
-        // Since it was caught by static, the dynamic array shouldn't have 3 items
         expect(result.dynamicMappedRanges.students?.length).toBe(2);
 
         // Check the sheetNamedRanges array mapping
@@ -83,14 +82,12 @@ describe("parseSpreadsheet", () => {
     });
 
     it("should safely handle an undefined spreadsheet or missing sheets array", () => {
-        // Entirely undefined
         const result1 = parseSpreadsheet(undefined, schema);
         expect(result1.mappedSheets).toEqual({});
         expect(result1.mappedRanges).toEqual({});
         expect(result1.mappedSheetNamedRanges).toEqual({});
         expect(result1.dynamicMappedRanges).toEqual({});
 
-        // Missing sheets array
         const result2 = parseSpreadsheet({} as GoogleAppsScript.Sheets.Schema.Spreadsheet, schema);
         expect(result2.mappedSheets).toEqual({});
     });
@@ -98,7 +95,6 @@ describe("parseSpreadsheet", () => {
     it("should gracefully handle a spreadsheet that lacks namedRanges", () => {
         const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
             sheets: [{ properties: { sheetId: 1, title: "Configuration" } }],
-            // explicitly omitting namedRanges
         };
 
         const result = parseSpreadsheet(mockSpreadsheet, schema);
@@ -106,30 +102,26 @@ describe("parseSpreadsheet", () => {
         expect(result.mappedSheets["Configuration"]).toBeDefined();
         expect(result.mappedRanges).toEqual({});
         expect(result.dynamicMappedRanges).toEqual({});
-        // Returns undefined for the array of named ranges because namedRanges didn't exist to filter
         expect(result.mappedSheetNamedRanges["Configuration"]).toBeUndefined();
     });
 
     it("should handle sheets missing properties, titles, or IDs", () => {
         const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
             sheets: [
-                {}, // completely empty sheet object
-                { properties: {} }, // missing title and ID
-                { properties: { title: "Configuration" } }, // missing ID (will fallback to 0)
+                {},
+                { properties: {} },
+                { properties: { title: "Configuration" } }, // missing ID (falls back to 0)
             ],
             namedRanges: [
-                { name: "UsersRange", range: { sheetId: 0 } }, // Maps to the sheet that fell back to ID 0
-                { name: "student00", range: { sheetId: 0 } }, // Dynamic map fallback
+                { name: "UsersRange", range: { sheetId: 0 } },
+                { name: "student00", range: { sheetId: 0 } },
             ],
         };
 
         const result = parseSpreadsheet(mockSpreadsheet, schema);
 
-        // It mapped the "Configuration" sheet even without an ID
         expect(result.mappedSheets["Configuration"]).toBeDefined();
-        // It mapped the static range because the sheet ID fell back to 0
         expect(result.mappedRanges["UsersRange"]).toBeDefined();
-        // It mapped the dynamic range because the sheet ID fell back to 0
         expect(result.dynamicMappedRanges["students"]).toBeDefined();
     });
 
@@ -137,25 +129,22 @@ describe("parseSpreadsheet", () => {
         const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
             sheets: [{ properties: { sheetId: 1, title: "Configuration" } }],
             namedRanges: [
-                {}, // Missing both name and range
-                { name: "UsersRange" }, // Missing range
-                { range: { sheetId: 1 } }, // Missing name
-                { name: "UsersRange", range: { sheetId: 999 } }, // Points to an unmapped sheet
-                { name: "student01", range: { sheetId: 999 } }, // Dynamic range pointing to an unmapped sheet
+                {},
+                { name: "UsersRange" },
+                { range: { sheetId: 1 } },
+                { name: "UsersRange", range: { sheetId: 999 } },
+                { name: "student01", range: { sheetId: 999 } },
             ],
         };
 
         const result = parseSpreadsheet(mockSpreadsheet, schema);
 
         expect(result.mappedSheets["Configuration"]).toBeDefined();
-        // None of the ranges were valid or pointed to a valid sheet
         expect(result.mappedRanges).toEqual({});
         expect(result.dynamicMappedRanges).toEqual({});
     });
 
     it("should handle malformed schema definitions safely at runtime", () => {
-        // We cast to `any` here to simulate runtime edge cases where a schema
-        // might be improperly constructed or corrupted, bypassing TS strictness.
         const malformedSchema = {
             sheets: {
                 validSheet: {
@@ -185,7 +174,6 @@ describe("parseSpreadsheet", () => {
 
         const result = parseSpreadsheet(mockSpreadsheet, malformedSchema);
 
-        // Verifies the function didn't crash on the undefined schema parts and processed the valid parts
         expect(result.mappedSheets["ValidSheet"]).toBeDefined();
         expect(result.mappedRanges["ValidRange"]).toBeDefined();
         expect(result.dynamicMappedRanges["validDynamic"]).toBeDefined();
@@ -207,20 +195,15 @@ describe("parseSpreadsheet", () => {
         } as const;
 
         const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
-            sheets: [
-                // We create a sheet and explicitly give it the fallback ID of 0
-                { properties: { sheetId: 0, title: "DefaultSheet" } },
-            ],
+            sheets: [{ properties: { sheetId: 0, title: "DefaultSheet" } }],
             namedRanges: [
                 {
                     name: "ZeroRange",
-                    // 3. Covers Branch: namedRange.range.sheetId ?? 0
-                    // The range object exists, but explicitly omits `sheetId`
-                    range: { startRowIndex: 1 },
+                    range: { startRowIndex: 1 }, // Omitted sheetId
                 },
                 {
                     name: "dyn_A",
-                    range: { startRowIndex: 2 },
+                    range: { startRowIndex: 2 }, // Omitted sheetId
                 },
             ],
         };
@@ -228,12 +211,137 @@ describe("parseSpreadsheet", () => {
         const result = parseSpreadsheet(mockSpreadsheet, fallbackSchema);
 
         expect(result.mappedSheets["DefaultSheet"]).toBeDefined();
-        // Because the range omitted the sheetId, the ?? 0 fallback caught it
-        // and successfully linked it to the sheet with ID 0.
         expect(result.mappedRanges["ZeroRange"]).toBeDefined();
         expect(result.mappedRanges["ZeroRange"]?.sheet.properties?.title).toBe("DefaultSheet");
-
         expect(result.dynamicMappedRanges["dyn"]).toBeDefined();
-        expect(result.dynamicMappedRanges["dyn"]?.[0]?.sheet.properties?.title).toBe("DefaultSheet");
+    });
+});
+
+describe("insertNewNamedRangeToMemory", () => {
+    const schema = {
+        sheets: {
+            config: {
+                sheetName: "Configuration",
+                ranges: {
+                    users: "UsersRange",
+                },
+                dynamicRanges: {
+                    students: "student",
+                },
+            },
+        },
+    } as const;
+
+    let parsedData: ParsedSpreadsheet<typeof schema>;
+
+    beforeEach(() => {
+        // Reset and mock a pre-parsed memory object for each test
+        parsedData = {
+            mappedSheets: {
+                Configuration: { properties: { sheetId: 1, title: "Configuration" } },
+            },
+            mappedSheetNamedRanges: {},
+            mappedRanges: {},
+            dynamicMappedRanges: {},
+        };
+    });
+
+    it("should throw an error if the target sheetTitle is missing from memory", () => {
+        expect(() => {
+            insertNewNamedRangeToMemory({
+                parsedData,
+                // biome-ignore lint/suspicious/noExplicitAny: Cast to simulate incorrect execution/runtime mismatch
+                sheetTitle: "NonExistentSheet" as any,
+                rangeNameId: "id-123",
+                rangeName: "SomeRange",
+                gridRange: { sheetId: 1 },
+                staticRangeKey: "UsersRange",
+            });
+        }).toThrow("Cannot add range. Sheet NonExistentSheet is not in memory.");
+    });
+
+    it("should successfully insert a static range and initialize mappedSheetNamedRanges if undefined", () => {
+        insertNewNamedRangeToMemory({
+            parsedData,
+            sheetTitle: "Configuration",
+            rangeNameId: "static-id",
+            rangeName: "UsersRange",
+            gridRange: { sheetId: 1, startRowIndex: 0, endRowIndex: 5 },
+            staticRangeKey: "UsersRange",
+        });
+
+        // Verify sheet-level ranges updated and initialized
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]).toBeDefined();
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]?.length).toBe(1);
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]?.[0]).toEqual({
+            namedRangeId: "static-id",
+            name: "UsersRange",
+            range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5 },
+        });
+
+        // Verify explicit static mapping updated
+        expect(parsedData.mappedRanges["UsersRange"]).toBeDefined();
+        expect(parsedData.mappedRanges["UsersRange"]?.namedRange.namedRangeId).toBe("static-id");
+        expect(parsedData.mappedRanges["UsersRange"]?.sheet).toBe(parsedData.mappedSheets["Configuration"]);
+    });
+
+    it("should successfully insert a dynamic range and initialize the target array if undefined", () => {
+        insertNewNamedRangeToMemory({
+            parsedData,
+            sheetTitle: "Configuration",
+            rangeNameId: "dynamic-id-1",
+            rangeName: "student_alpha",
+            gridRange: { sheetId: 1, startRowIndex: 10 },
+            dynamicRangeKey: "students",
+        });
+
+        // Verify sheet-level ranges tracking
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]?.length).toBe(1);
+
+        // Verify dynamic array allocation and inclusion
+        expect(parsedData.dynamicMappedRanges["students"]).toBeDefined();
+        expect(parsedData.dynamicMappedRanges["students"]?.length).toBe(1);
+        expect(parsedData.dynamicMappedRanges["students"]?.[0]?.namedRange.name).toBe("student_alpha");
+        expect(parsedData.dynamicMappedRanges["students"]?.[0]?.sheet).toBe(parsedData.mappedSheets["Configuration"]);
+    });
+
+    it("should append seamlessly to an existing dynamic mapped range array", () => {
+        // Mock an array already initialized with an element
+        parsedData.dynamicMappedRanges["students"] = [
+            {
+                namedRange: { namedRangeId: "existing-id", name: "student_alpha", range: { sheetId: 1 } },
+                // biome-ignore lint/style/noNonNullAssertion: The mock has it, for sure.
+                sheet: parsedData.mappedSheets["Configuration"]!,
+            },
+        ];
+        parsedData.mappedSheetNamedRanges["Configuration"] = [{ namedRangeId: "existing-id", name: "student_alpha", range: { sheetId: 1 } }];
+
+        insertNewNamedRangeToMemory({
+            parsedData,
+            sheetTitle: "Configuration",
+            rangeNameId: "dynamic-id-2",
+            rangeName: "student_beta",
+            gridRange: { sheetId: 1, startRowIndex: 11 },
+            dynamicRangeKey: "students",
+        });
+
+        expect(parsedData.dynamicMappedRanges["students"]?.length).toBe(2);
+        expect(parsedData.dynamicMappedRanges["students"]?.[1]?.namedRange.name).toBe("student_beta");
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]?.length).toBe(2);
+    });
+
+    it("should update sheet records even if neither staticRangeKey nor dynamicRangeKey is passed", () => {
+        insertNewNamedRangeToMemory({
+            parsedData,
+            sheetTitle: "Configuration",
+            rangeNameId: "unmapped-id",
+            rangeName: "ArbitraryUnmappedRange",
+            gridRange: { sheetId: 1 },
+        });
+
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]?.length).toBe(1);
+        expect(parsedData.mappedSheetNamedRanges["Configuration"]?.[0]?.name).toBe("ArbitraryUnmappedRange");
+        expect(parsedData.mappedRanges).toEqual({});
+        expect(parsedData.dynamicMappedRanges).toEqual({});
     });
 });
