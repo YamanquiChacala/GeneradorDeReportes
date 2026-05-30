@@ -1,3 +1,4 @@
+import type { MappedNamedRange } from ".";
 import { getA1Notation, getColumnLetter } from "./notation";
 
 describe("Notation", () => {
@@ -14,7 +15,7 @@ describe("Notation", () => {
 
         const createParams = (range: GoogleAppsScript.Sheets.Schema.GridRange, overrides: Partial<InferredA1Params> = {}): InferredA1Params => ({
             mappedRange: {
-                range,
+                namedRange: { name: "", range },
                 sheet: createMockSheet(),
             },
             ...overrides,
@@ -32,8 +33,8 @@ describe("Notation", () => {
             });
 
             it("should handle missing sheet parameters", () => {
-                const mockMappedRange = {
-                    range: { endRowIndex: 1, endColumnIndex: 1 },
+                const mockMappedRange: MappedNamedRange = {
+                    namedRange: { name: "", range: { endRowIndex: 1, endColumnIndex: 1 } },
                     sheet: { properties: { gridProperties: {} } },
                 };
                 expect(getA1Notation({ mappedRange: mockMappedRange })).toBe("A1");

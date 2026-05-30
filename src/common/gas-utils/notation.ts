@@ -39,7 +39,7 @@ export function getA1Notation({
     height,
     width,
 }: A1NotationParams): string {
-    const adjustedRange = offsetGridRange({ origin: mappedRange.range, rowOffset, colOffset, height, width });
+    const adjustedRange = offsetGridRange({ origin: mappedRange.namedRange.range, rowOffset, colOffset, height, width });
 
     // Fetch sheet dimensions to cap unbounded ends
     const gridProps = mappedRange.sheet.properties?.gridProperties;

@@ -139,19 +139,19 @@ export function buildTransferRequests({ destination, data, fields, adaptRange = 
         currentColOffset = resizeResult.colOffset;
     } else {
         // If not adapting, we still apply offsets so the destination is accurate for writing
-        destination.range = offsetGridRange({
-            origin: destination.range,
+        destination.namedRange.range = offsetGridRange({
+            origin: destination.namedRange.range,
             rowOffset: currentRowOffset,
             colOffset: currentColOffset,
         });
     }
 
     // destination.range is now fully accurate
-    const sheetId = destination.range.sheetId ?? 0;
-    const finalStartRow = destination.range.startRowIndex ?? 0;
-    const finalEndRow = destination.range.endRowIndex ?? 0;
-    const finalStartCol = destination.range.startColumnIndex ?? 0;
-    const finalEndCol = destination.range.endColumnIndex ?? 0;
+    const sheetId = destination.namedRange.range.sheetId ?? 0;
+    const finalStartRow = destination.namedRange.range.startRowIndex ?? 0;
+    const finalEndRow = destination.namedRange.range.endRowIndex ?? 0;
+    const finalStartCol = destination.namedRange.range.startColumnIndex ?? 0;
+    const finalEndCol = destination.namedRange.range.endColumnIndex ?? 0;
 
     const finalRows = finalEndRow - finalStartRow;
     const finalCols = finalEndCol - finalStartCol;

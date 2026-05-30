@@ -71,11 +71,11 @@ export function createAttendanceSheet(
 function getFrozenRowCols(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>): { frozenRows: number; frozenCols: number } {
     const getRange = createRequiredGetter(mappedRanges, "rango de formato de calendario");
 
-    const range = getRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.frozenArea).range;
+    const namedRange = getRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.frozenArea).namedRange;
 
     return {
-        frozenRows: range.startRowIndex ?? 0,
-        frozenCols: range.startColumnIndex ?? 0,
+        frozenRows: namedRange.range.startRowIndex ?? 0,
+        frozenCols: namedRange.range.startColumnIndex ?? 0,
     };
 }
 
@@ -205,7 +205,7 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
 
     // Format row 2
     const row2FormatSource = offsetGridRange({
-        origin: namedRanges[rangeNames.dayNames]?.range ?? {},
+        origin: namedRanges[rangeNames.dayNames]?.namedRange.range ?? {},
         height: 1,
         width: 1,
     });
@@ -213,14 +213,14 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
     formatRequests.push(buildCopyPasteRequest(row2FormatSource, row2FormatDest, PasteType.PASTE_FORMAT));
 
     for (const group of monthGroups) {
-        let origin = getMappedRange(rangeNames.monthNames5).range;
+        let origin = getMappedRange(rangeNames.monthNames5).namedRange.range;
         let width = 5;
 
         if (group.template === 1) {
-            origin = getMappedRange(rangeNames.monthNames1).range;
+            origin = getMappedRange(rangeNames.monthNames1).namedRange.range;
             width = 1;
         } else if (group.template === 2) {
-            origin = getMappedRange(rangeNames.monthNames2).range;
+            origin = getMappedRange(rangeNames.monthNames2).namedRange.range;
             width = 2;
         }
 
@@ -291,8 +291,8 @@ function addStudentLists(
     const buildGrid = (initialRow: number) => generateStudentGrid(data.students, initialRow, trimesters);
 
     if (data.configData.attendancePerClass) {
-        const subjectTitleFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.spaceSubjectRows).range;
-        const studentRowFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.attendanceStudentRow).range;
+        const subjectTitleFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.spaceSubjectRows).namedRange.range;
+        const studentRowFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.attendanceStudentRow).namedRange.range;
 
         const hues = getDistinctHues(data.subjects.length, 0.4);
         const subjectStudentListData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
@@ -381,7 +381,7 @@ function addStudentLists(
         });
         if (subjectStudentListDataTransferRequest) studentListDataRequests.push(subjectStudentListDataTransferRequest);
 
-        const studentRow = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.attendanceStudentRow).range;
+        const studentRow = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.attendanceStudentRow).namedRange.range;
         studentListFormatRequests.push(buildCopyPasteRequest(studentRow, studentListDataRange, PasteType.PASTE_FORMAT));
 
         // Banding
@@ -408,7 +408,7 @@ function formatMainArea(
     const { frozenRows, frozenCols } = getFrozenRowCols(mappedRanges);
 
     // Clean up format
-    const noFormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatAttendanceCell).range;
+    const noFormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatAttendanceCell).namedRange.range;
     const noFormatDest = createRange(sheetId, frozenRows, frozenCols);
     requests.push(buildCopyPasteRequest(noFormatSource, noFormatDest, PasteType.PASTE_NORMAL));
 
@@ -420,7 +420,7 @@ function formatMainArea(
 
     for (const config of trimesterConfig) {
         if (config.trimStart !== 1) {
-            const formatSource = getMappedRange(config.schemaRange).range;
+            const formatSource = getMappedRange(config.schemaRange).namedRange.range;
             for (const range of config.targetRanges) {
                 requests.push(buildCopyPasteRequest(formatSource, range, PasteType.PASTE_FORMAT));
             }

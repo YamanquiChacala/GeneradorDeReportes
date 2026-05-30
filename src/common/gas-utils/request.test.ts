@@ -136,7 +136,7 @@ describe("Request Utilities", () => {
 
         beforeEach(() => {
             mockDestination = {
-                range: { sheetId: 100, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 },
+                namedRange: { name: "", range: { sheetId: 100, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
                 sheet: {},
             };
         });
@@ -240,13 +240,13 @@ describe("Request Utilities", () => {
             expect(hasUpdateReq).toBe(false);
 
             // The memory destination should be completely collapsed
-            expect(mockDestination.range.endRowIndex).toBe(0);
-            expect(mockDestination.range.endColumnIndex).toBe(0);
+            expect(mockDestination.namedRange.range.endRowIndex).toBe(0);
+            expect(mockDestination.namedRange.range.endColumnIndex).toBe(0);
         });
 
         it("should handle omitted sheet properties seamlessly", () => {
             const statelessDestination: MappedNamedRange = {
-                range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 }, // No sheetId
+                namedRange: { name: "", range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } }, // No sheetId
                 sheet: {},
             };
 
@@ -287,7 +287,7 @@ describe("Request Utilities", () => {
 
         it("should safely fall back to 0 if the destination range is completely missing endRowIndex and endColumnIndex", () => {
             const openDestination: MappedNamedRange = {
-                range: { sheetId: 100, startRowIndex: 0, startColumnIndex: 0 }, // Explicitly missing end indexes
+                namedRange: { name: "", range: { sheetId: 100, startRowIndex: 0, startColumnIndex: 0 } }, // Explicitly missing end indexes
                 sheet: {},
             };
 

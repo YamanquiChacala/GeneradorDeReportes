@@ -8,12 +8,12 @@ interface GetCellParams {
 }
 
 export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = false, unboundColumns = false): GoogleAppsScript.Sheets.Schema.CellData[][] {
-    const { range, sheet } = mappedRange;
+    const { namedRange, sheet } = mappedRange;
 
-    const startRow = range.startRowIndex ?? 0;
-    const startCol = range.startColumnIndex ?? 0;
-    const endRow = (unboundRows ? undefined : range.endRowIndex) ?? sheet.properties?.gridProperties?.rowCount ?? startRow;
-    const endCol = (unboundColumns ? undefined : range.endColumnIndex) ?? sheet.properties?.gridProperties?.columnCount ?? startCol;
+    const startRow = namedRange.range.startRowIndex ?? 0;
+    const startCol = namedRange.range.startColumnIndex ?? 0;
+    const endRow = (unboundRows ? undefined : namedRange.range.endRowIndex) ?? sheet.properties?.gridProperties?.rowCount ?? startRow;
+    const endCol = (unboundColumns ? undefined : namedRange.range.endColumnIndex) ?? sheet.properties?.gridProperties?.columnCount ?? startCol;
 
     const numRows = Math.max(0, endRow - startRow);
     const numCols = Math.max(0, endCol - startCol);
@@ -55,11 +55,11 @@ export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = fa
 }
 
 export function getCellData({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData {
-    const absoluteRowIndex = (mappedRange.range.startRowIndex ?? 0) + (rowOffset ?? 0);
-    const absoluteColIndex = (mappedRange.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
+    const absoluteRowIndex = (mappedRange.namedRange.range.startRowIndex ?? 0) + (rowOffset ?? 0);
+    const absoluteColIndex = (mappedRange.namedRange.range.startColumnIndex ?? 0) + (columnOffset ?? 0);
 
-    const endRow = mappedRange.range.endRowIndex;
-    const endColumn = mappedRange.range.endColumnIndex;
+    const endRow = mappedRange.namedRange.range.endRowIndex;
+    const endColumn = mappedRange.namedRange.range.endColumnIndex;
 
     if ((endRow && absoluteRowIndex >= endRow) || (endColumn && absoluteColIndex >= endColumn)) return {};
 
@@ -122,10 +122,10 @@ export function getCellUnixEpoch(args: GetCellParams): number {
  */
 export function resizeMappedRange({ target, targetRows, targetCols, rowOffset = 0, colOffset = 0 }: ResizeRangeParams): RangeOperationResult {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    const sheetId = target.range.sheetId ?? 0;
+    const sheetId = target.namedRange.range.sheetId ?? 0;
 
     // Use the helper to determine where the range ACTUALLY is right now before resizing
-    const actualRange = offsetGridRange({ origin: target.range, rowOffset, colOffset });
+    const actualRange = offsetGridRange({ origin: target.namedRange.range, rowOffset, colOffset });
     const actualStartRow = actualRange.startRowIndex ?? 0;
     const actualEndRow = actualRange.endRowIndex ?? 0;
     const actualStartCol = actualRange.startColumnIndex ?? 0;
@@ -183,8 +183,8 @@ export function resizeMappedRange({ target, targetRows, targetCols, rowOffset = 
     }
 
     // Mutate the in-memory object using the helper to set the final position and size
-    target.range = offsetGridRange({
-        origin: target.range,
+    target.namedRange.range = offsetGridRange({
+        origin: target.namedRange.range,
         rowOffset, // Feed it the incoming offset, since origin is still the unmodified original
         colOffset,
         height: finalTargetRows,

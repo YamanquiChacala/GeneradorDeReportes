@@ -95,14 +95,14 @@ function buildSheetsRequests(
             ];
             for (const op of simpleCopyOps) {
                 const mappedRange = getMappedRange(op.rangeName);
-                const destination = changeGridRangeSheet(mappedRange.range, newSheetId);
+                const destination = changeGridRangeSheet(mappedRange.namedRange.range, newSheetId);
                 const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { stringValue: op.value } }]];
                 const updateRequest = buildUpdateCellsRequest({ destination, data, fields });
                 if (updateRequest) requests.push(updateRequest);
             }
 
             const infoMappedRange = getMappedRange(rangeNames.generalInfo);
-            const infoOriginalRange = offsetGridRange({ origin: infoMappedRange.range, height: 3 });
+            const infoOriginalRange = offsetGridRange({ origin: infoMappedRange.namedRange.range, height: 3 });
             const infoDestinationRange = changeGridRangeSheet(infoOriginalRange, newSheetId);
             const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [{ userEnteredValue: { stringValue: studentRow.curp } }],

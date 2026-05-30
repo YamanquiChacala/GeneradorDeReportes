@@ -54,14 +54,14 @@ describe("parseSpreadsheet", () => {
 
         // Check strict named ranges mapping
         expect(result.mappedRanges[schema.sheets.config.ranges.users]).toBeDefined();
-        expect(result.mappedRanges[schema.sheets.config.ranges.users]?.range.sheetId).toBe(1);
+        expect(result.mappedRanges[schema.sheets.config.ranges.users]?.namedRange.range.sheetId).toBe(1);
         expect("HiddenRange" in result.mappedRanges).toBe(false);
         expect("OtherConfigRange" in result.mappedRanges).toBe(false);
 
         // Check dynamic named ranges mapping
         expect(result.dynamicMappedRanges.students).toBeDefined();
         expect(result.dynamicMappedRanges.students?.length).toBe(2);
-        expect(result.dynamicMappedRanges.students?.map((r) => r.range.sheetId)).toEqual([1, 1]); // Verify they hold the MappedNamedRange objects
+        expect(result.dynamicMappedRanges.students?.map((r) => r.namedRange.range.sheetId)).toEqual([1, 1]); // Verify they hold the MappedNamedRange objects
 
         expect(result.dynamicMappedRanges.temps).toBeDefined();
         expect(result.dynamicMappedRanges.temps?.length).toBe(2);

@@ -22,8 +22,8 @@ export function createAttendaceFormulas(row: number, startCol: number, endCol: n
  * Helper function to build the formula for shorter comments (for the SEP).
  */
 export function getShortCommentFormula(source: MappedNamedRange, rowOffset: number, colOffset: number): string {
-    const sourceLetter = getColumnLetter((source.range.startColumnIndex ?? 0) + colOffset);
-    const sourceNumber = (source.range.startRowIndex ?? 0) + rowOffset + 1;
+    const sourceLetter = getColumnLetter((source.namedRange.range.startColumnIndex ?? 0) + colOffset);
+    const sourceNumber = (source.namedRange.range.startRowIndex ?? 0) + rowOffset + 1;
     return `=LET(
     raw_text, ${sourceLetter}${sourceNumber},
     lower_text, LOWER(raw_text),
@@ -119,7 +119,7 @@ export function createIndividualSubjectAverageFormula(valuesRange: MappedNamedRa
  * Formula to calculate the final subject's average.
  */
 export function createFinalSubjectAverageFormula(trim1: MappedNamedRange, trim2: MappedNamedRange, trim3: MappedNamedRange, rowOffset: number): string {
-    const colOffset = (trim3.range.endColumnIndex ?? 0) - 2;
+    const colOffset = (trim3.namedRange.range.endColumnIndex ?? 0) - 2;
 
     const trim1A1 = getA1Notation({ mappedRange: trim1, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
     const trim2A1 = getA1Notation({ mappedRange: trim2, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });

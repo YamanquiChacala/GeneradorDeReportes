@@ -21,12 +21,12 @@ jest.mock("../gas-utils", () => ({
 describe("Formula Generators", () => {
     // Reusable dummy data
     const mockRange: MappedNamedRange = {
-        range: { startRowIndex: 2, endRowIndex: 5, startColumnIndex: 1, endColumnIndex: 4 },
+        namedRange: { name: "", range: { startRowIndex: 2, endRowIndex: 5, startColumnIndex: 1, endColumnIndex: 4 } },
         sheet: { properties: { title: "TestSheet" } },
     };
 
     const mockRangeOpen: MappedNamedRange = {
-        range: {}, // Testing the `?? 0` fallbacks
+        namedRange: { name: "", range: {} }, // Testing the `?? 0` fallbacks
         sheet: {},
     };
 

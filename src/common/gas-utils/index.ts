@@ -8,14 +8,19 @@ export * from "./range";
 export * from "./request";
 export * from "./time";
 
-export interface MappedNamedRange {
+export interface StrictNameRange extends GoogleAppsScript.Sheets.Schema.NamedRange {
+    name: string;
     range: GoogleAppsScript.Sheets.Schema.GridRange;
+}
+
+export interface MappedNamedRange {
+    namedRange: StrictNameRange;
     sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
 export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
     mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
-    mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.NamedRange[]>>;
+    mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
     mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
     dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
 }

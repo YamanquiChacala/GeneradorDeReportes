@@ -125,7 +125,7 @@ function buildDayDataAndFormats(
             }
 
             const destinationRange = createSingleCellRange(calendarSheetId, week.rowNumber, 2 * i + 1);
-            requests.push(buildCopyPasteRequest(formatSource.range, destinationRange, PasteType.PASTE_FORMAT));
+            requests.push(buildCopyPasteRequest(formatSource.namedRange.range, destinationRange, PasteType.PASTE_FORMAT));
         });
 
         rowDataArray.push({ values: rowCells });
@@ -236,7 +236,7 @@ function buildMonthLabelRequests(
         const monthName = getCellText({ mappedRange: monthLabelRange, rowOffset: block.monthIndex }) ?? "";
         const monthYearText = `${monthName}\n${block.year}`;
 
-        const sourceMonthNameRange = offsetGridRange({ origin: monthLabelRange.range, rowOffset: block.monthIndex, height: 1, width: 1 });
+        const sourceMonthNameRange = offsetGridRange({ origin: monthLabelRange.namedRange.range, rowOffset: block.monthIndex, height: 1, width: 1 });
         const destinationMonthNameRange = createSingleCellRange(calendarSheetId, block.startRow, 0);
         const monthMergeRange = createRange(calendarSheetId, block.startRow, 0, rowSpan, 1);
 

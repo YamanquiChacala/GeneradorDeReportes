@@ -14,7 +14,7 @@ import {
 describe("MappedNamedRange Utilities", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks, but the sheet is 10x10.
     const mockMappedRange: MappedNamedRange = {
-        range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 },
+        namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
         sheet: {
             properties: {
                 gridProperties: { rowCount: 10, columnCount: 10 },
@@ -59,7 +59,7 @@ describe("MappedNamedRange Utilities", () => {
 
     // Mock an unbounded range (e.g., A:Z) where endRowIndex and endColumnIndex are inherently undefined.
     const mockUnboundedRange: MappedNamedRange = {
-        range: { sheetId: 2 }, // No end indexes
+        namedRange: { name: "", range: { sheetId: 2 } }, // No end indexes
         sheet: {
             properties: {
                 gridProperties: { rowCount: 100, columnCount: 26 },
@@ -97,7 +97,7 @@ describe("MappedNamedRange Utilities", () => {
 
         it("should return an empty result matrix if the sheet lacks a data array", () => {
             const emptyDataRange: MappedNamedRange = {
-                range: { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 },
+                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } },
                 sheet: { properties: { gridProperties: { rowCount: 10, columnCount: 10 } } },
             };
             const result = getCellDataArray(emptyDataRange);
@@ -107,7 +107,7 @@ describe("MappedNamedRange Utilities", () => {
 
         it("should handle missing grid properties safely by falling back to start index", () => {
             const noGridPropsRange: MappedNamedRange = {
-                range: { sheetId: 1, startRowIndex: 2, startColumnIndex: 2 },
+                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 2, startColumnIndex: 2 } },
                 sheet: { data: [] },
             };
             const result = getCellDataArray(noGridPropsRange, true, true);
@@ -140,7 +140,7 @@ describe("MappedNamedRange Utilities", () => {
 
         it("should return an empty array if range dimensions are 0", () => {
             const emptyRange: MappedNamedRange = {
-                range: { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 },
+                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 } },
                 sheet: { data: [] },
             };
             const result = getCellDataArray(emptyRange);
@@ -170,7 +170,7 @@ describe("MappedNamedRange Utilities", () => {
         });
 
         it("should safely handle sheets missing the data property entirely", () => {
-            const emptySheetRange: MappedNamedRange = { range: { sheetId: 1 }, sheet: {} };
+            const emptySheetRange: MappedNamedRange = { namedRange: { name: "", range: { sheetId: 1 } }, sheet: {} };
             const data = getCellData({ mappedRange: emptySheetRange });
             expect(data).toStrictEqual({});
         });
@@ -242,7 +242,7 @@ describe("MappedNamedRange Utilities", () => {
 
         beforeEach(() => {
             testRange = {
-                range: { sheetId: 123, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 },
+                namedRange: { name: "", range: { sheetId: 123, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
                 sheet: {},
             };
         });
@@ -261,7 +261,7 @@ describe("MappedNamedRange Utilities", () => {
                 startIndex: 1,
                 endIndex: 4,
             });
-            expect(testRange.range.endRowIndex).toBe(8);
+            expect(testRange.namedRange.range.endRowIndex).toBe(8);
         });
 
         it("should delete dimensions when the target size is smaller than the current size", () => {
@@ -288,7 +288,7 @@ describe("MappedNamedRange Utilities", () => {
             });
 
             expect(result.requests).toHaveLength(2);
-            expect(testRange.range.endRowIndex).toBe(0);
+            expect(testRange.namedRange.range.endRowIndex).toBe(0);
         });
 
         it("should return empty requests and leave dimensions unchanged if target size matches current size", () => {
@@ -310,7 +310,7 @@ describe("MappedNamedRange Utilities", () => {
         // NEW: Covers fallback rule `sheetId = target.range.sheetId ?? 0;`
         it("should default the sheetId to 0 if it is omitted from the target range object", () => {
             const statelessRange: MappedNamedRange = {
-                range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 }, // Missing sheetId
+                namedRange: { name: "", range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } }, // Missing sheetId
                 sheet: {},
             };
             const result = resizeMappedRange({ target: statelessRange, targetRows: 5 });
@@ -320,7 +320,7 @@ describe("MappedNamedRange Utilities", () => {
         // NEW: Covers fallback definitions `actualEndRow = actualRange.endRowIndex ?? 0` and `actualEndCol = actualRange.endColumnIndex ?? 0`
         it("should fall back to 0 end-indexes safely when resizing open, horizontally/vertically unbounded ranges", () => {
             const openRange: MappedNamedRange = {
-                range: { sheetId: 1, startRowIndex: 0, startColumnIndex: 0 }, // Missing endRowIndex and endColumnIndex
+                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, startColumnIndex: 0 } }, // Missing endRowIndex and endColumnIndex
                 sheet: {},
             };
             const result = resizeMappedRange({
@@ -330,7 +330,7 @@ describe("MappedNamedRange Utilities", () => {
             });
             expect(result.requests).toHaveLength(2);
             expect(result.requests[0]?.insertDimension?.range?.endIndex).toBe(6);
-            expect(openRange.range.endRowIndex).toBe(5);
+            expect(openRange.namedRange.range.endRowIndex).toBe(5);
         });
     });
 });

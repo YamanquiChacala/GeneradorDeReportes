@@ -79,7 +79,7 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
     if (persistentData.configData.attendancePerClass) {
         // Remove general absences.
         const info = getMappedRange(rangeNames.generalInfo);
-        const height = getRangeHeight(info.range) || 1;
+        const height = getRangeHeight(info.namedRange.range) || 1;
         const { requests: infoRequests, rowOffset: infoRowOffset } = resizeMappedRange({ target: info, targetRows: height - 1, rowOffset });
         rowOffset = infoRowOffset;
         requests.push(...infoRequests);
@@ -140,8 +140,8 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
     }
 
     // Fix merged cells
-    const userCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).range, colOffset: 1, width: 3 });
-    const simpleCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).range, colOffset: 4, width: 3 });
+    const userCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).namedRange.range, colOffset: 1, width: 3 });
+    const simpleCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).namedRange.range, colOffset: 4, width: 3 });
 
     requests.push(buildMergeCellsRequest(userCommentRange, MergeType.MERGE_ROWS));
     requests.push(buildMergeCellsRequest(simpleCommentRange, MergeType.MERGE_ROWS));
@@ -155,12 +155,13 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
         { origin: rangeNames.trim3Subjects, width: 2, name: rangeNames.unprotectedTrim3 },
     ];
 
+    // TODO: Named range update
     for (const op of unprotectedRangeOperations) {
         const origin = getMappedRange(op.origin);
-        const newRange = offsetGridRange({ origin: origin.range, colOffset: 1, width: op.width });
+        const newRange = offsetGridRange({ origin: origin.namedRange.range, colOffset: 1, width: op.width });
         requests.push(buildAddNamedRangeRequest<typeof ReportSheetSchema>(op.name, newRange));
         mappedRanges[op.name] = {
-            range: newRange,
+            namedRange: { name: op.name, range: newRange },
             sheet: origin.sheet,
         };
     }
@@ -177,19 +178,19 @@ function removeRangeColumns(
     fields: MappedNamedRange,
     averages: MappedNamedRange,
 ): GoogleAppsScript.Sheets.Schema.Request {
-    const removedCols = getRangeWidth(absences.range);
+    const removedCols = getRangeWidth(absences.namedRange.range);
 
     const request: GoogleAppsScript.Sheets.Schema.Request = {
         deleteRange: {
-            range: absences.range,
+            range: absences.namedRange.range,
             shiftDimension: Dimension.COLUMNS,
         },
     };
 
-    absences.range = shrinkRangeWidth(absences.range, removedCols);
-    subjects.range = shrinkRangeWidth(subjects.range, removedCols);
-    fields.range = shrinkRangeWidth(fields.range, removedCols);
-    averages.range = shrinkRangeWidth(averages.range, removedCols);
+    absences.namedRange.range = shrinkRangeWidth(absences.namedRange.range, removedCols);
+    subjects.namedRange.range = shrinkRangeWidth(subjects.namedRange.range, removedCols);
+    fields.namedRange.range = shrinkRangeWidth(fields.namedRange.range, removedCols);
+    averages.namedRange.range = shrinkRangeWidth(averages.namedRange.range, removedCols);
 
     return request;
 }
@@ -460,7 +461,7 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             const gradesRange = getMappedRange(grades);
             const destRange = getMappedRange(dest);
 
-            const totalColumns = getRangeWidth(destRange.range);
+            const totalColumns = getRangeWidth(destRange.namedRange.range);
             for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
                 rowData.push({
                     userEnteredValue: { formulaValue: createFieldAverageFormula(gradesRange, colOffset + 1, colOffset === totalColumns - 1 && lastBig ? 2 : 1) },
@@ -488,7 +489,7 @@ function prepareAverages(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             const destRange = getMappedRange(dest);
             const weightsRange = getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.subjects);
 
-            const totalColumns = getRangeWidth(destRange.range);
+            const totalColumns = getRangeWidth(destRange.namedRange.range);
             for (let colOffset = 0; colOffset < totalColumns; colOffset++) {
                 rowData.push({
                     userEnteredValue: {
