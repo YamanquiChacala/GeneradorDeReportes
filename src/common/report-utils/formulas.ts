@@ -75,7 +75,7 @@ export function createStudentPerSubjectAttendanceFormula(
     const returnColum = getColumnLetter(3 + period * 2);
     return `=LET(
     start_row, MATCH(${subjectA1}, ${attendanceSheetName}!A:A, 0),
-    next_subject_offset,
+    height,
         IFERROR(
             MATCH(
                 TRUE,
@@ -89,7 +89,6 @@ export function createStudentPerSubjectAttendanceFormula(
             ),
             ROWS(${attendanceSheetName}!A:A) - start_row
         ),
-    height, next_subject_offset - 1,
     first_names, OFFSET(${attendanceSheetName}!B$1, start_row, 0, height, 1),
     last_names, OFFSET(${attendanceSheetName}!C$1, start_row, 0, height, 1),
     return_data, OFFSET(${attendanceSheetName}!${returnColum}$1, start_row, 0, height, 2),

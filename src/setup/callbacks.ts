@@ -152,6 +152,7 @@ export function onInitializeReport(e: GoogleAppsScript.Addons.EventObject): Goog
         initializeReport(setupFileId, parentId);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(errorMessage);
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${errorMessage}`))
             .build();

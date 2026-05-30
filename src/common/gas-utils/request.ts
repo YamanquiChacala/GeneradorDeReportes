@@ -38,10 +38,12 @@ export function buildMergeCellsRequest(range: GoogleAppsScript.Sheets.Schema.Gri
 export function buildAddNamedRangeRequest<T extends NestedSheetSchema>(
     name: ExtractRangeNames<T>,
     range: GoogleAppsScript.Sheets.Schema.GridRange,
+    namedRangeId?: string,
 ): GoogleAppsScript.Sheets.Schema.Request {
     return {
         addNamedRange: {
             namedRange: {
+                namedRangeId,
                 name,
                 range,
             },

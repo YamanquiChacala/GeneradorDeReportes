@@ -9,6 +9,7 @@ import {
     createRequiredGetter,
     getRangeHeight,
     getRangeWidth,
+    insertNewNamedRangeToMemory,
     type MappedNamedRange,
     offsetGridRange,
     resizeMappedRange,
@@ -37,7 +38,7 @@ export function prepareStudentTemplate(
     persistentData: ReportPersistentData,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     // Adapt the sheet's ranges
-    const adaptSheetRangesRequests = adaptSizeAndRanges(parsedReport.mappedRanges, persistentData);
+    const adaptSheetRangesRequests = adaptSizeAndRanges(parsedReport, persistentData);
 
     // Fill in data
     const infoRequests = prepareInfo(parsedReport.mappedRanges, persistentData);
@@ -64,7 +65,7 @@ export function prepareStudentTemplate(
 /**
  * Adapts the size of the template sheet, and updates the named ranges
  */
-function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+function adaptSizeAndRanges(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     let rowOffset = 0;
@@ -73,7 +74,7 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
     const fieldCount = persistentData.configData.averagePerField ? persistentData.academicFields.length : 0;
 
     const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
-    const getMappedRange = createRequiredGetter(mappedRanges, "template de estudiante");
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "template de estudiante");
 
     // Handle absences
     if (persistentData.configData.attendancePerClass) {
@@ -155,15 +156,20 @@ function adaptSizeAndRanges(mappedRanges: Partial<Record<RangeName, MappedNamedR
         { origin: rangeNames.trim3Subjects, width: 2, name: rangeNames.unprotectedTrim3 },
     ];
 
-    // TODO: Named range update
     for (const op of unprotectedRangeOperations) {
+        const rangeNameId = Utilities.getUuid();
         const origin = getMappedRange(op.origin);
         const newRange = offsetGridRange({ origin: origin.namedRange.range, colOffset: 1, width: op.width });
-        requests.push(buildAddNamedRangeRequest<typeof ReportSheetSchema>(op.name, newRange));
-        mappedRanges[op.name] = {
-            namedRange: { name: op.name, range: newRange },
-            sheet: origin.sheet,
-        };
+        requests.push(buildAddNamedRangeRequest<typeof ReportSheetSchema>(op.name, newRange, rangeNameId));
+
+        insertNewNamedRangeToMemory({
+            parsedData: parsedReport,
+            sheetTitle: ReportSheetSchema.sheets.studentTemplate.sheetName,
+            rangeNameId,
+            rangeName: op.name,
+            gridRange: newRange,
+            staticRangeKey: op.name,
+        });
     }
 
     return requests;

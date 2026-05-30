@@ -75,24 +75,35 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges };
 }
 
+interface InsertNewNamedRangeToMemoryParams<T extends NestedSheetSchema> {
+    parsedData: ParsedSpreadsheet<T>;
+    sheetTitle: ExtractSheetNames<T>;
+    rangeNameId: string;
+    rangeName: string;
+    gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
+    staticRangeKey?: ExtractRangeNames<T>;
+    dynamicRangeKey?: ExtractDynamicRangeKeys<T>;
+}
+
 /**
  * Update the memory representation with a new named range
  */
-export function insertNewNamedRangeToMemory<T extends NestedSheetSchema>(
-    parsedData: ParsedSpreadsheet<T>,
-    sheetTitle: ExtractSheetNames<T>,
-    rangeName: string,
-    gridRange: GoogleAppsScript.Sheets.Schema.GridRange,
-    // Optional params to tell it where to store the mapped wrapper:
-    staticRangeKey?: ExtractRangeNames<T>,
-    dynamicRangeKey?: ExtractDynamicRangeKeys<T>,
-) {
+export function insertNewNamedRangeToMemory<T extends NestedSheetSchema>({
+    parsedData,
+    sheetTitle,
+    rangeNameId,
+    rangeName,
+    gridRange,
+    staticRangeKey,
+    dynamicRangeKey,
+}: InsertNewNamedRangeToMemoryParams<T>) {
     const sheet = parsedData.mappedSheets[sheetTitle];
     if (!sheet) {
         throw new Error(`Cannot add range. Sheet ${sheetTitle as string} is not in memory.`);
     }
 
     const newStrictNamedRange: StrictNameRange = {
+        namedRangeId: rangeNameId,
         name: rangeName,
         range: gridRange,
     };
