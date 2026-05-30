@@ -99,14 +99,16 @@ describe("Setup Parse Utils", () => {
             const studentSetupData: readonly CellData[][] = [
                 /* 0 */ [empty(), empty(), empty(), empty(), empty()],
                 /* 1 */ [],
-                /* 2 */ [str("first1"), str("last1"), str("male"), str("elementary"), str("1")], // id 1
-                /* 3 */ [str("first2"), str("last2"), str("female"), str("elementary"), num(2)], // id 2
-                /* 4 */ [str("first3"), str("last3"), str("male"), str("elementary"), str("3°")], // id 3
-                /* 5 */ [empty(), str("ignore"), str("female"), str("high school"), num(2)], // Gap triggers here
-                /* 6 */ [str("ignore"), empty(), str("male"), str("high school"), num(2)], // Continued gap
-                /* 7 */ [str("first4"), str("last4")], // Starts new group, id 1
-                /* 8 */ [],
-                /* 9 */ [],
+                /* 2 */ [str("first1"), str("last1"), str("male"), str("elementary"), str("1"), str("abc")], // id 1
+                /* 3 */ [str("first2"), str("last2"), num(50), num(35), num(2), num(123)], // id 2
+                /* 4 */ [str("first3"), str("last3"), str("male"), str("elementary"), str("3°"), str("aqui")], // id 3
+                /* 5 */ [empty(), str("ignore"), str("female"), str("high school"), num(2), str("my curp")], // Gap triggers here
+                /* 6 */ [str("ignore"), empty(), str("male"), str("high school"), num(2), str("nada")], // Continued gap
+                /* 7 */ [num(56), str("fake"), str("male"), str("high school"), num(2), str("nada")], // Continued gap
+                /* 8 */ [str("ignore"), num(35), str("male"), str("high school"), num(2), str("nada")], // Continued gap
+                /* 9 */ [str("first4"), str("last4")], // Starts new group, id 1
+                /* 10 */ [],
+                /* 11 */ [],
             ];
 
             const { students, studentReportData } = parseStudentList(studentSetupData);
@@ -121,6 +123,7 @@ describe("Setup Parse Utils", () => {
                     sex: "male",
                     level: "elementary",
                     grade: "1",
+                    curp: "abc",
                 },
                 {
                     type: "student",
@@ -128,9 +131,10 @@ describe("Setup Parse Utils", () => {
                     firstName: "first2",
                     lastName: "last2",
                     sheetName: expect.any(String),
-                    sex: "female",
-                    level: "elementary",
+                    sex: "50",
+                    level: "35",
                     grade: "2º", // Number value fallback logic kicks in
+                    curp: "123",
                 },
                 {
                     type: "student",
@@ -141,6 +145,7 @@ describe("Setup Parse Utils", () => {
                     sex: "male",
                     level: "elementary",
                     grade: "3°",
+                    curp: "aqui",
                 },
                 { type: "separator" }, // Separator correctly inserted between groups
                 {
@@ -152,6 +157,7 @@ describe("Setup Parse Utils", () => {
                     sex: "", // Defaults for missing optionals
                     level: "",
                     grade: "",
+                    curp: "",
                 },
             ]);
 

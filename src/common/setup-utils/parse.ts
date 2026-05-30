@@ -108,11 +108,12 @@ export function parseStudentList(studentSetupData: readonly GoogleAppsScript.She
             lastName,
             sheetName,
             // TODO: Maybe mark these as optional.
-            sex: studentRow[2]?.effectiveValue?.stringValue ?? "",
-            level: studentRow[3]?.effectiveValue?.stringValue ?? "",
+            sex: studentRow[2]?.effectiveValue?.stringValue ?? (studentRow[2]?.effectiveValue?.numberValue != null ? `${studentRow[2].effectiveValue.numberValue}` : ""),
+            level:
+                studentRow[3]?.effectiveValue?.stringValue ?? (studentRow[3]?.effectiveValue?.numberValue != null ? `${studentRow[3].effectiveValue.numberValue}` : ""),
             grade:
-                studentRow[4]?.effectiveValue?.stringValue ??
-                (studentRow[4]?.effectiveValue?.numberValue != null ? `${studentRow[4]?.effectiveValue?.numberValue}º` : ""),
+                studentRow[4]?.effectiveValue?.stringValue ?? (studentRow[4]?.effectiveValue?.numberValue != null ? `${studentRow[4].effectiveValue.numberValue}º` : ""),
+            curp: studentRow[5]?.effectiveValue?.stringValue ?? (studentRow[5]?.effectiveValue?.numberValue != null ? `${studentRow[5].effectiveValue.numberValue}` : ""),
         };
 
         const studentReportDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [

@@ -45,6 +45,7 @@ export interface Student {
     sex: string;
     level: string;
     grade: string;
+    curp: string;
 }
 
 interface StudentSpace {
