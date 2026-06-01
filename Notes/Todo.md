@@ -1,3 +1,6 @@
+# General code
+* [ ] Update `transferData` function to grow only on rows and spill over content.
+
 # Report initial creation
 ## Persistent Data
 * [x] Number each student by groups
@@ -12,6 +15,7 @@
 * [x] Set `BandedRange` for each subject, dynamic colors.
 * [x] Remove format for rows between subjects.
 * [x] Only allow write on unprotected period.
+* [ ] Add vertical borders between the final periods.
 
 ## Student Sheets
 
@@ -19,8 +23,7 @@
 
 # General
 * [x] Switch from using `formattedValue` to use `effectiveValue`.
-* [ ] Use `createRequiredGetter` and siplified names everywhere.
-* [ ] Maybe, just maybe, instead of hardcoding student names, subject names and academic field names, make them references to the persistent data.
+* [x] Use `createRequiredGetter` and siplified names everywhere.
 
 # Menu
 ## Assistance
