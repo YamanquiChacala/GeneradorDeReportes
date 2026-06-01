@@ -6,6 +6,7 @@ import {
     buildFieldsMask,
     buildMergeCellsRequest,
     buildTransferRequests,
+    buildUpdateSheetPropertiesRequest,
     createRequiredGetter,
     getRangeHeight,
     getRangeWidth,
@@ -58,8 +59,26 @@ export function prepareStudentTemplate(
     // Prepare averages
     const averageRequests = prepareAverages(parsedReport.mappedRanges, persistentData);
 
+    // Unhide it for making copies later.
+    const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
+    const studentTemplateSheetId = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName).properties?.sheetId ?? 0;
+    const propertiesRequest = buildUpdateSheetPropertiesRequest({
+        sheetId: studentTemplateSheetId,
+        hidden: false,
+        index: 1,
+    });
+
     // Build requests
-    return [...adaptSheetRangesRequests, ...infoRequests, ...abilitiesRequests, ...commentsRequests, ...subjectRequests, ...fieldRequests, ...averageRequests];
+    return [
+        ...adaptSheetRangesRequests,
+        ...infoRequests,
+        ...abilitiesRequests,
+        ...commentsRequests,
+        ...subjectRequests,
+        ...fieldRequests,
+        ...averageRequests,
+        propertiesRequest,
+    ];
 }
 
 /**

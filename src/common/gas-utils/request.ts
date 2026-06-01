@@ -68,6 +68,83 @@ export function buildAddBandingRequest(
     };
 }
 
+interface BuildUpdateSheetPropertiesParams {
+    sheetId: number;
+    index?: number;
+    hidden?: boolean;
+    rowCount?: number;
+    columnCount?: number;
+    frozenRowCount?: number;
+    frozenColumnCount?: number;
+    hideGridlines?: boolean;
+}
+
+/**
+ * Generates batch update `updateSheetProperties`
+ */
+export function buildUpdateSheetPropertiesRequest({
+    sheetId,
+    index,
+    hidden,
+    rowCount,
+    columnCount,
+    frozenRowCount,
+    frozenColumnCount,
+    hideGridlines = true,
+}: BuildUpdateSheetPropertiesParams): GoogleAppsScript.Sheets.Schema.Request {
+    const properties: GoogleAppsScript.Sheets.Schema.SheetProperties = { sheetId };
+    const fields: string[] = [];
+
+    if (index !== undefined) {
+        properties.index = index;
+        fields.push("index");
+    }
+    if (hidden !== undefined) {
+        properties.hidden = hidden;
+        fields.push("hidden");
+    }
+
+    const gridProperties: GoogleAppsScript.Sheets.Schema.GridProperties = {};
+    let hasGridProperties = false;
+
+    if (rowCount !== undefined) {
+        gridProperties.rowCount = rowCount;
+        fields.push("gridProperties.rowCount");
+        hasGridProperties = true;
+    }
+    if (columnCount !== undefined) {
+        gridProperties.columnCount = columnCount;
+        fields.push("gridProperties.columnCount");
+        hasGridProperties = true;
+    }
+    if (frozenRowCount !== undefined) {
+        gridProperties.frozenRowCount = frozenRowCount;
+        fields.push("gridProperties.frozenRowCount");
+        hasGridProperties = true;
+    }
+    if (frozenColumnCount !== undefined) {
+        gridProperties.frozenColumnCount = frozenColumnCount;
+        fields.push("gridProperties.frozenColumnCount");
+        hasGridProperties = true;
+    }
+    if (hideGridlines) {
+        gridProperties.hideGridlines = hideGridlines;
+        fields.push("gridProperties.hideGridlines");
+        hasGridProperties = true;
+    }
+
+    if (hasGridProperties) {
+        properties.gridProperties = gridProperties;
+    }
+
+    return {
+        updateSheetProperties: {
+            properties,
+            fields: fields.join(","),
+        },
+    };
+}
+
 interface BuildUpdateCellsRequestParams {
     destination: GoogleAppsScript.Sheets.Schema.GridRange;
     data: GoogleAppsScript.Sheets.Schema.CellData[][];

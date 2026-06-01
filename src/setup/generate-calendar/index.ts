@@ -5,6 +5,7 @@ import {
     buildCopyPasteRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
+    buildUpdateSheetPropertiesRequest,
     createRange,
     createRequiredGetter,
     createSingleCellRange,
@@ -183,29 +184,23 @@ function buildSheetSetupRequests(
     }
 
     // Adjust calendar sheet size and visibility
-    apiRequests.push({
-        updateSheetProperties: {
-            properties: {
-                sheetId: calendarSheetId,
-                hidden: false,
-                gridProperties: { rowCount: totalRows, frozenRowCount: 1, frozenColumnCount: 1 },
-            },
-            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.SheetProperties>(
-                "hidden",
-                "gridProperties.rowCount",
-                "gridProperties.frozenRowCount",
-                "gridProperties.frozenColumnCount",
-            ),
-        },
-    });
+    apiRequests.push(
+        buildUpdateSheetPropertiesRequest({
+            sheetId: calendarSheetId,
+            hidden: false,
+            rowCount: totalRows,
+            frozenRowCount: 1,
+            frozenColumnCount: 1,
+        }),
+    );
 
     // Hide calendar template to be used when changing the calendar.
-    apiRequests.push({
-        updateSheetProperties: {
-            properties: { sheetId: calendarTemplateSheet.properties?.sheetId, hidden: true },
-            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.SheetProperties>("hidden"),
-        },
-    });
+    apiRequests.push(
+        buildUpdateSheetPropertiesRequest({
+            sheetId: calendarTemplateSheet.properties?.sheetId ?? 0,
+            hidden: true,
+        }),
+    );
 
     return apiRequests;
 }

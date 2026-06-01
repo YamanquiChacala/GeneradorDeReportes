@@ -8,6 +8,7 @@ import {
     buildFieldsMask,
     buildMergeCellsRequest,
     buildUpdateCellsRequest,
+    buildUpdateSheetPropertiesRequest,
     createBanding,
     createRange,
     createRequiredGetter,
@@ -100,6 +101,10 @@ function copyAttendanceTemplate(
     persistenData: ReportPersistentData,
     attendaceSheetId: number,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
+    const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
+
+    const attendanceTemplateSheetId = getMappedSheet(ReportSheetSchema.sheets.attendanceTemplate.sheetName).properties?.sheetId ?? 0;
+
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     const { frozenRows, frozenCols } = getFrozenRowCols(parsedReport.mappedRanges);
@@ -120,23 +125,22 @@ function copyAttendanceTemplate(
     // Make the new sheet
     requests.push({
         duplicateSheet: {
-            sourceSheetId: parsedReport.mappedSheets[ReportSheetSchema.sheets.attendanceTemplate.sheetName]?.properties?.sheetId,
+            sourceSheetId: attendanceTemplateSheetId,
             newSheetId: attendaceSheetId,
             newSheetName: ReportSheetSchema.sheets.attendance.sheetName,
         },
     });
 
     // Adjust properties
-    requests.push({
-        updateSheetProperties: {
-            properties: {
-                sheetId: attendaceSheetId,
-                hidden: false,
-                gridProperties: { columnCount: finalColumnCount, rowCount: finalRowCount },
-            },
-            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.SheetProperties>("hidden", "gridProperties.columnCount", "gridProperties.rowCount", "index"),
-        },
-    });
+    requests.push(
+        buildUpdateSheetPropertiesRequest({
+            sheetId: attendaceSheetId,
+            hidden: false,
+            rowCount: finalRowCount,
+            columnCount: finalColumnCount,
+            index: 0,
+        }),
+    );
 
     // Unmerge cells
     requests.push({
@@ -162,6 +166,15 @@ function copyAttendanceTemplate(
 
     // Return the namedRanges to the template
     for (const namedRange of templateNamedRanges) requests.push({ addNamedRange: { namedRange: namedRange } });
+
+    // Hide the template sheet
+    requests.push(
+        buildUpdateSheetPropertiesRequest({
+            sheetId: attendanceTemplateSheetId,
+            hidden: true,
+            index: 1,
+        }),
+    );
 
     // Return
     return requests;

@@ -43,7 +43,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
     const parsedReportSheet = parseSpreadsheet(reportSpreadsheet, ReportSheetSchema);
 
     // Fill Report Persistent Data
-    const { persistentData, requests: persistentDataRequests } = fillPersistentData(setupMappedRanges, parsedReportSheet.mappedRanges);
+    const { persistentData, requests: persistentDataRequests } = fillPersistentData(setupMappedRanges, parsedReportSheet);
 
     // Create Attendance sheet
     const attendanceRequests = createAttendanceSheet(parsedReportSheet, persistentData);

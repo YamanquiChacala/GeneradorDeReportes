@@ -1,8 +1,9 @@
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/gas-parts";
-import type { ExtractRangeNames } from "../../common/gas-utils";
+import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
     buildFieldsMask,
     buildTransferRequests,
+    buildUpdateSheetPropertiesRequest,
     createRequiredGetter,
     getCellBoolean,
     getCellDataArray,
@@ -23,16 +24,18 @@ type ReportRangeName = ExtractRangeNames<typeof ReportSheetSchema>;
  */
 export function fillPersistentData(
     setupMappedRanges: Partial<Record<SetupRangeName, MappedNamedRange>>,
-    reportMappedRanges: Partial<Record<ReportRangeName, MappedNamedRange>>,
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
 ): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     persistentData: ReportPersistentData;
 } {
+    const getSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
+
     // How much we've pushed or pulled rows as we move from top to buttom.
     let rowOffset = 0;
 
     // Update general configuration data
-    const { requests: configRequests, configData } = getConfigData(setupMappedRanges, reportMappedRanges);
+    const { requests: configRequests, configData } = getConfigData(setupMappedRanges, parsedReport.mappedRanges);
 
     // Update Academic Fields and subjects
     const {
@@ -40,18 +43,25 @@ export function fillPersistentData(
         newRowOffset: subjectsOffset,
         academicFields,
         subjects,
-    } = getSubjects(setupMappedRanges, reportMappedRanges, configData.averagePerField, rowOffset);
+    } = getSubjects(setupMappedRanges, parsedReport.mappedRanges, configData.averagePerField, rowOffset);
     rowOffset = subjectsOffset;
 
     // Update Student list
-    const { requests: studentRequests, newRowOffset: studentOffset, students } = getStudents(setupMappedRanges, reportMappedRanges, rowOffset);
+    const { requests: studentRequests, newRowOffset: studentOffset, students } = getStudents(setupMappedRanges, parsedReport.mappedRanges, rowOffset);
     rowOffset = studentOffset;
 
     // Update calendar days
-    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupMappedRanges, reportMappedRanges, rowOffset);
+    const { requests: calendarDaysRequests, calendar } = getCalendarDays(setupMappedRanges, parsedReport.mappedRanges, rowOffset);
+
+    // Set sheet properties
+    const propertiesRequest = buildUpdateSheetPropertiesRequest({
+        sheetId: getSheet(ReportSheetSchema.sheets.persistentData.sheetName).properties?.sheetId ?? 0,
+        hidden: true,
+        index: 0,
+    });
 
     // Build response
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...subjectRequests, ...studentRequests, ...calendarDaysRequests];
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...subjectRequests, ...studentRequests, ...calendarDaysRequests, propertiesRequest];
 
     // Build memory version of the sheet, for use without calling get again.
     const persistentData: ReportPersistentData = {

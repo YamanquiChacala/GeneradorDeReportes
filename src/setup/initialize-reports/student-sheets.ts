@@ -2,6 +2,7 @@ import { ReportSheetSchema } from "../../common/gas-parts";
 import {
     buildFieldsMask,
     buildUpdateCellsRequest,
+    buildUpdateSheetPropertiesRequest,
     changeGridRangeSheet,
     createRequiredGetter,
     type ExtractRangeNames,
@@ -34,7 +35,14 @@ export function createStudentSheets(
     // Return the deleted named ranges to the template.
     const resetTemplateRequests = resetTemplateSheet(studentNamedRanges);
 
-    return [...cleanTemplateRequest, ...newSheetsRequests, ...resetTemplateRequests];
+    // Hide the template
+    const studentTemplateSheetId = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName).properties?.sheetId ?? 0;
+    const propertiesRequest = buildUpdateSheetPropertiesRequest({
+        sheetId: studentTemplateSheetId,
+        hidden: true,
+    });
+
+    return [...cleanTemplateRequest, ...newSheetsRequests, ...resetTemplateRequests, propertiesRequest];
 }
 
 /**
@@ -76,19 +84,31 @@ function buildSheetsRequests(
 
     const fields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue");
 
+    const baseUnprotectedRanges = [
+        getMappedRange(rangeNames.unprotectedAbilities).namedRange.range,
+        getMappedRange(rangeNames.unprotectedComments).namedRange.range,
+        getMappedRange(rangeNames.unprotectedTrim1).namedRange.range,
+    ];
+
+    let insertSheetIndex: number = 0;
     for (const studentRow of persistenData.students) {
         if (studentRow.type === "student") {
             // Create a random id for the sheet.
             const newSheetId = getRandomId();
 
+            insertSheetIndex++;
+
+            // Copy the template sheet
             requests.push({
                 duplicateSheet: {
+                    insertSheetIndex,
                     newSheetId,
                     sourceSheetId: templateId,
                     newSheetName: studentRow.sheetName,
                 },
             });
 
+            // Add the information to the sheet
             const simpleCopyOps: Array<{ rangeName: RangeName; value: string }> = [
                 { rangeName: rangeNames.firstName, value: studentRow.firstName },
                 { rangeName: rangeNames.lastName, value: studentRow.lastName },
@@ -111,6 +131,19 @@ function buildSheetsRequests(
             ];
             const infoRequest = buildUpdateCellsRequest({ destination: infoDestinationRange, data, fields });
             if (infoRequest) requests.push(infoRequest);
+
+            // Protect the sheet
+            const unprotectedRanges = baseUnprotectedRanges.map((range) => changeGridRangeSheet(range, newSheetId));
+            requests.push({
+                addProtectedRange: {
+                    protectedRange: {
+                        range: { sheetId: newSheetId },
+                        description: studentRow.sheetName,
+                        warningOnly: false,
+                        unprotectedRanges,
+                    },
+                },
+            });
         }
     }
 
