@@ -1,68 +1,78 @@
-export enum PasteType {
-    PASTE_NORMAL = "PASTE_NORMAL",
-    PASTE_VALUES = "PASTE_VALUES",
-    PASTE_FORMAT = "PASTE_FORMAT",
-    PASTE_NO_BORDERS = "PASTE_NO_BORDERS",
-    PASTE_FORMULA = "PASTE_FORMULA",
-    PASTE_DATA_VALIDATION = "PASTE_DATA_VALIDATION",
-    PASTE_CONDITIONAL_FORMATTING = "PASTE_CONDITIONAL_FORMATTING",
+export interface StrictNameRange extends GoogleAppsScript.Sheets.Schema.NamedRange {
+    name: string;
+    range: GoogleAppsScript.Sheets.Schema.GridRange;
 }
 
-export enum PasteOrientation {
-    NORMAL = "NORMAL",
-    TRANSPOSE = "TRANSPOSE",
+export interface MappedNamedRange {
+    namedRange: StrictNameRange;
+    sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
-export enum Dimension {
-    DIMENSION_UNSPECIFIED = "DIMENSION_UNSPECIFIED",
-    ROWS = "ROWS",
-    COLUMNS = "COLUMNS",
+export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
+    mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
+    mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
+    mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
+    dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
 }
 
-export enum ConditionType {
-    CONDITION_TYPE_UNSPECIFIED = "CONDITION_TYPE_UNSPECIFIED",
-    NUMBER_GREATER = "NUMBER_GREATER",
-    NUMBER_GREATER_THAN_EQ = "NUMBER_GREATER_THAN_EQ",
-    NUMBER_LESS = "NUMBER_LESS",
-    NUMBER_LESS_THAN_EQ = "NUMBER_LESS_THAN_EQ",
-    NUMBER_EQ = "NUMBER_EQ",
-    NUMBER_NOT_EQ = "NUMBER_NOT_EQ",
-    NUMBER_BETWEEN = "NUMBER_BETWEEN",
-    NUMBER_NOT_BETWEEN = "NUMBER_NOT_BETWEEN",
-    TEXT_CONTAINS = "TEXT_CONTAINS",
-    TEXT_NOT_CONTAINS = "TEXT_NOT_CONTAINS",
-    TEXT_STARTS_WITH = "TEXT_STARTS_WITH",
-    TEXT_ENDS_WITH = "TEXT_ENDS_WITH",
-    TEXT_EQ = "TEXT_EQ",
-    TEXT_IS_EMAIL = "TEXT_IS_EMAIL",
-    TEXT_IS_URL = "TEXT_IS_URL",
-    DATE_EQ = "DATE_EQ",
-    DATE_BEFORE = "DATE_BEFORE",
-    DATE_AFTER = "DATE_AFTER",
-    DATE_ON_OR_BEFORE = "DATE_ON_OR_BEFORE",
-    DATE_ON_OR_AFTER = "DATE_ON_OR_AFTER",
-    DATE_BETWEEN = "DATE_BETWEEN",
-    DATE_NOT_BETWEEN = "DATE_NOT_BETWEEN",
-    DATE_IS_VALID = "DATE_IS_VALID",
-    ONE_OF_RANGE = "ONE_OF_RANGE",
-    ONE_OF_LIST = "ONE_OF_LIST",
-    BLANK = "BLANK",
-    NOT_BLANK = "NOT_BLANK",
-    CUSTOM_FORMULA = "CUSTOM_FORMULA",
-    BOOLEAN = "BOOLEAN",
-    TEXT_NOT_EQ = "TEXT_NOT_EQ",
-    DATE_NOT_EQ = "DATE_NOT_EQ",
-    FILTER_EXPRESSION = "FILTER_EXPRESSION",
+export interface NestedSheetSchema {
+    readonly sheets: Record<
+        string,
+        {
+            readonly sheetName: string;
+            readonly ranges?: Record<string, string>;
+            readonly dynamicRanges?: Record<string, string>;
+        }
+    >;
 }
 
-export enum MergeType {
-    MERGE_ALL = "MERGE_ALL",
-    MERGE_COLUMNS = "MERGE_COLUMNS",
-    MERGE_ROWS = "MERGE_ROWS",
+export type ExtractSheetNames<T extends NestedSheetSchema> = T["sheets"][keyof T["sheets"]]["sheetName"];
+
+export type ExtractRangeNames<T extends NestedSheetSchema> = {
+    [K in keyof T["sheets"]]: T["sheets"][K] extends { ranges?: infer R } ? (R extends undefined ? never : R[keyof R]) : never;
+}[keyof T["sheets"]];
+
+export type ExtractDynamicRangeKeys<T extends NestedSheetSchema> = {
+    [K in keyof T["sheets"]]: T["sheets"][K] extends { dynamicRanges?: infer D } ? (D extends undefined ? never : keyof D) : never;
+}[keyof T["sheets"]];
+
+export interface OffsetGridRangeProperties {
+    origin: GoogleAppsScript.Sheets.Schema.GridRange;
+    rowOffset?: number;
+    colOffset?: number;
+    height?: number;
+    width?: number;
 }
 
-export enum ValueInputOption {
-    INPUT_VALUE_OPTION_UNSPECIFIED = "INPUT_VALUE_OPTION_UNSPECIFIED",
-    RAW = "RAW",
-    USER_ENTERED = "USER_ENTERED",
+export interface ResizeRangeParams {
+    target: MappedNamedRange;
+    targetRows?: number;
+    targetCols?: number;
+    rowOffset?: number;
+    colOffset?: number;
+}
+
+export interface RangeOperationResult {
+    requests: GoogleAppsScript.Sheets.Schema.Request[];
+    rowOffset: number;
+    colOffset: number;
+}
+
+export enum FileType {
+    SETUP = "MontessoriChacalaSchoolGroupSetup",
+    REPORT = "MontessoriChacalaSchoolReport",
+}
+
+export enum Urls {
+    MEDIA_SERVER = "https://media.githubusercontent.com/media/YamanquiChacala/GeneradorDeReportes/refs/heads/main/",
+}
+
+export enum Colors {
+    LOGO_OSCURO = "#34666A",
+    LOGO_CLARO = "#159A5E",
+    ORANGE = "#EA4335",
+    LANGUAGE = "#c9daf8",
+    SCIENCE = "#fce5cd",
+    NATURE = "#d9ead3",
+    HUMANITIES = "#ead1dc",
 }

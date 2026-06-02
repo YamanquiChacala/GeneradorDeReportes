@@ -1,4 +1,4 @@
-import { Colors } from "../common/gas-parts";
+import { Colors } from "../common/gas-utils";
 import { Base64Fonts, Base64Images } from "../common/utils/base64-constants";
 import { Templates } from "./types";
 

@@ -1,5 +1,5 @@
 import type { MappedNamedRange } from ".";
-import { getA1Notation, getColumnLetter } from "./notation";
+import { getA1Notation, getColumnLetter } from "./a1-notation";
 
 describe("Notation", () => {
     describe("getA1Notation", () => {

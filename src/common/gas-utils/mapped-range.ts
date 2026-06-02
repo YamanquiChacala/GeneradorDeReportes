@@ -1,5 +1,7 @@
-import { getEpochDate, type MappedNamedRange, offsetGridRange, type RangeOperationResult, type ResizeRangeParams } from ".";
-import { Dimension } from "./types";
+import { Dimension } from "./api-types";
+import { offsetGridRange } from "./range";
+import { getEpochDate } from "./time";
+import type { MappedNamedRange, RangeOperationResult, ResizeRangeParams } from "./types";
 
 interface GetCellParams {
     mappedRange: MappedNamedRange;

@@ -16,7 +16,7 @@ import {
     offsetGridRange,
     parseSpreadsheet,
 } from "../../common/gas-utils";
-import { ConditionType, MergeType, PasteType } from "../../common/gas-utils/types";
+import { ConditionType, MergeType, PasteType } from "../../common/gas-utils/api-types";
 import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, type MonthBlock } from "../../common/setup-utils";
 
 type SheetName = ExtractSheetNames<typeof SetupSheetSchema>;

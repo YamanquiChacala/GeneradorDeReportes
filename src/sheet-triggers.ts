@@ -1,4 +1,5 @@
-import { buildRequestAuthorizationCard, buildWrongSelectionCard, FileType, getFileType } from "./common/gas-parts";
+import { buildRequestAuthorizationCard, buildWrongSelectionCard, getFileType } from "./common/gas-parts";
+import { FileType } from "./common/gas-utils";
 import { buildEditSetupFileCard } from "./setup/cards";
 
 /**

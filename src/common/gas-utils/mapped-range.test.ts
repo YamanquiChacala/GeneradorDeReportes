@@ -9,7 +9,7 @@ import {
     type MappedNamedRange,
     resizeMappedRange,
 } from ".";
-import { Dimension } from "./types";
+import { Dimension } from "./api-types";
 
 describe("MappedNamedRange Utilities", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks, but the sheet is 10x10.

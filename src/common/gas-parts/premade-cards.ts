@@ -1,7 +1,7 @@
+import { Colors } from "../gas-utils/types";
 import { Icon } from "../utils";
 import { onAskPermission } from "./callbacks";
 import { headerImage, icon } from "./card-parts";
-import { Colors } from "./types";
 
 interface UtilityCardParams {
     header: GoogleAppsScript.Card_Service.CardHeader;

@@ -1,70 +1,12 @@
+export * from "./a1-notation";
+export * from "./api-types";
+export * from "./card-io";
 export * from "./color";
 export * from "./constants";
-export * from "./gas-types";
 export * from "./helpers";
 export * from "./mapped-range";
-export * from "./notation";
 export * from "./parse";
 export * from "./range";
 export * from "./request";
 export * from "./time";
-
-export interface StrictNameRange extends GoogleAppsScript.Sheets.Schema.NamedRange {
-    name: string;
-    range: GoogleAppsScript.Sheets.Schema.GridRange;
-}
-
-export interface MappedNamedRange {
-    namedRange: StrictNameRange;
-    sheet: GoogleAppsScript.Sheets.Schema.Sheet;
-}
-
-export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
-    mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
-    mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
-    mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
-    dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
-}
-
-export interface NestedSheetSchema {
-    readonly sheets: Record<
-        string,
-        {
-            readonly sheetName: string;
-            readonly ranges?: Record<string, string>;
-            readonly dynamicRanges?: Record<string, string>;
-        }
-    >;
-}
-
-export type ExtractSheetNames<T extends NestedSheetSchema> = T["sheets"][keyof T["sheets"]]["sheetName"];
-
-export type ExtractRangeNames<T extends NestedSheetSchema> = {
-    [K in keyof T["sheets"]]: T["sheets"][K] extends { ranges?: infer R } ? (R extends undefined ? never : R[keyof R]) : never;
-}[keyof T["sheets"]];
-
-export type ExtractDynamicRangeKeys<T extends NestedSheetSchema> = {
-    [K in keyof T["sheets"]]: T["sheets"][K] extends { dynamicRanges?: infer D } ? (D extends undefined ? never : keyof D) : never;
-}[keyof T["sheets"]];
-
-export interface OffsetGridRangeProperties {
-    origin: GoogleAppsScript.Sheets.Schema.GridRange;
-    rowOffset?: number;
-    colOffset?: number;
-    height?: number;
-    width?: number;
-}
-
-export interface ResizeRangeParams {
-    target: MappedNamedRange;
-    targetRows?: number;
-    targetCols?: number;
-    rowOffset?: number;
-    colOffset?: number;
-}
-
-export interface RangeOperationResult {
-    requests: GoogleAppsScript.Sheets.Schema.Request[];
-    rowOffset: number;
-    colOffset: number;
-}
+export * from "./types";

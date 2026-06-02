@@ -16,7 +16,7 @@ import {
     type MappedNamedRange,
     offsetGridRange,
 } from "../../common/gas-utils";
-import { MergeType, PasteType } from "../../common/gas-utils/types";
+import { MergeType, PasteType } from "../../common/gas-utils/api-types";
 import type { ReportPersistentData } from "../../common/report-utils";
 import {
     calculateAttendanceGridSize,

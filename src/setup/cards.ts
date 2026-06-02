@@ -1,5 +1,5 @@
-import { Colors, headerIcon, headerImage, textButton } from "../common/gas-parts";
-import { buildFieldsMask, defineActionParameters, defineInputsSchema } from "../common/gas-utils";
+import { headerIcon, headerImage, textButton } from "../common/gas-parts";
+import { buildFieldsMask, Colors, defineActionParameters, defineInputsSchema } from "../common/gas-utils";
 import { Icon } from "../common/utils";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar, onInitializeReport } from "./callbacks";
 

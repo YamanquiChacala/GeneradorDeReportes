@@ -1,5 +1,5 @@
 import { type HSLColor, hslToRgb, type RGBColor, rgbToHex } from "../utils";
-import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from ".";
+import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from "./constants";
 
 /**
  * Creates a banding for alternating cell backgrounds in a given hue [0,1]

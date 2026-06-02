@@ -15,7 +15,7 @@ import {
     resizeMappedRange,
     shrinkRangeWidth,
 } from "../../common/gas-utils";
-import { Dimension, MergeType } from "../../common/gas-utils/types";
+import { Dimension, MergeType } from "../../common/gas-utils/api-types";
 import {
     createAllSubjectsAverageFormula,
     createFieldAverageFormula,

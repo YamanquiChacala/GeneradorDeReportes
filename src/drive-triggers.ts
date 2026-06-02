@@ -1,4 +1,5 @@
-import { buildWrongSelectionCard, FileType, getFileType } from "./common/gas-parts";
+import { buildWrongSelectionCard, getFileType } from "./common/gas-parts";
+import { FileType } from "./common/gas-utils";
 import { buildCreateSetupFileCard } from "./setup/cards";
 
 /**

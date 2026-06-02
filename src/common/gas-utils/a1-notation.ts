@@ -1,5 +1,5 @@
-import type { MappedNamedRange } from ".";
-import { offsetGridRange } from ".";
+import { offsetGridRange } from "./range";
+import type { MappedNamedRange } from "./types";
 
 /**
  * Transforms a column number into it's corresponding column letter, using 0-based index.

@@ -1,5 +1,5 @@
 # General code
-* [ ] Update `transferData` function to grow only on rows and spill over content.
+* [ ] Update `src/common/gas-utils/mapped-range.ts/resizeMappedRange` function to grow only on rows and spill over content.
 
 # Report initial creation
 ## Persistent Data

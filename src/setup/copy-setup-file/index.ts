@@ -1,5 +1,6 @@
-import { FILE_VALIDATION_KEY, FileType, SetupSheetSchema } from "../../common/gas-parts";
-import { ValueInputOption } from "../../common/gas-utils/types";
+import { SetupSheetSchema } from "../../common/gas-parts";
+import { FILE_VALIDATION_KEY, FileType } from "../../common/gas-utils";
+import { ValueInputOption } from "../../common/gas-utils/api-types";
 import { SETUP_FILE_PREFIX } from "../../common/setup-utils";
 
 /**
