@@ -1,6 +1,13 @@
-import { MergeType, PasteOrientation, PasteType } from "../constants";
 import type { MappedNamedRange } from ".";
-import { buildAddBandingRequest, buildAddNamedRangeRequest, buildCopyPasteRequest, buildMergeCellsRequest, buildTransferRequests, buildUpdateCellsRequest } from ".";
+import {
+    buildAddBandingRequest,
+    buildAddNamedRangeRequest,
+    buildCopyPasteRequest,
+    buildMergeCellsRequest,
+    buildTransferRequests,
+    buildUpdateCellsRequest,
+} from "./request";
+import { MergeType, PasteOrientation, PasteType } from "./types";
 
 describe("Request Utilities", () => {
     describe("buildCopyPasteRequest", () => {

@@ -1,5 +1,5 @@
-import type { Icon } from "../constants";
 import { iconifyUrl } from "./iconify";
+import type { Icon } from "./types";
 
 describe("Image Utils Module", () => {
     describe("iconifyUrl()", () => {

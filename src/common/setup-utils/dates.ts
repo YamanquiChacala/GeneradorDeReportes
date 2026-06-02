@@ -1,4 +1,4 @@
-import { MORE_THAN_A_YEAR, MS_PER_DAY } from "../constants";
+import { MORE_THAN_A_YEAR, MS_PER_DAY } from "../utils";
 import type { CalendarDates, CalendarGrid, DayData, DayType, MonthBlock, WeekData } from ".";
 
 /**

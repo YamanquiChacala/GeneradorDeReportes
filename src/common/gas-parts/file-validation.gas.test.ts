@@ -1,6 +1,6 @@
 import { GasTestRunner } from "../../testing/gas-test-runner";
-import { FileType } from "../constants";
 import * as fileValidation from "./file-validation";
+import { FileType } from "./types";
 
 export function testFileValidation() {
     const runner = new GasTestRunner();

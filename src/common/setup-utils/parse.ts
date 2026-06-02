@@ -1,7 +1,6 @@
-import { MS_PER_DAY } from "../constants";
 import { colorToHex, getSheetsDate } from "../gas-utils";
 import type { AcademicField, Student, StudentRow, WeightedSubject } from "../report-utils";
-import { sanitizeSheetName } from "../utils";
+import { MS_PER_DAY, sanitizeSheetName } from "../utils";
 
 /**
  * Parses a 2D array of Google Sheets CellData into structured AcademicFields and WeightedSubjects.

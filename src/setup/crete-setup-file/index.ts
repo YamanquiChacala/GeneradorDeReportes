@@ -1,6 +1,6 @@
-import { FileType, SETUP_FILE_PREFIX, ValueInputOption } from "../../common/constants";
-import { FILE_VALIDATION_KEY, SetupSheetSchema } from "../../common/gas-parts";
-import { buildSetupFileUpdatePayload, type SetupFileData } from "../../common/setup-utils";
+import { FILE_VALIDATION_KEY, FileType, SetupSheetSchema } from "../../common/gas-parts";
+import { ValueInputOption } from "../../common/gas-utils/types";
+import { buildSetupFileUpdatePayload, SETUP_FILE_PREFIX, type SetupFileData } from "../../common/setup-utils";
 import { generateCalendar } from "../generate-calendar";
 
 /**

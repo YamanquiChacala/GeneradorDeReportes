@@ -1,4 +1,4 @@
-import * as GasEnums from "./gas-enums";
+import * as GasEnums from "./types";
 
 describe("GAS Enums Validation", () => {
     // GasEnums represents the entire file.

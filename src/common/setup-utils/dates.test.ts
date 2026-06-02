@@ -1,4 +1,4 @@
-import { MORE_THAN_A_YEAR } from "../constants";
+import { MORE_THAN_A_YEAR } from "../utils";
 import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, validateDates } from ".";
 
 describe("Setup Date Utilities", () => {

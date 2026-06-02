@@ -1,5 +1,5 @@
-import { Dimension } from "../constants";
 import { getEpochDate, type MappedNamedRange, offsetGridRange, type RangeOperationResult, type ResizeRangeParams } from ".";
+import { Dimension } from "./types";
 
 interface GetCellParams {
     mappedRange: MappedNamedRange;

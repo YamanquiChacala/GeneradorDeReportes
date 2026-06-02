@@ -1,6 +1,5 @@
-import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from "../constants";
 import { hslToRgb } from "../utils";
-import { colorToHex, createBanding } from ".";
+import { BAND_LIGHT, colorToHex, createBanding, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from ".";
 
 describe("Colors", () => {
     describe("createBanding", () => {

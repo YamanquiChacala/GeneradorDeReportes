@@ -1,6 +1,6 @@
-import { type Icon, Urls } from "../constants";
-import type { IconifyParams } from "../utils";
+import type { Icon, IconifyParams } from "../utils";
 import { iconifyUrl, webColor } from "../utils";
+import { Urls } from "./types";
 
 interface BaseHeaderParams {
     title: string;

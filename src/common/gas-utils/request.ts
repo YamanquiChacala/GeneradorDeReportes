@@ -1,6 +1,6 @@
-import { type MergeType, PasteOrientation, type PasteType } from "../constants";
 import type { ExtractRangeNames, MappedNamedRange, NestedSheetSchema } from ".";
 import { offsetGridRange, type RangeOperationResult, resizeMappedRange } from ".";
+import { type MergeType, PasteOrientation, type PasteType } from "./types";
 
 /**
  * Generates batch update `copyPaste` request to copy data from `origin` into `destination` ranges.

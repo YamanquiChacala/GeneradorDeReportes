@@ -1,4 +1,3 @@
-import { MergeType, PasteType } from "../../common/constants";
 import { ReportSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
@@ -17,6 +16,7 @@ import {
     type MappedNamedRange,
     offsetGridRange,
 } from "../../common/gas-utils";
+import { MergeType, PasteType } from "../../common/gas-utils/types";
 import type { ReportPersistentData } from "../../common/report-utils";
 import {
     calculateAttendanceGridSize,

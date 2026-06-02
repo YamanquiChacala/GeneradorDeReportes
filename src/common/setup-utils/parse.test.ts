@@ -1,4 +1,4 @@
-import { MS_PER_DAY } from "../constants";
+import { MS_PER_DAY } from "../utils";
 import { parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from ".";
 
 // Helper functions to quickly mock Google Apps Script CellData

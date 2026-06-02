@@ -1,4 +1,3 @@
-import { ConditionType, MergeType, PasteType } from "../../common/constants";
 import { SetupSheetSchema } from "../../common/gas-parts";
 import {
     buildAddNamedRangeRequest,
@@ -17,6 +16,7 @@ import {
     offsetGridRange,
     parseSpreadsheet,
 } from "../../common/gas-utils";
+import { ConditionType, MergeType, PasteType } from "../../common/gas-utils/types";
 import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, type MonthBlock } from "../../common/setup-utils";
 
 type SheetName = ExtractSheetNames<typeof SetupSheetSchema>;

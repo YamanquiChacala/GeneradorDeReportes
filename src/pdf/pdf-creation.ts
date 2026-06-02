@@ -1,4 +1,6 @@
-import { Base64Fonts, Base64Images, Colors, Templates } from "../common/constants";
+import { Colors } from "../common/gas-parts";
+import { Base64Fonts, Base64Images } from "../common/utils/base64-constants";
+import { Templates } from "./types";
 
 interface StudentData {
     start_year: string;

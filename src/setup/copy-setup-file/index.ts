@@ -1,5 +1,6 @@
-import { FileType, SETUP_FILE_PREFIX, ValueInputOption } from "../../common/constants";
-import { FILE_VALIDATION_KEY, SetupSheetSchema } from "../../common/gas-parts";
+import { FILE_VALIDATION_KEY, FileType, SetupSheetSchema } from "../../common/gas-parts";
+import { ValueInputOption } from "../../common/gas-utils/types";
+import { SETUP_FILE_PREFIX } from "../../common/setup-utils";
 
 /**
  * Copies the SetupFile `fileId` changing the group name and saves it into `folderId`.

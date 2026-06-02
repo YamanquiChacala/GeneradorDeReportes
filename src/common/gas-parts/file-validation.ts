@@ -1,6 +1,6 @@
-import type { FileType } from "../constants";
 import { buildFieldsMask } from "../gas-utils";
 import { FILE_VALIDATION_KEY } from ".";
+import type { FileType } from "./types";
 
 export function setFileType(fileId: string, fileType: FileType) {
     Drive?.Files.update(

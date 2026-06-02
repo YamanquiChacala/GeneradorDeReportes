@@ -1,4 +1,5 @@
-import { MS_PER_DAY, SHEETS_EPOCH_OFFSET } from "../constants";
+import { MS_PER_DAY } from "../utils";
+import { SHEETS_EPOCH_OFFSET } from "./constants";
 
 /**
  * Converts a Unix Epoch into a Sheets Epoch.

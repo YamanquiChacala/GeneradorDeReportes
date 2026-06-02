@@ -1,4 +1,3 @@
-import { DEFAULT_COMMENT, Dimension, MergeType, TRIMESTER_NAMES } from "../../common/constants";
 import { ReportSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
@@ -16,6 +15,7 @@ import {
     resizeMappedRange,
     shrinkRangeWidth,
 } from "../../common/gas-utils";
+import { Dimension, MergeType } from "../../common/gas-utils/types";
 import {
     createAllSubjectsAverageFormula,
     createFieldAverageFormula,
@@ -28,6 +28,7 @@ import {
     getShortCommentFormula,
     type ReportPersistentData,
 } from "../../common/report-utils";
+import { DEFAULT_COMMENT, TRIMESTER_NAMES } from "../../common/setup-utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
