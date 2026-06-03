@@ -37,11 +37,12 @@ export type ExtractDynamicRangeKeys<T extends NestedSheetSchema> = {
 }[keyof T["sheets"]];
 
 export interface OffsetGridRangeProperties {
-    origin: GoogleAppsScript.Sheets.Schema.GridRange;
-    rowOffset?: number;
-    colOffset?: number;
-    height?: number;
-    width?: number;
+    readonly origin: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly sheetId?: number;
+    readonly rowOffset?: number;
+    readonly colOffset?: number;
+    readonly height?: number;
+    readonly width?: number;
 }
 
 export interface ResizeRangeParams {
@@ -50,12 +51,20 @@ export interface ResizeRangeParams {
     targetCols?: number;
     rowOffset?: number;
     colOffset?: number;
+    rowBehavior?: RangeBehavior;
+    colBehavior?: RangeBehavior;
 }
 
 export interface RangeOperationResult {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     rowOffset: number;
     colOffset: number;
+}
+
+export enum RangeBehavior {
+    IGNORE = "IGNORE",
+    INSERT_DELETE = "INSERT_DELETE",
+    MODIFY_RANGE = "MODIFY_RANGE",
 }
 
 export enum FileType {

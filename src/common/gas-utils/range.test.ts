@@ -1,4 +1,4 @@
-import { changeGridRangeSheet, createRange, createSingleCellRange, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from ".";
+import { createRange, createSingleCellRange, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from ".";
 
 describe("Range", () => {
     describe("createRange", () => {
@@ -33,24 +33,6 @@ describe("Range", () => {
                 endRowIndex: 6,
                 endColumnIndex: 3,
             });
-        });
-    });
-
-    describe("changeGridRangeSheet", () => {
-        it("should return a new grid range with an updated sheetId", () => {
-            const original: GoogleAppsScript.Sheets.Schema.GridRange = {
-                sheetId: 1,
-                startRowIndex: 0,
-                endRowIndex: 10,
-            };
-            const updated = changeGridRangeSheet(original, 99);
-
-            expect(updated.sheetId).toBe(99);
-            expect(updated.startRowIndex).toBe(0);
-            expect(updated.endRowIndex).toBe(10);
-
-            // Should not mutate original
-            expect(original.sheetId).toBe(1);
         });
     });
 

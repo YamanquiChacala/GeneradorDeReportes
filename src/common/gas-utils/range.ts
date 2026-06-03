@@ -1,4 +1,4 @@
-import type { OffsetGridRangeProperties } from ".";
+import type { OffsetGridRangeProperties } from "./types";
 
 /**
  * Creates a range with the given data.
@@ -13,30 +13,23 @@ export function createRange(sheetId: number, startRowIndex: number, startColumnI
 /**
  * Creates a range with a single cell.
  */
-
 export function createSingleCellRange(sheetId: number, startRowIndex: number, startColumnIndex: number): GoogleAppsScript.Sheets.Schema.GridRange {
     return createRange(sheetId, startRowIndex, startColumnIndex, 1, 1);
-}
-
-/**
- * Changes the sheetId of the grid. Moving a grid to another sheet.
- */
-
-export function changeGridRangeSheet(grid: GoogleAppsScript.Sheets.Schema.GridRange, sheetId: number): GoogleAppsScript.Sheets.Schema.GridRange {
-    const newGrid = { ...grid };
-    newGrid.sheetId = sheetId;
-    return newGrid;
 }
 
 /**
  * Offsets a `range` and optionally bounds it to a given size.
  * height or width negative unbounds the range.
  */
-export function offsetGridRange({ origin, rowOffset = 0, colOffset = 0, height, width }: OffsetGridRangeProperties): GoogleAppsScript.Sheets.Schema.GridRange {
+export function offsetGridRange({ origin, sheetId, rowOffset = 0, colOffset = 0, height, width }: OffsetGridRangeProperties): GoogleAppsScript.Sheets.Schema.GridRange {
+    const result: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: origin.sheetId };
+
+    if (sheetId != null) {
+        result.sheetId = sheetId;
+    }
+
     const startRow = Math.max(0, (origin.startRowIndex ?? 0) + rowOffset);
     const startCol = Math.max(0, (origin.startColumnIndex ?? 0) + colOffset);
-
-    const result: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: origin.sheetId };
 
     if (startRow > 0) {
         result.startRowIndex = startRow;

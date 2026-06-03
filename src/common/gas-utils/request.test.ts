@@ -1,4 +1,4 @@
-import type { MappedNamedRange } from ".";
+import { type MappedNamedRange, RangeBehavior } from ".";
 import { MergeType, PasteOrientation, PasteType } from "./api-types";
 import {
     buildAddBandingRequest,
@@ -155,7 +155,6 @@ describe("Request Utilities", () => {
                 destination: mockDestination,
                 data,
                 fields: "*",
-                adaptRange: false,
                 rowOffset: 2,
                 colOffset: 2,
             });
@@ -189,7 +188,8 @@ describe("Request Utilities", () => {
                 destination: mockDestination,
                 data,
                 fields: "userEnteredValue",
-                adaptRange: true,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
                 rowOffset: 0,
                 colOffset: 0,
             });
@@ -218,7 +218,8 @@ describe("Request Utilities", () => {
                 destination: mockDestination,
                 data,
                 fields: "*",
-                adaptRange: true,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
             });
 
             const updateReq = result.requests[result.requests.length - 1]?.updateCells;
@@ -234,7 +235,8 @@ describe("Request Utilities", () => {
                 destination: mockDestination,
                 data,
                 fields: "*",
-                adaptRange: true,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
             });
 
             // Because it shrinks to 0x0, it generates 2 deleteDimension requests
@@ -263,7 +265,6 @@ describe("Request Utilities", () => {
                 destination: statelessDestination,
                 data,
                 fields: "*",
-                adaptRange: false,
             });
 
             const updateReq = result.requests[0]?.updateCells;
@@ -304,7 +305,6 @@ describe("Request Utilities", () => {
                 destination: openDestination,
                 data,
                 fields: "*",
-                adaptRange: false,
             });
 
             // Because finalEndRow (0) - finalStartRow (0) = 0 finalRows,

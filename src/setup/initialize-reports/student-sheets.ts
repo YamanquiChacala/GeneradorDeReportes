@@ -3,7 +3,6 @@ import {
     buildFieldsMask,
     buildUpdateCellsRequest,
     buildUpdateSheetPropertiesRequest,
-    changeGridRangeSheet,
     createRequiredGetter,
     type ExtractRangeNames,
     type MappedNamedRange,
@@ -115,15 +114,14 @@ function buildSheetsRequests(
             ];
             for (const op of simpleCopyOps) {
                 const mappedRange = getMappedRange(op.rangeName);
-                const destination = changeGridRangeSheet(mappedRange.namedRange.range, newSheetId);
+                const destination = offsetGridRange({ origin: mappedRange.namedRange.range, sheetId: newSheetId });
                 const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { stringValue: op.value } }]];
                 const updateRequest = buildUpdateCellsRequest({ destination, data, fields });
                 if (updateRequest) requests.push(updateRequest);
             }
 
             const infoMappedRange = getMappedRange(rangeNames.generalInfo);
-            const infoOriginalRange = offsetGridRange({ origin: infoMappedRange.namedRange.range, height: 3 });
-            const infoDestinationRange = changeGridRangeSheet(infoOriginalRange, newSheetId);
+            const infoDestinationRange = offsetGridRange({ origin: infoMappedRange.namedRange.range, sheetId: newSheetId, height: 3 });
             const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [{ userEnteredValue: { stringValue: studentRow.curp } }],
                 [{ userEnteredValue: { stringValue: studentRow.grade } }],
@@ -133,7 +131,7 @@ function buildSheetsRequests(
             if (infoRequest) requests.push(infoRequest);
 
             // Protect the sheet
-            const unprotectedRanges = baseUnprotectedRanges.map((range) => changeGridRangeSheet(range, newSheetId));
+            const unprotectedRanges = baseUnprotectedRanges.map((range) => offsetGridRange({ origin: range, sheetId: newSheetId }));
             requests.push({
                 addProtectedRange: {
                     protectedRange: {

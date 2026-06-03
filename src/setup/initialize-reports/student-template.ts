@@ -12,6 +12,7 @@ import {
     insertNewNamedRangeToMemory,
     type MappedNamedRange,
     offsetGridRange,
+    RangeBehavior,
     resizeMappedRange,
     shrinkRangeWidth,
 } from "../../common/gas-utils";
@@ -101,7 +102,12 @@ function adaptSizeAndRanges(parsedReport: ParsedSpreadsheet<typeof ReportSheetSc
         // Remove general absences.
         const info = getMappedRange(rangeNames.generalInfo);
         const height = getRangeHeight(info.namedRange.range) || 1;
-        const { requests: infoRequests, rowOffset: infoRowOffset } = resizeMappedRange({ target: info, targetRows: height - 1, rowOffset });
+        const { requests: infoRequests, rowOffset: infoRowOffset } = resizeMappedRange({
+            target: info,
+            targetRows: height - 1,
+            rowOffset,
+            rowBehavior: RangeBehavior.INSERT_DELETE,
+        });
         rowOffset = infoRowOffset;
         requests.push(...infoRequests);
     } else {
@@ -155,7 +161,12 @@ function adaptSizeAndRanges(parsedReport: ParsedSpreadsheet<typeof ReportSheetSc
     for (const op of resizeOperations) {
         const mapped = getMappedRange(op.name);
 
-        const { requests: resizeRequests, rowOffset: newRowOffset } = resizeMappedRange({ target: mapped, rowOffset, targetRows: op.count });
+        const { requests: resizeRequests, rowOffset: newRowOffset } = resizeMappedRange({
+            target: mapped,
+            rowOffset,
+            targetRows: op.count,
+            rowBehavior: RangeBehavior.INSERT_DELETE,
+        });
         requests.push(...resizeRequests);
         rowOffset = newRowOffset;
     }

@@ -1,4 +1,4 @@
-import type { ExtractDynamicRangeKeys, ExtractRangeNames, ExtractSheetNames, MappedNamedRange, NestedSheetSchema, ParsedSpreadsheet, StrictNameRange } from ".";
+import type { ExtractDynamicRangeKeys, ExtractRangeNames, ExtractSheetNames, MappedNamedRange, NestedSheetSchema, ParsedSpreadsheet, StrictNameRange } from "./types";
 
 /**
  * Parses a Spreadsheet coming from Sheets API, so that the Sheets and named ranges are easy to find and work with.

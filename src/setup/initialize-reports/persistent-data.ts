@@ -11,6 +11,7 @@ import {
     getCellUnixEpoch,
     type MappedNamedRange,
     makeUserEntered,
+    RangeBehavior,
 } from "../../common/gas-utils";
 import type { AcademicField, ConfigData, ReportPersistentData, StudentRow, WeightedSubject } from "../../common/report-utils";
 import { normalizeSubjectWeights, normalizeTrimesterWeights, parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from "../../common/setup-utils";
@@ -224,7 +225,7 @@ function buildReportFieldsAndSubjects(
         destination: getNamedRange(rangeNames.fields),
         data: fieldsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        adaptRange: true,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
         rowOffset,
     });
 
@@ -232,7 +233,7 @@ function buildReportFieldsAndSubjects(
         destination: getNamedRange(rangeNames.subjects),
         data: subjectsData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        adaptRange: true,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
         rowOffset: fieldsRowOffset,
     });
 
@@ -263,7 +264,7 @@ function getStudents(
         destination: getReportNamedRange(ReportSheetSchema.sheets.persistentData.ranges.students),
         data: studentReportData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        adaptRange: true,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
         rowOffset,
     });
 
@@ -294,7 +295,7 @@ function getCalendarDays(
         destination: getReportNamedRange(ReportSheetSchema.sheets.persistentData.ranges.calendarDates),
         data: sheetDays,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
-        adaptRange: true,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
         rowOffset,
     });
 

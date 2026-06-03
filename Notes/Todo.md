@@ -1,5 +1,6 @@
 # General code
 * [ ] Update `src/common/gas-utils/mapped-range.ts/resizeMappedRange` function to grow only on rows and spill over content.
+* [ ] Add `readonly`, `Readonly<>`, `ReadonlyArray<>`, etc. **Everywhre**.
 
 # Report initial creation
 ## Persistent Data

@@ -1,4 +1,5 @@
-import { insertNewNamedRangeToMemory, type ParsedSpreadsheet, parseSpreadsheet } from ".";
+import { insertNewNamedRangeToMemory, parseSpreadsheet } from "./parse";
+import type { ParsedSpreadsheet } from "./types";
 
 describe("parseSpreadsheet", () => {
     const schema = {

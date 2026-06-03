@@ -1,5 +1,4 @@
-import type { ExtractRangeNames, MappedNamedRange, NestedSheetSchema } from ".";
-import { offsetGridRange, type RangeOperationResult, resizeMappedRange } from ".";
+import { type ExtractRangeNames, type MappedNamedRange, type NestedSheetSchema, RangeBehavior, type RangeOperationResult, resizeMappedRange } from ".";
 import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
 
 /**
@@ -165,6 +164,7 @@ export function buildUpdateCellsRequest({ destination, data, fields }: BuildUpda
     const finalCols = endCol - startCol;
 
     if (!finalRows || !finalCols) return undefined;
+
     const finalRowData: GoogleAppsScript.Sheets.Schema.RowData[] = [];
     for (let r = 0; r < finalRows; r++) {
         const rowValues: GoogleAppsScript.Sheets.Schema.CellData[] = [];
@@ -191,82 +191,49 @@ interface BuildTransferRequestParams {
     destination: MappedNamedRange;
     data: GoogleAppsScript.Sheets.Schema.CellData[][];
     fields: string;
-    adaptRange?: boolean;
+    rowBehavior?: RangeBehavior;
+    colBehavior?: RangeBehavior;
     rowOffset?: number;
     colOffset?: number;
 }
 
-export function buildTransferRequests({ destination, data, fields, adaptRange = false, rowOffset = 0, colOffset = 0 }: BuildTransferRequestParams): RangeOperationResult {
+export function buildTransferRequests({
+    destination,
+    data,
+    fields,
+    rowBehavior = RangeBehavior.IGNORE,
+    colBehavior = RangeBehavior.IGNORE,
+    rowOffset = 0,
+    colOffset = 0,
+}: BuildTransferRequestParams): RangeOperationResult {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    let currentRowOffset = rowOffset;
-    let currentColOffset = colOffset;
 
     const dataRows = data.length;
     const dataCols = dataRows > 0 ? Math.max(...data.map((row) => row.length)) : 0;
 
-    if (adaptRange) {
-        const resizeResult = resizeMappedRange({
-            target: destination,
-            targetRows: dataRows,
-            targetCols: dataCols,
-            rowOffset: currentRowOffset,
-            colOffset: currentColOffset,
-        });
+    const resizeResult = resizeMappedRange({
+        target: destination,
+        targetRows: dataRows,
+        targetCols: dataCols,
+        rowOffset,
+        colOffset,
+        rowBehavior,
+        colBehavior,
+    });
 
-        requests.push(...resizeResult.requests);
-        currentRowOffset = resizeResult.rowOffset;
-        currentColOffset = resizeResult.colOffset;
-    } else {
-        // If not adapting, we still apply offsets so the destination is accurate for writing
-        destination.namedRange.range = offsetGridRange({
-            origin: destination.namedRange.range,
-            rowOffset: currentRowOffset,
-            colOffset: currentColOffset,
-        });
-    }
+    requests.push(...resizeResult.requests);
 
-    // destination.range is now fully accurate
-    const sheetId = destination.namedRange.range.sheetId ?? 0;
-    const finalStartRow = destination.namedRange.range.startRowIndex ?? 0;
-    const finalEndRow = destination.namedRange.range.endRowIndex ?? 0;
-    const finalStartCol = destination.namedRange.range.startColumnIndex ?? 0;
-    const finalEndCol = destination.namedRange.range.endColumnIndex ?? 0;
+    const updateRequest = buildUpdateCellsRequest({
+        destination: destination.namedRange.range,
+        data,
+        fields,
+    });
 
-    const finalRows = finalEndRow - finalStartRow;
-    const finalCols = finalEndCol - finalStartCol;
-
-    // Only attempt to build data and write if the range still exists (wasn't destroyed)
-    if (finalRows > 0 && finalCols > 0) {
-        const finalRowData: GoogleAppsScript.Sheets.Schema.RowData[] = [];
-        for (let r = 0; r < finalRows; r++) {
-            const rowValues: GoogleAppsScript.Sheets.Schema.CellData[] = [];
-            const sourceRow = data[r] ?? [];
-
-            for (let c = 0; c < finalCols; c++) {
-                rowValues.push(sourceRow[c] ?? {});
-            }
-
-            finalRowData.push({ values: rowValues });
-        }
-
-        requests.push({
-            updateCells: {
-                range: {
-                    sheetId: sheetId,
-                    startRowIndex: finalStartRow,
-                    endRowIndex: finalEndRow,
-                    startColumnIndex: finalStartCol,
-                    endColumnIndex: finalEndCol,
-                },
-                rows: finalRowData,
-                fields: fields,
-            },
-        });
-    }
+    if (updateRequest) requests.push(updateRequest);
 
     return {
         requests,
-        rowOffset: currentRowOffset,
-        colOffset: currentColOffset,
+        rowOffset: resizeResult.rowOffset,
+        colOffset: resizeResult.colOffset,
     };
 }

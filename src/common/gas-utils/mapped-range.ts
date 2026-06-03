@@ -1,7 +1,8 @@
 import { Dimension } from "./api-types";
+import { buildFieldsMask } from "./helpers";
 import { offsetGridRange } from "./range";
 import { getEpochDate } from "./time";
-import type { MappedNamedRange, RangeOperationResult, ResizeRangeParams } from "./types";
+import { type MappedNamedRange, RangeBehavior, type RangeOperationResult, type ResizeRangeParams } from "./types";
 
 interface GetCellParams {
     mappedRange: MappedNamedRange;
@@ -122,12 +123,21 @@ export function getCellUnixEpoch(args: GetCellParams): number {
  * Updates the size of a MappedNamedRange in Sheets and syncs its in-memory state.
  * Allows collapsing to 0 to destroy unused template ranges.
  */
-export function resizeMappedRange({ target, targetRows, targetCols, rowOffset = 0, colOffset = 0 }: ResizeRangeParams): RangeOperationResult {
+export function resizeMappedRange({
+    target,
+    targetRows,
+    targetCols,
+    rowOffset = 0,
+    colOffset = 0,
+    rowBehavior = RangeBehavior.IGNORE,
+    colBehavior = RangeBehavior.IGNORE,
+}: ResizeRangeParams): RangeOperationResult {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const sheetId = target.namedRange.range.sheetId ?? 0;
+    const originalRange = target.namedRange.range;
 
-    // Use the helper to determine where the range ACTUALLY is right now before resizing
-    const actualRange = offsetGridRange({ origin: target.namedRange.range, rowOffset, colOffset });
+    // Determine where the range ACTUALLY is right now before resizing
+    const actualRange = offsetGridRange({ origin: originalRange, rowOffset, colOffset });
     const actualStartRow = actualRange.startRowIndex ?? 0;
     const actualEndRow = actualRange.endRowIndex ?? 0;
     const actualStartCol = actualRange.startColumnIndex ?? 0;
@@ -136,62 +146,89 @@ export function resizeMappedRange({ target, targetRows, targetCols, rowOffset = 
     const currentRows = actualEndRow - actualStartRow;
     const currentCols = actualEndCol - actualStartCol;
 
-    // If undefined, default to keeping the current dimensions
-    const finalTargetRows = targetRows ?? currentRows;
-    const finalTargetCols = targetCols ?? currentCols;
+    // Lock dimensions to current sizes if ignoring. Otherwise, adapt to target sizes.
+    const finalTargetRows = rowBehavior === RangeBehavior.IGNORE ? currentRows : (targetRows ?? currentRows);
+    const finalTargetCols = colBehavior === RangeBehavior.IGNORE ? currentCols : (targetCols ?? currentCols);
 
     let newRowOffset = rowOffset;
     let newColOffset = colOffset;
 
     // Adjust Rows
-    if (finalTargetRows > currentRows) {
-        const diff = finalTargetRows - currentRows;
-        requests.push({
-            insertDimension: {
-                range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + 1, endIndex: actualStartRow + 1 + diff },
-                inheritFromBefore: true,
-            },
-        });
-        newRowOffset += diff;
-    } else if (finalTargetRows < currentRows) {
-        const diff = currentRows - finalTargetRows;
-        requests.push({
-            deleteDimension: {
-                // If finalTargetRows is 0, this deletes from actualStartRow to actualEndRow (destroying it)
-                range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + finalTargetRows, endIndex: actualEndRow },
-            },
-        });
-        newRowOffset -= diff;
+    if (rowBehavior === RangeBehavior.INSERT_DELETE) {
+        if (finalTargetRows > currentRows) {
+            const diff = finalTargetRows - currentRows;
+            requests.push({
+                insertDimension: {
+                    range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + 1, endIndex: actualStartRow + 1 + diff },
+                    inheritFromBefore: true,
+                },
+            });
+            newRowOffset += diff;
+        } else if (finalTargetRows < currentRows) {
+            const diff = currentRows - finalTargetRows;
+            requests.push({
+                deleteDimension: {
+                    // If finalTargetRows is 0, this deletes from actualStartRow to actualEndRow (destroying it)
+                    range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + finalTargetRows, endIndex: actualEndRow },
+                },
+            });
+            newRowOffset -= diff;
+        }
     }
 
     // Adjust Columns
-    if (finalTargetCols > currentCols) {
-        const diff = finalTargetCols - currentCols;
-        requests.push({
-            insertDimension: {
-                range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + 1, endIndex: actualStartCol + 1 + diff },
-                inheritFromBefore: true,
-            },
-        });
-        newColOffset += diff;
-    } else if (finalTargetCols < currentCols) {
-        const diff = currentCols - finalTargetCols;
-        requests.push({
-            deleteDimension: {
-                range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + finalTargetCols, endIndex: actualEndCol },
-            },
-        });
-        newColOffset -= diff;
+    if (colBehavior === RangeBehavior.INSERT_DELETE) {
+        if (finalTargetCols > currentCols) {
+            const diff = finalTargetCols - currentCols;
+            requests.push({
+                insertDimension: {
+                    range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + 1, endIndex: actualStartCol + 1 + diff },
+                    inheritFromBefore: true,
+                },
+            });
+            newColOffset += diff;
+        } else if (finalTargetCols < currentCols) {
+            const diff = currentCols - finalTargetCols;
+            requests.push({
+                deleteDimension: {
+                    range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + finalTargetCols, endIndex: actualEndCol },
+                },
+            });
+            newColOffset -= diff;
+        }
     }
 
-    // Mutate the in-memory object using the helper to set the final position and size
-    target.namedRange.range = offsetGridRange({
-        origin: target.namedRange.range,
+    // Calculate the new in-memory range bounds
+    const newRange = offsetGridRange({
+        origin: originalRange,
         rowOffset, // Feed it the incoming offset, since origin is still the unmodified original
         colOffset,
         height: finalTargetRows,
         width: finalTargetCols,
     });
+
+    // Check if the range actually changed coordinates or size
+    const rangeChanged =
+        originalRange.startRowIndex !== newRange.startRowIndex ||
+        originalRange.endRowIndex !== newRange.endRowIndex ||
+        originalRange.startColumnIndex !== newRange.startColumnIndex ||
+        originalRange.endColumnIndex !== newRange.endColumnIndex;
+
+    // If we are modifying bounds without relying purely on Sheets' auto-shift, update the NamedRange directly
+    if (rangeChanged && (rowBehavior === RangeBehavior.MODIFY_RANGE || colBehavior === RangeBehavior.MODIFY_RANGE)) {
+        requests.push({
+            updateNamedRange: {
+                namedRange: {
+                    namedRangeId: target.namedRange.namedRangeId,
+                    range: newRange,
+                },
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.NamedRange>("range"),
+            },
+        });
+    }
+
+    // Finally, mutate the in-memory object so subsequent functions have the accurate bounds
+    target.namedRange.range = newRange;
 
     return { requests, rowOffset: newRowOffset, colOffset: newColOffset };
 }
