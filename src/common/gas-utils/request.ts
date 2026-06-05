@@ -277,9 +277,15 @@ type AddNewSheetParams<T extends NestedSheetSchema> = AddSchemaSheetParams<T> | 
 /**
  * Duplicates a template sheet.
  */
-export function addNewSheet<T extends NestedSheetSchema>(params: AddNewSheetParams<T>): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newSheetIds: number[] } {
-    const { parsedData, sourceSheetTitle, sourceSheetId, insertSheetIndex, schema, schemaSheetKey, multipleSheetNames } = params;
-
+export function addNewSheet<T extends NestedSheetSchema>({
+    parsedData,
+    sourceSheetTitle,
+    sourceSheetId,
+    insertSheetIndex,
+    schema,
+    schemaSheetKey,
+    multipleSheetNames,
+}: AddNewSheetParams<T>): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newSheetIds: number[] } {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const newSheetIds: number[] = [];
 
@@ -364,9 +370,14 @@ type AddNamedRangeParams<T extends NestedSheetSchema> = AddStaticNamedRangeParam
 /**
  * Adds a new named range, both to the spreadsheet, and to memory.
  */
-export function addNewNamedRange<T extends NestedSheetSchema>(params: AddNamedRangeParams<T>): GoogleAppsScript.Sheets.Schema.Request {
-    const { parsedData, sheetTitle, gridRange, staticRangeKey, rangeName, dynamicRangeKey } = params;
-
+export function addNewNamedRange<T extends NestedSheetSchema>({
+    parsedData,
+    sheetTitle,
+    gridRange,
+    staticRangeKey,
+    rangeName,
+    dynamicRangeKey,
+}: AddNamedRangeParams<T>): GoogleAppsScript.Sheets.Schema.Request {
     const getSheet = createRequiredGetter(parsedData.mappedSheets, "Adding range name to sheet");
     const sheet = getSheet(sheetTitle);
 

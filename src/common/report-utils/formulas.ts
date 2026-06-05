@@ -1,5 +1,5 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
-import type { AcademicField } from ".";
+import type { AcademicField } from "./types";
 
 /**
  * Define the formala for calculating the attendance percent.

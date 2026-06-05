@@ -1,5 +1,5 @@
 import { formatDateRange, getUpperBoundIndex } from "../utils";
-import type { ReportPersistentData } from ".";
+import type { ReportPersistentData } from "./types";
 
 /**
  * Returns a nice string for the asked period.

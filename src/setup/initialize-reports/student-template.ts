@@ -1,7 +1,7 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
-    buildAddNamedRangeRequest,
+    addNewNamedRange,
     buildFieldsMask,
     buildMergeCellsRequest,
     buildTransferRequests,
@@ -9,7 +9,6 @@ import {
     createRequiredGetter,
     getRangeHeight,
     getRangeWidth,
-    insertNewNamedRangeToMemory,
     type MappedNamedRange,
     offsetGridRange,
     RangeBehavior,
@@ -25,11 +24,12 @@ import {
     createIndividualSubjectAverageFormula,
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
+    DEFAULT_COMMENT,
     generatePeriodString,
     getShortCommentFormula,
     type ReportPersistentData,
+    TRIMESTER_NAMES,
 } from "../../common/report-utils";
-import { DEFAULT_COMMENT, TRIMESTER_NAMES } from "../../common/setup-utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
@@ -188,19 +188,12 @@ function adaptSizeAndRanges(parsedReport: ParsedSpreadsheet<typeof ReportSheetSc
     ];
 
     for (const op of unprotectedRangeOperations) {
-        const rangeNameId = Utilities.getUuid();
         const origin = getMappedRange(op.origin);
         const newRange = offsetGridRange({ origin: origin.namedRange.range, colOffset: 1, width: op.width });
-        requests.push(buildAddNamedRangeRequest<typeof ReportSheetSchema>(op.name, newRange, rangeNameId));
 
-        insertNewNamedRangeToMemory({
-            parsedData: parsedReport,
-            sheetTitle: ReportSheetSchema.sheets.studentTemplate.sheetName,
-            rangeNameId,
-            rangeName: op.name,
-            gridRange: newRange,
-            staticRangeKey: op.name,
-        });
+        requests.push(
+            addNewNamedRange({ parsedData: parsedReport, sheetTitle: ReportSheetSchema.sheets.studentTemplate.sheetName, gridRange: newRange, staticRangeKey: op.name }),
+        );
     }
 
     return requests;

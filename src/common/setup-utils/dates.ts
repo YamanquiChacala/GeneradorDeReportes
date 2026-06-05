@@ -1,5 +1,5 @@
 import { MORE_THAN_A_YEAR, MS_PER_DAY } from "../utils";
-import type { CalendarDates, CalendarGrid, DayData, DayType, MonthBlock, WeekData } from ".";
+import { type CalendarDates, type CalendarGrid, type DayData, DayType, type MonthBlock, type WeekData } from ".";
 
 /**
  * Ensures the user given dates are in order and valid
@@ -75,11 +75,11 @@ export function calculateCalendarGrid(dates: CalendarDates): CalendarGrid {
             const inBounds = currentMs >= dates.dateStart && currentMs <= dates.dateEnd;
 
             // Determine day formatting
-            let dayType: DayType = "rest";
+            let dayType = DayType.REST;
             if (isWeekday && inBounds) {
-                if (currentMs > dates.dateTrimester2) dayType = "trimester3";
-                else if (currentMs > dates.dateTrimester1) dayType = "trimester2";
-                else dayType = "trimester1";
+                if (currentMs > dates.dateTrimester2) dayType = DayType.TRIM3;
+                else if (currentMs > dates.dateTrimester1) dayType = DayType.TRIM2;
+                else dayType = DayType.TRIM1;
             }
 
             days.push({

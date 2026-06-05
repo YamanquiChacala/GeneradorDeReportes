@@ -1,5 +1,4 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
-import type { AcademicField } from ".";
 import {
     createAllSubjectsAverageFormula,
     createAttendaceFormulas,
@@ -10,7 +9,8 @@ import {
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
     getShortCommentFormula,
-} from ".";
+} from "./formulas";
+import type { AcademicField } from "./types";
 
 // Mock the dependencies
 jest.mock("../gas-utils", () => ({

@@ -82,61 +82,6 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets };
 }
 
-interface InsertNewNamedRangeToMemoryParams<T extends NestedSheetSchema> {
-    parsedData: ParsedSpreadsheet<T>;
-    sheetTitle: ExtractSheetNames<T>;
-    rangeNameId: string;
-    rangeName: string;
-    gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
-    staticRangeKey?: ExtractRangeNames<T>;
-    dynamicRangeKey?: ExtractDynamicRangeKeys<T>;
-}
-
-/**
- * Update the memory representation with a new named range
- */
-export function insertNewNamedRangeToMemory<T extends NestedSheetSchema>({
-    parsedData,
-    sheetTitle,
-    rangeNameId,
-    rangeName,
-    gridRange,
-    staticRangeKey,
-    dynamicRangeKey,
-}: InsertNewNamedRangeToMemoryParams<T>) {
-    const sheet = parsedData.mappedSheets[sheetTitle];
-    if (!sheet) {
-        throw new Error(`Cannot add range. Sheet ${sheetTitle as string} is not in memory.`);
-    }
-
-    const newStrictNamedRange: StrictNameRange = {
-        namedRangeId: rangeNameId,
-        name: rangeName,
-        range: gridRange,
-    };
-
-    const newMappedNamedRange: MappedNamedRange = {
-        namedRange: newStrictNamedRange,
-        sheet: sheet,
-    };
-
-    if (!parsedData.mappedSheetNamedRanges[sheetTitle]) {
-        parsedData.mappedSheetNamedRanges[sheetTitle] = [];
-    }
-    parsedData.mappedSheetNamedRanges[sheetTitle].push(newStrictNamedRange);
-
-    if (staticRangeKey) {
-        const targetMap = parsedData.mappedRanges as Record<string, MappedNamedRange | undefined>;
-        targetMap[staticRangeKey] = newMappedNamedRange;
-    } else if (dynamicRangeKey) {
-        const targetMap = parsedData.dynamicMappedRanges as Record<string, MappedNamedRange[] | undefined>;
-        if (!targetMap[dynamicRangeKey]) {
-            targetMap[dynamicRangeKey] = [];
-        }
-        targetMap[dynamicRangeKey].push(newMappedNamedRange);
-    }
-}
-
 /**
  * Tests that a named range is a StrictNameRange
  */

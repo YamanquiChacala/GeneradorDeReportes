@@ -1,6 +1,9 @@
 # General code
-* [ ] Update `src/common/gas-utils/mapped-range.ts/resizeMappedRange` function to grow only on rows and spill over content.
+* [x] Update `src/common/gas-utils/mapped-range.ts/resizeMappedRange` function to grow only on rows and spill over content.
 * [ ] Add `readonly`, `Readonly<>`, `ReadonlyArray<>`, etc. **Everywhre**.
+* [ ] Remove any direct use of `duplicateSheet:` and instead use `addNewSheet`.
+* [ ] Remove any direct use of `buildAddNamedRangeRequest` or `addNamedRange:` and instead use `addNewNamedRange`.
+* [ ] Replace string union types with string enums.
 
 # Report initial creation
 ## Persistent Data

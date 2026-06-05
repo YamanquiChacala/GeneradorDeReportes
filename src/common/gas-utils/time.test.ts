@@ -1,4 +1,4 @@
-import { getEpochDate, getSheetsDate } from ".";
+import { getEpochDate, getSheetsDate } from "./time";
 
 describe("Time", () => {
     describe("getSheetsDate", () => {

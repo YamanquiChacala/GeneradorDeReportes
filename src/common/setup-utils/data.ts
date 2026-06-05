@@ -1,5 +1,5 @@
 import { createAttendaceFormulas, type StudentRow } from "../report-utils";
-import type { Trimesters } from ".";
+import type { Trimesters } from "./types";
 
 interface MonthGroupMeta {
     year: number;

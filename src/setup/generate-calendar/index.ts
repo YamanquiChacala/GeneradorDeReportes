@@ -1,6 +1,6 @@
 import { SetupSheetSchema } from "../../common/gas-parts";
 import {
-    buildAddNamedRangeRequest,
+    addNewNamedRange,
     buildCopyPasteRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
@@ -14,10 +14,11 @@ import {
     getCellUnixEpoch,
     type MappedNamedRange,
     offsetGridRange,
+    type ParsedSpreadsheet,
     parseSpreadsheet,
 } from "../../common/gas-utils";
 import { ConditionType, MergeType, PasteType } from "../../common/gas-utils/api-types";
-import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, type MonthBlock } from "../../common/setup-utils";
+import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, DayType, type MonthBlock } from "../../common/setup-utils";
 
 type SheetName = ExtractSheetNames<typeof SetupSheetSchema>;
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
@@ -34,22 +35,22 @@ export function generateCalendar(setupFileId: string) {
         "sheets.data.rowData.values.effectiveValue",
         "namedRanges",
     );
-    const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
-    const { mappedSheets: sheets, mappedSheetNamedRanges: sheetNamedRanges, mappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
+    const setupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: fieldsMask });
+    const parsedSetup = parseSpreadsheet(setupSpreadsheet, SetupSheetSchema);
 
     // Extract and Validate Dates
-    const dates = getCalendarDates(mappedRanges);
+    const dates = getCalendarDates(parsedSetup.mappedRanges);
     const calendarSheetId = Math.floor(Math.random() * (2 ** 31 - 1));
 
     // Generate the Day-by-Day data and formats
-    const { rowDataArray, monthBlocks, requests: dayRequests } = buildDayDataAndFormats(dates, mappedRanges, calendarSheetId);
+    const { rowDataArray, monthBlocks, requests: dayRequests } = buildDayDataAndFormats(dates, parsedSetup.mappedRanges, calendarSheetId);
 
     // Compile all API Requests
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
-        ...buildSheetSetupRequests(sheets, sheetNamedRanges, calendarSheetId, dates.totalRows),
+        ...buildSheetSetupRequests(parsedSetup.mappedSheets, parsedSetup.mappedSheetNamedRanges, calendarSheetId, dates.totalRows),
         ...dayRequests,
-        ...buildMonthLabelRequests(monthBlocks, rowDataArray, mappedRanges, calendarSheetId),
-        ...buildFinalizationRequests(rowDataArray, dates, calendarSheetId),
+        ...buildMonthLabelRequests(monthBlocks, rowDataArray, parsedSetup.mappedRanges, calendarSheetId),
+        ...buildFinalizationRequests(parsedSetup, rowDataArray, dates, calendarSheetId),
     ];
 
     // Execute Batch Update
@@ -111,16 +112,16 @@ function buildDayDataAndFormats(
             // Format
             let formatSource: MappedNamedRange;
             switch (day.dayType) {
-                case "trimester1":
+                case DayType.TRIM1:
                     formatSource = getMappedRange(rangeNames.trimester1Day);
                     break;
-                case "trimester2":
+                case DayType.TRIM2:
                     formatSource = getMappedRange(rangeNames.trimester2Day);
                     break;
-                case "trimester3":
+                case DayType.TRIM3:
                     formatSource = getMappedRange(rangeNames.trimester3Day);
                     break;
-                case "rest":
+                case DayType.REST:
                     formatSource = getMappedRange(rangeNames.restDay);
                     break;
             }
@@ -253,6 +254,7 @@ function buildMonthLabelRequests(
  * Applies the generated values to the grid, creates named ranges, and protects the sheet.
  */
 function buildFinalizationRequests(
+    parsedData: ParsedSpreadsheet<typeof SetupSheetSchema>,
     rowDataArray: GoogleAppsScript.Sheets.Schema.RowData[],
     dates: CalendarDates,
     calendarSheetId: number,
@@ -279,10 +281,24 @@ function buildFinalizationRequests(
     });
 
     // Create named range for the start ms in A1
-    requests.push(buildAddNamedRangeRequest(SetupSheetSchema.sheets.calendar.ranges.start, calendarFirstCell));
+    requests.push(
+        addNewNamedRange({
+            parsedData,
+            sheetTitle: SetupSheetSchema.sheets.calendar.sheetName,
+            gridRange: calendarFirstCell,
+            staticRangeKey: SetupSheetSchema.sheets.calendar.ranges.start,
+        }),
+    );
 
     // Create named range for the actual calendar.
-    requests.push(buildAddNamedRangeRequest(SetupSheetSchema.sheets.calendar.ranges.calendar, createRange(calendarSheetId, 1, 1, dates.totalRows - 1, 14)));
+    requests.push(
+        addNewNamedRange({
+            parsedData,
+            sheetTitle: SetupSheetSchema.sheets.calendar.sheetName,
+            gridRange: createRange(calendarSheetId, 1, 1, dates.totalRows - 1, 14),
+            staticRangeKey: SetupSheetSchema.sheets.calendar.ranges.calendar,
+        }),
+    );
 
     // Protect the sheet
     requests.push({
