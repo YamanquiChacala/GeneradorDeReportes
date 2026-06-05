@@ -1,4 +1,17 @@
-import { type ExtractRangeNames, type MappedNamedRange, type NestedSheetSchema, RangeBehavior, type RangeOperationResult, resizeMappedRange } from ".";
+import { getRandomId } from "../setup-utils";
+import {
+    createRequiredGetter,
+    type ExtractDynamicRangeKeys,
+    type ExtractRangeNames,
+    type ExtractSheetNames,
+    type MappedNamedRange,
+    type NestedSheetSchema,
+    type ParsedSpreadsheet,
+    RangeBehavior,
+    type RangeOperationResult,
+    resizeMappedRange,
+    type StrictNameRange,
+} from ".";
 import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
 
 /**
@@ -236,4 +249,157 @@ export function buildTransferRequests({
         rowOffset: resizeResult.rowOffset,
         colOffset: resizeResult.colOffset,
     };
+}
+
+interface BaseAddSheetParams<T extends NestedSheetSchema> {
+    parsedData: ParsedSpreadsheet<T>;
+    sourceSheetTitle: ExtractSheetNames<T>;
+    sourceSheetId: number;
+    insertSheetIndex: number;
+}
+
+// Option A: Single sheet tied to the schema
+interface AddSchemaSheetParams<T extends NestedSheetSchema> extends BaseAddSheetParams<T> {
+    schema: T;
+    schemaSheetKey: Extract<keyof T["sheets"], string>;
+    multipleSheetNames?: never;
+}
+
+// Option B: Multiple non-schema sheets
+interface AddExtraSheetsParams<T extends NestedSheetSchema> extends BaseAddSheetParams<T> {
+    schema?: never;
+    schemaSheetKey?: never;
+    multipleSheetNames: string[];
+}
+
+type AddNewSheetParams<T extends NestedSheetSchema> = AddSchemaSheetParams<T> | AddExtraSheetsParams<T>;
+
+/**
+ * Duplicates a template sheet.
+ */
+export function addNewSheet<T extends NestedSheetSchema>(params: AddNewSheetParams<T>): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newSheetIds: number[] } {
+    const { parsedData, sourceSheetTitle, sourceSheetId, insertSheetIndex, schema, schemaSheetKey, multipleSheetNames } = params;
+
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    const newSheetIds: number[] = [];
+
+    // Temporarly remove named ranges before duplicating template
+    const templateNamedRanges = parsedData.mappedSheetNamedRanges[sourceSheetTitle] ?? [];
+    for (const namedRange of templateNamedRanges) {
+        if (namedRange.namedRangeId) {
+            requests.push({ deleteNamedRange: { namedRangeId: namedRange.namedRangeId } });
+        }
+    }
+
+    let sheetNamesToCreate: string[] = [];
+    let isSchemaBound = false;
+
+    if (schema && schemaSheetKey) {
+        // biome-ignore lint/style/noNonNullAssertion: `schemaSheetKey` is defined as a valid key of `sheets`
+        sheetNamesToCreate = [schema.sheets[schemaSheetKey]!.sheetName];
+        isSchemaBound = true;
+    } else {
+        // biome-ignore lint/style/noNonNullAssertion: if `schema` is not defined, `multipleSheetNames` must be.
+        sheetNamesToCreate = multipleSheetNames!;
+    }
+
+    // Mass duplication
+    for (const [index, targetSheetName] of sheetNamesToCreate.entries()) {
+        const newSheetId = getRandomId();
+        newSheetIds.push(newSheetId);
+
+        const targetIndex = insertSheetIndex + index;
+
+        const newSheet: GoogleAppsScript.Sheets.Schema.Sheet = {
+            properties: {
+                sheetId: newSheetId,
+                title: targetSheetName,
+                index: targetIndex,
+            },
+        };
+
+        if (isSchemaBound) {
+            parsedData.mappedSheets[targetSheetName as ExtractSheetNames<T>] = newSheet;
+            parsedData.mappedSheetNamedRanges[targetSheetName as ExtractSheetNames<T>] = [];
+        } else {
+            parsedData.extraSheets.push(newSheet);
+        }
+
+        requests.push({
+            duplicateSheet: {
+                sourceSheetId,
+                newSheetName: targetSheetName,
+                insertSheetIndex: targetIndex,
+                newSheetId,
+            },
+        });
+    }
+
+    // Restor named ranges to template
+    for (const namedRange of templateNamedRanges) requests.push({ addNamedRange: { namedRange } });
+
+    return { requests, newSheetIds };
+}
+
+interface BaseAddNamedRangeParams<T extends NestedSheetSchema> {
+    parsedData: ParsedSpreadsheet<T>;
+    sheetTitle: ExtractSheetNames<T>;
+    gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
+}
+
+interface AddStaticNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
+    staticRangeKey: ExtractRangeNames<T>;
+    rangeName?: never;
+    dynamicRangeKey?: never;
+}
+
+interface AddDynamicNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
+    staticRangeKey?: never;
+    rangeName: string;
+    dynamicRangeKey: ExtractDynamicRangeKeys<T>;
+}
+
+type AddNamedRangeParams<T extends NestedSheetSchema> = AddStaticNamedRangeParams<T> | AddDynamicNamedRangeParams<T>;
+
+/**
+ * Adds a new named range, both to the spreadsheet, and to memory.
+ */
+export function addNewNamedRange<T extends NestedSheetSchema>(params: AddNamedRangeParams<T>): GoogleAppsScript.Sheets.Schema.Request {
+    const { parsedData, sheetTitle, gridRange, staticRangeKey, rangeName, dynamicRangeKey } = params;
+
+    const getSheet = createRequiredGetter(parsedData.mappedSheets, "Adding range name to sheet");
+    const sheet = getSheet(sheetTitle);
+
+    gridRange.sheetId = sheet.properties?.sheetId;
+
+    const finalRangeName = rangeName ?? staticRangeKey;
+
+    const newStricNamedRange: StrictNameRange = {
+        namedRangeId: Utilities.getUuid(),
+        name: finalRangeName,
+        range: gridRange,
+    };
+
+    const newMappedNamedRange: MappedNamedRange = {
+        namedRange: newStricNamedRange,
+        sheet: sheet,
+    };
+
+    if (!parsedData.mappedSheetNamedRanges[sheetTitle]) {
+        parsedData.mappedSheetNamedRanges[sheetTitle] = [];
+    }
+    parsedData.mappedSheetNamedRanges[sheetTitle].push(newStricNamedRange);
+
+    if (staticRangeKey) {
+        const key = staticRangeKey as ExtractRangeNames<T>;
+        parsedData.mappedRanges[key] = newMappedNamedRange;
+    } else {
+        const key = dynamicRangeKey as ExtractDynamicRangeKeys<T>;
+        if (!parsedData.dynamicMappedRanges[key]) {
+            parsedData.dynamicMappedRanges[key] = [];
+        }
+        parsedData.dynamicMappedRanges[key].push(newMappedNamedRange);
+    }
+
+    return { addNamedRange: { namedRange: newStricNamedRange } };
 }

@@ -1,20 +1,11 @@
-import {
-    getCellBoolean,
-    getCellData,
-    getCellDataArray,
-    getCellEffectiveValue,
-    getCellNumber,
-    getCellText,
-    getCellUnixEpoch,
-    type MappedNamedRange,
-    resizeMappedRange,
-} from ".";
 import { Dimension } from "./api-types";
+import { getCellBoolean, getCellData, getCellDataArray, getCellEffectiveValue, getCellNumber, getCellText, getCellUnixEpoch, resizeMappedRange } from "./mapped-range";
+import type { MappedNamedRange } from "./types";
 
 describe("MappedNamedRange Utilities", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks, but the sheet is 10x10.
     const mockMappedRange: MappedNamedRange = {
-        namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
+        namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
         sheet: {
             properties: {
                 gridProperties: { rowCount: 10, columnCount: 10 },
@@ -59,7 +50,7 @@ describe("MappedNamedRange Utilities", () => {
 
     // Mock an unbounded range (e.g., A:Z) where endRowIndex and endColumnIndex are inherently undefined.
     const mockUnboundedRange: MappedNamedRange = {
-        namedRange: { name: "", range: { sheetId: 2 } }, // No end indexes
+        namedRange: { namedRangeId: "", name: "", range: { sheetId: 2 } }, // No end indexes
         sheet: {
             properties: {
                 gridProperties: { rowCount: 100, columnCount: 26 },
@@ -97,7 +88,7 @@ describe("MappedNamedRange Utilities", () => {
 
         it("should return an empty result matrix if the sheet lacks a data array", () => {
             const emptyDataRange: MappedNamedRange = {
-                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } },
+                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } },
                 sheet: { properties: { gridProperties: { rowCount: 10, columnCount: 10 } } },
             };
             const result = getCellDataArray(emptyDataRange);
@@ -107,7 +98,7 @@ describe("MappedNamedRange Utilities", () => {
 
         it("should handle missing grid properties safely by falling back to start index", () => {
             const noGridPropsRange: MappedNamedRange = {
-                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 2, startColumnIndex: 2 } },
+                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 2, startColumnIndex: 2 } },
                 sheet: { data: [] },
             };
             const result = getCellDataArray(noGridPropsRange, true, true);
@@ -140,7 +131,7 @@ describe("MappedNamedRange Utilities", () => {
 
         it("should return an empty array if range dimensions are 0", () => {
             const emptyRange: MappedNamedRange = {
-                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 } },
+                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 } },
                 sheet: { data: [] },
             };
             const result = getCellDataArray(emptyRange);
@@ -170,7 +161,7 @@ describe("MappedNamedRange Utilities", () => {
         });
 
         it("should safely handle sheets missing the data property entirely", () => {
-            const emptySheetRange: MappedNamedRange = { namedRange: { name: "", range: { sheetId: 1 } }, sheet: {} };
+            const emptySheetRange: MappedNamedRange = { namedRange: { namedRangeId: "", name: "", range: { sheetId: 1 } }, sheet: {} };
             const data = getCellData({ mappedRange: emptySheetRange });
             expect(data).toStrictEqual({});
         });
@@ -242,7 +233,7 @@ describe("MappedNamedRange Utilities", () => {
 
         beforeEach(() => {
             testRange = {
-                namedRange: { name: "", range: { sheetId: 123, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
+                namedRange: { namedRangeId: "", name: "", range: { sheetId: 123, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
                 sheet: {},
             };
         });
@@ -310,7 +301,7 @@ describe("MappedNamedRange Utilities", () => {
         // NEW: Covers fallback rule `sheetId = target.range.sheetId ?? 0;`
         it("should default the sheetId to 0 if it is omitted from the target range object", () => {
             const statelessRange: MappedNamedRange = {
-                namedRange: { name: "", range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } }, // Missing sheetId
+                namedRange: { namedRangeId: "", name: "", range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } }, // Missing sheetId
                 sheet: {},
             };
             const result = resizeMappedRange({ target: statelessRange, targetRows: 5 });
@@ -320,7 +311,7 @@ describe("MappedNamedRange Utilities", () => {
         // NEW: Covers fallback definitions `actualEndRow = actualRange.endRowIndex ?? 0` and `actualEndCol = actualRange.endColumnIndex ?? 0`
         it("should fall back to 0 end-indexes safely when resizing open, horizontally/vertically unbounded ranges", () => {
             const openRange: MappedNamedRange = {
-                namedRange: { name: "", range: { sheetId: 1, startRowIndex: 0, startColumnIndex: 0 } }, // Missing endRowIndex and endColumnIndex
+                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, startColumnIndex: 0 } }, // Missing endRowIndex and endColumnIndex
                 sheet: {},
             };
             const result = resizeMappedRange({

@@ -244,6 +244,7 @@ describe("insertNewNamedRangeToMemory", () => {
             mappedSheetNamedRanges: {},
             mappedRanges: {},
             dynamicMappedRanges: {},
+            extraSheets: [],
         };
     });
 

@@ -1,4 +1,5 @@
 export interface StrictNameRange extends GoogleAppsScript.Sheets.Schema.NamedRange {
+    namedRangeId: string;
     name: string;
     range: GoogleAppsScript.Sheets.Schema.GridRange;
 }
@@ -13,6 +14,7 @@ export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
     mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
     mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
     dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
+    extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[];
 }
 
 export interface NestedSheetSchema {

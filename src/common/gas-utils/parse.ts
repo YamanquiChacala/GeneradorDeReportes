@@ -8,8 +8,9 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     const mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>> = {};
     const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
     const dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>> = {};
+    const extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[] = [];
 
-    if (!spreadsheet?.sheets) return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges };
+    if (!spreadsheet?.sheets) return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets };
 
     const allowedSheetNames = new Set<string>();
     const allowedRangeNames = new Set<string>();
@@ -36,11 +37,17 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     for (const sheet of spreadsheet.sheets) {
         sheetIdLookup[sheet.properties?.sheetId ?? 0] = sheet;
         const sheetTitle = sheet.properties?.title;
-        if (sheetTitle != null && allowedSheetNames.has(sheetTitle)) {
-            mappedSheets[sheetTitle as ExtractSheetNames<T>] = sheet;
-            mappedSheetNamedRanges[sheetTitle as ExtractSheetNames<T>] = spreadsheet.namedRanges?.filter(
-                (namedRange): namedRange is StrictNameRange => isStrictNameRange(namedRange) && namedRange.range.sheetId === sheet.properties?.sheetId,
-            );
+
+        if (sheetTitle != null) {
+            if (allowedSheetNames.has(sheetTitle)) {
+                mappedSheets[sheetTitle as ExtractSheetNames<T>] = sheet;
+                mappedSheetNamedRanges[sheetTitle as ExtractSheetNames<T>] =
+                    spreadsheet.namedRanges?.filter(
+                        (namedRange): namedRange is StrictNameRange => isStrictNameRange(namedRange) && namedRange.range.sheetId === sheet.properties?.sheetId,
+                    ) ?? [];
+            } else {
+                extraSheets.push(sheet);
+            }
         }
     }
 
@@ -72,7 +79,7 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
         }
     }
 
-    return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges };
+    return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets };
 }
 
 interface InsertNewNamedRangeToMemoryParams<T extends NestedSheetSchema> {
@@ -134,5 +141,5 @@ export function insertNewNamedRangeToMemory<T extends NestedSheetSchema>({
  * Tests that a named range is a StrictNameRange
  */
 function isStrictNameRange(namedRange: GoogleAppsScript.Sheets.Schema.NamedRange): namedRange is StrictNameRange {
-    return namedRange.name != null && namedRange.range != null;
+    return namedRange.namedRangeId != null && namedRange.name != null && namedRange.range != null;
 }
