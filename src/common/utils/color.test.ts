@@ -1,4 +1,4 @@
-import { getDistinctHues, hexToRgb, hslToRgb, rgbToHex, rgbToHsl } from "./color"; // Update path as needed
+import { getDistinctHues, hexToRgb, hslToRgb, rgbToHex, rgbToHsl } from "./color";
 import { getStep } from "./math";
 
 describe("Color Conversion Utilities", () => {

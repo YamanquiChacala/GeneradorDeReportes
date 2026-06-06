@@ -1,3 +1,11 @@
+export interface IconifyParams {
+    iconName: Icon;
+    color?: string;
+    width?: number;
+    height?: number;
+    box?: boolean;
+}
+
 export enum Icon {
     WARNING = "material-symbols/warning-rounded",
     FOLDER_QUESTION = "mdi/folder-question",

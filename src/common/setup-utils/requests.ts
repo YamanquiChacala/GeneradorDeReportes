@@ -1,6 +1,6 @@
 import { SetupSheetSchema } from "../gas-parts";
 import type { ExtractRangeNames } from "../gas-utils";
-import type { SetupFileData } from ".";
+import type { SetupFileData } from "./types";
 
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
 

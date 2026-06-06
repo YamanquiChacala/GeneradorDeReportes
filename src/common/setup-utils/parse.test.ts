@@ -1,5 +1,5 @@
 import { MS_PER_DAY } from "../utils";
-import { parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from ".";
+import { parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from "./parse";
 
 // Helper functions to quickly mock Google Apps Script CellData
 type CellData = GoogleAppsScript.Sheets.Schema.CellData;

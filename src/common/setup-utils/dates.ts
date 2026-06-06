@@ -1,5 +1,5 @@
 import { MORE_THAN_A_YEAR, MS_PER_DAY } from "../utils";
-import { type CalendarDates, type CalendarGrid, type DayData, DayType, type MonthBlock, type WeekData } from ".";
+import { type CalendarDates, type CalendarGrid, type DayData, DayType, type MonthBlock, type WeekData } from "./types";
 
 /**
  * Ensures the user given dates are in order and valid

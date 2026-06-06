@@ -1,5 +1,5 @@
 import type { AcademicField, WeightedSubject } from "../report-utils";
-import type { SubjectBlockLayout } from ".";
+import type { SubjectBlockLayout } from "./types";
 
 /**
  * Generates a random 30 bit integer ID

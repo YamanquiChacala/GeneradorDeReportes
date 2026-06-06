@@ -1,6 +1,6 @@
 import { createAttendaceFormulas, type StudentRow } from "../report-utils";
-import type { Trimesters } from ".";
-import { calculateCalendarHeaders, generateStudentGrid } from ".";
+import { calculateCalendarHeaders, generateStudentGrid } from "./data";
+import type { Trimesters } from "./types";
 
 // 1. Setup Typed Mocks
 jest.mock("../report-utils", () => ({

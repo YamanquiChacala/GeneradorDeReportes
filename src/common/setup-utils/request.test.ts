@@ -1,5 +1,5 @@
-import type { SetupFileData } from ".";
 import { buildSetupFileUpdatePayload } from "./requests";
+import type { SetupFileData } from "./types";
 
 jest.mock("../gas-parts", () => ({
     SetupSheetSchema: {

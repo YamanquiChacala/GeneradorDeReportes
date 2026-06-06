@@ -1,4 +1,4 @@
-import { typedEntries } from ".";
+import { typedEntries } from "./helpers";
 
 describe("typedEntries", () => {
     it("should return an array of key-value pairs for a standard object", () => {

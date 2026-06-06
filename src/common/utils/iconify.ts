@@ -1,5 +1,5 @@
-import type { IconifyParams } from ".";
 import { webColor } from "./text";
+import type { IconifyParams } from "./types";
 
 /**
  * Helper method to generate the URL for an Iconify icon.

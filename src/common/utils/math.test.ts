@@ -1,4 +1,4 @@
-import { gcd, getStep, getUpperBoundIndex } from ".";
+import { gcd, getStep, getUpperBoundIndex } from "./math";
 
 describe("Math Utilities", () => {
     describe("gcd (Greatest Common Divisor)", () => {
