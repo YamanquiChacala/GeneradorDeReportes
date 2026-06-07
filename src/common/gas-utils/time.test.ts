@@ -1,6 +1,6 @@
 import { getEpochDate, getSheetsDate } from "./time";
 
-describe("Time", () => {
+describe("GAS Utils, Time", () => {
     describe("getSheetsDate", () => {
         it("converts Unix epoch 0 (Jan 1, 1970) to the Sheets epoch offset", () => {
             expect(getSheetsDate(0)).toBe(25569);

@@ -1,13 +1,13 @@
 import { formatDateRange, getUpperBoundIndex } from "../utils";
-import type { ReportPersistentData } from "./types";
+import { Period, type ReportPersistentData } from "./types";
 
 /**
  * Returns a nice string for the asked period.
  */
-export function generatePeriodString(data: ReportPersistentData, period: 0 | 1 | 2): string | undefined {
+export function generatePeriodString(data: ReportPersistentData, period: Period): string | undefined {
     const { configData, calendar } = data;
 
-    const startBoundary = configData.dates[period] - (period === 0 ? 1 : 0);
+    const startBoundary = configData.dates[period] - (period === Period.FIRST ? 1 : 0);
     // biome-ignore lint/style/noNonNullAssertion: dates has 4 elements.
     const endBoundary = configData.dates[period + 1]!;
 

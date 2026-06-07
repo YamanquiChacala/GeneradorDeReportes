@@ -12,7 +12,7 @@
   "files.eol": "\n",
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    "index.ts": "*.ts",
+    //  "index.ts": "*.ts",
     "*.ts": "${capture}.js",
     "*.js": "${capture}.js.map, ${capture}.min.js, ${capture}.d.ts",
     "*.jsx": "${capture}.js",
@@ -22,9 +22,9 @@
     "Cargo.toml": "Cargo.lock"
   },
   "workbench.editor.customLabels.enabled": true,
-  "workbench.editor.customLabels.patterns": {
-    "**/index.ts": "${dirname}"
-  },
+  //"workbench.editor.customLabels.patterns": {
+  //  "**/index.ts": "${dirname}"
+  //},
   "workbench.editorAssociations": {
     //"*.md": "vscode.markdown.preview.editor"
   },

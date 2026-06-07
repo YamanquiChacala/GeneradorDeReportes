@@ -1,6 +1,6 @@
 import { createAttendaceFormulas, type StudentRow } from "../report-utils";
 import { calculateCalendarHeaders, generateStudentGrid } from "./data";
-import type { Trimesters } from "./types";
+import { TemplateSize, type Trimesters } from "./types";
 
 // 1. Setup Typed Mocks
 jest.mock("../report-utils", () => ({
@@ -9,7 +9,7 @@ jest.mock("../report-utils", () => ({
 
 const mockCreateAttendaceFormulas = createAttendaceFormulas as jest.MockedFunction<typeof createAttendaceFormulas>;
 
-describe("Setup Data Utils", () => {
+describe("Setup Utils. Data", () => {
     describe("calculateCalendarHeaders", () => {
         // Shared mock data for names
         const names1 = ["Jan1", "Feb1", "Mar1"];
@@ -28,7 +28,7 @@ describe("Setup Data Utils", () => {
             });
         });
 
-        it("should correctly format a single day (Template 1)", () => {
+        it("should correctly format a single day (Template SMALL)", () => {
             // Date.UTC(Year, Month Index, Date) -> Jan 1, 2023 is a Sunday
             const days = [Date.UTC(2023, 0, 1)];
             const frozenCols = 2;
@@ -36,35 +36,35 @@ describe("Setup Data Utils", () => {
             const result = calculateCalendarHeaders(days, frozenCols, names1, names2, names5, dayNames);
 
             expect(result).toEqual({
-                monthGroups: [{ year: 2023, month: 0, startCol: 2, count: 1, template: 1 }],
+                monthGroups: [{ year: 2023, month: 0, startCol: 2, count: 1, template: TemplateSize.SMALL }],
                 row1Values: ["Jan1\n23"],
                 row2Values: ["Sun"],
                 row3Values: [1],
             });
         });
 
-        it("should correctly format 2 to 4 days (Template 2)", () => {
+        it("should correctly format 2 to 4 days (Template MEDIUM)", () => {
             // Jan 1 (Sun), Jan 2 (Mon), Jan 3 (Tue)
             const days = [Date.UTC(2023, 0, 1), Date.UTC(2023, 0, 2), Date.UTC(2023, 0, 3)];
 
             const result = calculateCalendarHeaders(days, 0, names1, names2, names5, dayNames);
 
             expect(result).toEqual({
-                monthGroups: [{ year: 2023, month: 0, startCol: 0, count: 3, template: 2 }],
+                monthGroups: [{ year: 2023, month: 0, startCol: 0, count: 3, template: TemplateSize.MEDIUM }],
                 row1Values: ["Jan2\n2023", null, null],
                 row2Values: ["Sun", "Mon", "Tue"],
                 row3Values: [1, 2, 3],
             });
         });
 
-        it("should correctly format 5 or more days (Template 5)", () => {
+        it("should correctly format 5 or more days (Template LARGE)", () => {
             // Feb 1 to Feb 5, 2023
             const days = [Date.UTC(2023, 1, 1), Date.UTC(2023, 1, 2), Date.UTC(2023, 1, 3), Date.UTC(2023, 1, 4), Date.UTC(2023, 1, 5)];
 
             const result = calculateCalendarHeaders(days, 0, names1, names2, names5, dayNames);
 
             expect(result).toEqual({
-                monthGroups: [{ year: 2023, month: 1, startCol: 0, count: 5, template: 5 }],
+                monthGroups: [{ year: 2023, month: 1, startCol: 0, count: 5, template: TemplateSize.LARGE }],
                 row1Values: ["Feb5\n2023", null, null, null, null],
                 row2Values: ["Wed", "Thu", "Fri", "Sat", "Sun"],
                 row3Values: [1, 2, 3, 4, 5],
@@ -79,8 +79,8 @@ describe("Setup Data Utils", () => {
 
             expect(result).toEqual({
                 monthGroups: [
-                    { year: 2023, month: 0, startCol: 0, count: 1, template: 1 },
-                    { year: 2023, month: 1, startCol: 1, count: 1, template: 1 },
+                    { year: 2023, month: 0, startCol: 0, count: 1, template: TemplateSize.SMALL },
+                    { year: 2023, month: 1, startCol: 1, count: 1, template: TemplateSize.SMALL },
                 ],
                 row1Values: ["Jan1\n23", "Feb1\n23"],
                 row2Values: ["Tue", "Wed"],
@@ -92,27 +92,28 @@ describe("Setup Data Utils", () => {
             const days1 = [Date.UTC(2023, 0, 1)];
             const days3 = [Date.UTC(2023, 0, 1), Date.UTC(2023, 0, 2), Date.UTC(2023, 0, 3)];
             const days5 = [Date.UTC(2023, 1, 1), Date.UTC(2023, 1, 2), Date.UTC(2023, 1, 3), Date.UTC(2023, 1, 4), Date.UTC(2023, 1, 5)];
+
             // Passing empty arrays to trigger the `?? ""` fallback
             const result1 = calculateCalendarHeaders(days1, 0, [], [], [], []);
             const result3 = calculateCalendarHeaders(days3, 0, [], [], [], []);
             const result5 = calculateCalendarHeaders(days5, 0, [], [], [], []);
 
             expect(result1).toEqual({
-                monthGroups: [{ year: 2023, month: 0, startCol: 0, count: 1, template: 1 }],
+                monthGroups: [{ year: 2023, month: 0, startCol: 0, count: 1, template: TemplateSize.SMALL }],
                 row1Values: ["\n23"],
                 row2Values: [""],
                 row3Values: [1],
             });
 
             expect(result3).toEqual({
-                monthGroups: [{ year: 2023, month: 0, startCol: 0, count: 3, template: 2 }],
+                monthGroups: [{ year: 2023, month: 0, startCol: 0, count: 3, template: TemplateSize.MEDIUM }],
                 row1Values: ["\n2023", null, null],
                 row2Values: ["", "", ""],
                 row3Values: [1, 2, 3],
             });
 
             expect(result5).toEqual({
-                monthGroups: [{ year: 2023, month: 1, startCol: 0, count: 5, template: 5 }],
+                monthGroups: [{ year: 2023, month: 1, startCol: 0, count: 5, template: TemplateSize.LARGE }],
                 row1Values: ["\n2023", null, null, null, null],
                 row2Values: ["", "", "", "", ""],
                 row3Values: [1, 2, 3, 4, 5],
@@ -138,8 +139,8 @@ describe("Setup Data Utils", () => {
         });
 
         it("should push empty arrays for non-student rows", () => {
-            // Type casting to bypass needing all properties of StudentRow for a separator
-            const students = [{ type: "separator" } as unknown as StudentRow];
+            // Natively satisfies the StudentSpace interface
+            const students: StudentRow[] = [{ type: "separator" }];
 
             const result = generateStudentGrid(students, 5, mockTrimesters);
 
@@ -148,13 +149,19 @@ describe("Setup Data Utils", () => {
         });
 
         it("should generate cell data correctly for student rows", () => {
-            const students = [
+            // Natively satisfies the Student interface
+            const students: StudentRow[] = [
                 {
                     type: "student",
                     id: 99,
                     firstName: "Jane",
                     lastName: "Doe",
-                } as unknown as StudentRow,
+                    sheetName: "Sheet1",
+                    sex: "F",
+                    level: "Elementary",
+                    grade: "1st",
+                    curp: "ABCD123456",
+                },
             ];
 
             const initialRow = 2;

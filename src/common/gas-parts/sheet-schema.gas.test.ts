@@ -4,31 +4,32 @@ import { ReportSheetSchema, SetupSheetSchema } from "./sheet-schema";
 
 interface ExpectedSchemaShape {
     readonly templateId: string;
-    readonly sheets: Record<
-        string,
-        {
-            readonly sheetName: string;
-            readonly ranges?: Record<string, string>;
-        }
+    readonly sheets: Readonly<
+        Record<
+            string,
+            {
+                readonly sheetName: string;
+                readonly ranges?: Readonly<Record<string, string>>;
+            }
+        >
     >;
 }
 
 interface SchemaTestConfig {
-    name: string;
-    // schema: NestedSheetSchema & { templateId: string };
-    schema: ExpectedSchemaShape;
-    skipSheets?: string[];
-    skipRanges?: string[];
+    readonly name: string;
+    readonly schema: ExpectedSchemaShape;
+    readonly skipSheets?: readonly string[];
+    readonly skipRanges?: readonly string[];
 }
 
 const schemasToTest: SchemaTestConfig[] = [
     {
-        name: "Setup Sheet",
+        name: "Setup Spreadsheet",
         schema: SetupSheetSchema,
         skipSheets: [SetupSheetSchema.sheets.calendar.sheetName],
     },
     {
-        name: "Report Sheet",
+        name: "Report Spreadsheet",
         schema: ReportSheetSchema,
         skipSheets: [ReportSheetSchema.sheets.attendance.sheetName],
         skipRanges: [
@@ -45,20 +46,20 @@ export function testSchemaValidation() {
     const runner = new GasTestRunner();
     const { describe, test, expect, beforeAll } = runner;
 
-    for (const config of schemasToTest) {
-        describe(`Schema Validation: ${config.name}`, () => {
+    for (const schema of schemasToTest) {
+        describe(`Schema Validation: ${schema.name}`, () => {
             let rawSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet;
             let parsedData: ReturnType<typeof parseSpreadsheet>;
 
             beforeAll(() => {
-                const response = Sheets?.Spreadsheets.get(config.schema.templateId, {
+                const response = Sheets?.Spreadsheets.get(schema.schema.templateId, {
                     fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>("sheets.properties.sheetId", "sheets.properties.title", "namedRanges"),
                 });
 
-                if (!response) throw new Error(`Failed to fetch the spreadsheet for ${config.name}.`);
+                if (!response) throw new Error(`Failed to fetch the spreadsheet for ${schema.name}.`);
 
                 rawSpreadsheet = response;
-                parsedData = parseSpreadsheet(rawSpreadsheet, config.schema);
+                parsedData = parseSpreadsheet(rawSpreadsheet, schema.schema);
             });
 
             test("Should successfully fetch and parse the spreadsheet data", () => {
@@ -68,8 +69,8 @@ export function testSchemaValidation() {
                 expect(parsedData.mappedRanges).toBeTruthy();
             });
 
-            for (const [sheetKey, sheetConfig] of Object.entries(config.schema.sheets)) {
-                if (config.skipSheets?.includes(sheetConfig.sheetName)) continue;
+            for (const [sheetKey, sheetConfig] of Object.entries(schema.schema.sheets)) {
+                if (schema.skipSheets?.includes(sheetConfig.sheetName)) continue;
 
                 test(`[Sheet] "${sheetKey}" must exist`, () => {
                     expect(parsedData.mappedSheets[sheetConfig.sheetName]).toBeTruthy();
@@ -77,7 +78,7 @@ export function testSchemaValidation() {
 
                 if (sheetConfig.ranges) {
                     for (const [rangeKey, rangeName] of Object.entries(sheetConfig.ranges)) {
-                        if (config.skipRanges?.includes(rangeName)) continue;
+                        if (schema.skipRanges?.includes(rangeName)) continue;
 
                         test(`    [Range] "${rangeKey}" must exist`, () => {
                             expect(parsedData.mappedRanges[rangeName]).toBeTruthy();

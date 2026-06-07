@@ -1,14 +1,14 @@
 import { Colors } from "../gas-utils/types";
 import { Icon } from "../utils";
 import { onAskPermission } from "./callbacks";
-import { headerImage, icon } from "./card-parts";
+import { headerImage, iconImage } from "./card-parts";
 
 interface UtilityCardParams {
-    header: GoogleAppsScript.Card_Service.CardHeader;
-    title?: string;
-    message?: string;
-    points?: string[];
-    button?: GoogleAppsScript.Card_Service.Button;
+    readonly header: GoogleAppsScript.Card_Service.CardHeader;
+    readonly title?: string;
+    readonly message?: string;
+    readonly points?: string[];
+    readonly button?: GoogleAppsScript.Card_Service.Button;
 }
 
 /**
@@ -18,29 +18,24 @@ interface UtilityCardParams {
 export function buildUtilityCard({ header, title, message, points, button }: UtilityCardParams): GoogleAppsScript.Card_Service.Card {
     const section = CardService.newCardSection();
 
-    // 1. Optional Title
+    // Optional Title
     if (title) {
-        section.addWidget(
-            // Using a slightly larger, bold font to establish hierarchy
-            CardService.newTextParagraph().setText(title),
-        );
+        section.addWidget(CardService.newTextParagraph().setText(title));
     }
 
-    // 2. Optional Main Message
+    // Optional Main Message
     if (message) {
         section.addWidget(CardService.newTextParagraph().setText(message));
     }
 
-    // 3. Optional List of Points
+    // Optional List of Points
     if (points && points.length > 0) {
-        // Adding each point as its own widget avoids clunky <br/> tags
-        // and gives the list natural, readable spacing.
         points.forEach((point) => {
             section.addWidget(CardService.newTextParagraph().setText(`• ${point}`));
         });
     }
 
-    // 4. Optional Button
+    // Optional Button
     if (button) {
         // Wrapping the button in a ButtonSet prevents layout stretching
         // and aligns it nicely according to standard Material Design rules.
@@ -56,9 +51,9 @@ export function buildUtilityCard({ header, title, message, points, button }: Uti
  * Reminds them of the specific files/folders the add-on can manage.
  */
 export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
-    // 1. Highlight the warning clearly
+    // Highlight the warning clearly
     const warning = CardService.newDecoratedText()
-        .setStartIcon(icon({ iconName: Icon.FOLDER_QUESTION, color: Colors.ORANGE, height: 48 }))
+        .setStartIcon(iconImage({ iconName: Icon.FOLDER_QUESTION, color: Colors.ORANGE, height: 48 }))
         .setText(`<font color="${Colors.ORANGE}"><b>Selección no válida</b></font>`);
 
     const explanation = CardService.newTextParagraph().setText(
@@ -67,29 +62,31 @@ export function buildWrongSelectionCard(): GoogleAppsScript.Card_Service.Card {
 
     const mainSection = CardService.newCardSection().addWidget(warning).addWidget(explanation);
 
-    // 2. Use distinct widgets for the list with matching IconImages
+    // Use distinct widgets for the list with matching IconImages
     const optionsSection = CardService.newCardSection()
         .addWidget(
             CardService.newDecoratedText()
-                .setStartIcon(icon({ iconName: Icon.FOLDER }))
+                .setStartIcon(iconImage({ iconName: Icon.FOLDER }))
                 .setText("<b>Carpeta de Drive</b>")
-                .setBottomLabel("Para crear la configuración inicial"),
+                .setBottomLabel("Para crear la configuración inicial")
+                .setWrapText(true),
         )
         .addWidget(
             CardService.newDecoratedText()
-                .setStartIcon(icon({ iconName: Icon.CLIPBOARD }))
+                .setStartIcon(iconImage({ iconName: Icon.CLIPBOARD }))
                 .setText("<b>Registro inicial de grupos</b>")
-                .setBottomLabel("Archivo de configuración base"),
+                .setBottomLabel("Archivo de configuración base")
+                .setWrapText(true),
         )
         .addWidget(
             CardService.newDecoratedText()
-                .setStartIcon(icon({ iconName: Icon.CHART }))
+                .setStartIcon(iconImage({ iconName: Icon.CHART }))
                 .setText("<b>Calificaciones, asistencias y reportes</b>")
                 .setBottomLabel("Archivo principal de gestión")
-                .setWrapText(true), // Ensures the longer title doesn't get cut off
+                .setWrapText(true),
         );
 
-    // 3. Build and return the card
+    // Build and return the card
     return CardService.newCardBuilder()
         .setHeader(headerImage({ title: "Archivo no reconocido", subtitle: "Montessori Chacala" }))
         .addSection(mainSection)
@@ -106,36 +103,36 @@ export function buildRequestAuthorizationCard(): GoogleAppsScript.Card_Service.C
 
     const section = CardService.newCardSection();
 
-    // 1. Prominent Warning Header (Now using the Enum)
+    // Prominent Warning Header
     section.addWidget(
         CardService.newDecoratedText()
-            .setStartIcon(icon({ iconName: Icon.WARNING, color: Colors.ORANGE, height: 48 }))
+            .setStartIcon(iconImage({ iconName: Icon.WARNING, color: Colors.ORANGE, height: 48 }))
             // Using template literals to inject the Enum color directly into the HTML
             .setText(`<font color='${Colors.ORANGE}'><b>Verifica antes de continuar</b></font>`),
     );
 
-    // 2. Clear Context
+    // Clear Context
     section.addWidget(
-        CardService.newTextParagraph().setText("El complemento necesita permiso para interactuar con este archivo. Confirma que estás en la hoja correcta:"),
+        CardService.newTextParagraph().setText("El complemento necesita permiso para interactuar con este archivo. Confirma que estás en la hoja de cálculo correcta:"),
     );
 
-    // 3. The Valid Files (Now using IconImages for consistent rendering)
+    // The Valid Files
     section.addWidget(
         CardService.newDecoratedText()
-            .setStartIcon(icon({ iconName: Icon.CLIPBOARD }))
+            .setStartIcon(iconImage({ iconName: Icon.CLIPBOARD }))
             .setText("<b>Registro inicial de grupos</b>"),
     );
     section.addWidget(
         CardService.newDecoratedText()
-            .setStartIcon(icon({ iconName: Icon.CHART }))
+            .setStartIcon(iconImage({ iconName: Icon.CHART }))
             .setText("<b>Calificaciones, asistencias y reportes</b>")
             .setWrapText(true),
     );
 
-    // 4. Consequence/Security message
+    // Consequence/Security message
     section.addWidget(CardService.newTextParagraph().setText("🔒 <i>Al autorizar, el complemento podrá <b>editar</b> este documento.</i>"));
 
-    // 5. Action Button
+    // Action Button
     const askPermissionAction = CardService.newAction().setFunctionName(onAskPermission.name);
     const askPermissionButton = CardService.newTextButton()
         .setText("🔑 Dar permiso")

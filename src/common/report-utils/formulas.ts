@@ -1,5 +1,5 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
-import type { AcademicField } from "./types";
+import type { AcademicField, Period } from "./types";
 
 /**
  * Define the formala for calculating the attendance percent.
@@ -40,7 +40,7 @@ export function getShortCommentFormula(source: MappedNamedRange, rowOffset: numb
  * Generate a formula for the general absences.
  */
 export function createStudentGeneralAttendanceFormula(
-    period: 0 | 1 | 2,
+    period: Period,
     firstNameMappedRange: MappedNamedRange,
     lastNameMappedRange: MappedNamedRange,
     attendanceSheetName: string,
@@ -62,7 +62,7 @@ export function createStudentGeneralAttendanceFormula(
  * Generate the student forumala to grab the absences per subject.
  */
 export function createStudentPerSubjectAttendanceFormula(
-    period: 0 | 1 | 2,
+    period: Period,
     subjectRange: MappedNamedRange,
     rowOffset: number,
     firstNameRange: MappedNamedRange,

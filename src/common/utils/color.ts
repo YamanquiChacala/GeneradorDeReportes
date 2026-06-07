@@ -1,16 +1,5 @@
 import { getStep } from "./math";
-
-export interface RGBColor {
-    r: number;
-    g: number;
-    b: number;
-}
-
-export interface HSLColor {
-    h: number;
-    s: number;
-    l: number;
-}
+import type { HSLColor, RGBColor } from "./types";
 
 /**
  * Transform a Hex color into it's rgb [0,1] componenet.

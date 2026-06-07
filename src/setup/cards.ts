@@ -1,20 +1,20 @@
 import { headerIcon, headerImage, textButton } from "../common/gas-parts";
-import { buildFieldsMask, Colors, defineActionParameters, defineInputsSchema } from "../common/gas-utils";
+import { buildFieldsMask, Colors, defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
 import { Icon } from "../common/utils";
 import { onCopySetupFile, onCreateSetupFile, onGenerateCalendar, onInitializeReport } from "./callbacks";
 
 export const CreateSetupFileInputs = defineInputsSchema({
-    groupName: "string",
-    attendancePerClass: "boolean",
-    averagePerField: "boolean",
-    dateStart: "date",
-    dateEndTrimester1: "date",
-    dateEndTrimester2: "date",
-    dateEnd: "date",
+    groupName: InputType.STRING,
+    attendancePerClass: InputType.BOOLEAN,
+    averagePerField: InputType.BOOLEAN,
+    dateStart: InputType.DATE,
+    dateEndTrimester1: InputType.DATE,
+    dateEndTrimester2: InputType.DATE,
+    dateEnd: InputType.DATE,
 } as const);
 
 export const CreateSetupFileParams = defineActionParameters({
-    folderId: "string",
+    folderId: ParamType.STRING,
 } as const);
 
 /**
@@ -86,21 +86,21 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
 }
 
 export const GenerateCalendarParams = defineActionParameters({
-    setupFileId: "string",
+    setupFileId: ParamType.STRING,
 } as const);
 
 export const CopySetupFileInputs = defineInputsSchema({
-    groupName: "string",
-    folderId: "string",
+    groupName: InputType.STRING,
+    folderId: InputType.STRING,
 } as const);
 
 export const CopySetupFileParams = defineActionParameters({
-    setupFileId: "string",
+    setupFileId: ParamType.STRING,
 } as const);
 
 export const InitializeReportParams = defineActionParameters({
-    setupFileId: "string",
-    parentId: "string",
+    setupFileId: ParamType.STRING,
+    parentId: ParamType.STRING,
 } as const);
 
 /**

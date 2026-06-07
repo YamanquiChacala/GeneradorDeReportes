@@ -1,6 +1,6 @@
-import { buildFieldsMask, createRequiredGetter, makeUserEntered } from ".";
+import { buildFieldsMask, createRequiredGetter, makeUserEntered } from "./helpers";
 
-describe("Helper functions", () => {
+describe("GAS Utils, Helpers", () => {
     describe("makeUserEntered", () => {
         it("should overwrite userEntered values with effective values and delete effectives", () => {
             const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
@@ -15,15 +15,33 @@ describe("Helper functions", () => {
             ];
 
             const result = makeUserEntered(data, false);
-            const firstRow = result[0];
-            const firstCell = firstRow ? firstRow[0] : undefined;
+            // biome-ignore lint/style/noNonNullAssertion: Test setup guarantees index 0 exists
+            const firstCell = result[0]![0]!;
 
-            expect(firstCell).toBeDefined();
-            expect(firstCell?.userEnteredValue).toEqual({ stringValue: "new" });
-            expect(firstCell?.userEnteredFormat).toEqual({ backgroundColor: { red: 1 } });
-            expect(firstCell?.note).toBe("hello");
-            expect(firstCell?.effectiveValue).toBeUndefined();
-            expect(firstCell?.effectiveFormat).toBeUndefined();
+            expect(firstCell.userEnteredValue).toEqual({ stringValue: "new" });
+            expect(firstCell.userEnteredFormat).toEqual({ backgroundColor: { red: 1 } });
+            expect(firstCell.note).toBe("hello");
+            expect(firstCell.effectiveValue).toBeUndefined();
+            expect(firstCell.effectiveFormat).toBeUndefined();
+        });
+
+        it("should not mutate the original input array or its objects", () => {
+            const originalData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    {
+                        userEnteredValue: { stringValue: "old" },
+                        effectiveValue: { stringValue: "new" },
+                    },
+                ],
+            ];
+
+            makeUserEntered(originalData, false);
+
+            // The original object should remain completely untouched
+            // biome-ignore lint/style/noNonNullAssertion: Test setup guarantees index 0 exists
+            const originalCell = originalData[0]![0]!;
+            expect(originalCell.effectiveValue).toEqual({ stringValue: "new" });
+            expect(originalCell.userEnteredValue).toEqual({ stringValue: "old" });
         });
 
         it("should strip out all other properties if stripOthers is true", () => {
@@ -38,13 +56,15 @@ describe("Helper functions", () => {
             ];
 
             const result = makeUserEntered(data, true);
-            const firstRow = result[0];
-            const firstCell = firstRow ? firstRow[0] : undefined;
+            // biome-ignore lint/style/noNonNullAssertion: Test setup guarantees index 0 exists
+            const firstCell = result[0]![0]!;
 
-            expect(firstCell).toBeDefined();
-            expect(firstCell?.userEnteredValue).toEqual({ numberValue: 42 });
-            expect(firstCell?.note).toBeUndefined();
-            expect(firstCell?.hyperlink).toBeUndefined();
+            expect(firstCell.userEnteredValue).toEqual({ numberValue: 42 });
+            expect(firstCell.note).toBeUndefined();
+            expect(firstCell.hyperlink).toBeUndefined();
+
+            // Explicitly verify the object only has exactly the keys we want
+            expect(Object.keys(firstCell)).toEqual(["userEnteredValue"]);
         });
 
         it("should default stripOthers to false when a second argument is not provided", () => {
@@ -60,7 +80,7 @@ describe("Helper functions", () => {
             const result = makeUserEntered(data); // No second argument
 
             expect(result[0]?.[0]?.userEnteredValue).toEqual({ numberValue: 1 });
-            expect(result[0]?.[0]?.note).toBe("keep me"); // Proves stripOthers defaulted to false
+            expect(result[0]?.[0]?.note).toBe("keep me");
         });
 
         it("should retain userEntered properties if effective properties are undefined", () => {
@@ -69,7 +89,6 @@ describe("Helper functions", () => {
                     {
                         userEnteredValue: { stringValue: "fallback string" },
                         userEnteredFormat: { textFormat: { bold: true } },
-                        // effectiveValue and effectiveFormat are inherently undefined here
                     },
                 ],
             ];
@@ -107,84 +126,57 @@ describe("Helper functions", () => {
     describe("createRequiredGetter", () => {
         describe("when the key exists", () => {
             it("returns the corresponding value", () => {
-                const getter = createRequiredGetter({
-                    a: 1,
-                    b: 2,
-                });
-
+                const getter = createRequiredGetter({ a: 1, b: 2 });
                 expect(getter("a")).toBe(1);
                 expect(getter("b")).toBe(2);
             });
 
-            it("does not throw for 0", () => {
-                const getter = createRequiredGetter({
-                    zero: 0,
-                });
+            it("does not throw for falsy values like 0, false, or empty strings", () => {
+                const numberGetter = createRequiredGetter({ zero: 0 });
+                const booleanGetter = createRequiredGetter({ falseValue: false });
+                const stringGetter = createRequiredGetter({ emptyString: "" });
 
-                expect(getter("zero")).toBe(0);
+                expect(numberGetter("zero")).toBe(0);
+                expect(booleanGetter("falseValue")).toBe(false);
+                expect(stringGetter("emptyString")).toBe("");
             });
 
-            it("does not throw for false", () => {
-                const getter = createRequiredGetter({
-                    falseValue: false,
-                });
-
-                expect(getter("falseValue")).toBe(false);
-            });
-
-            it("does not throw for empty string", () => {
-                const getter = createRequiredGetter({
-                    emptyString: "",
-                });
-
-                expect(getter("emptyString")).toBe("");
+            it("does not throw for explicit null values", () => {
+                const getter = createRequiredGetter({ nullValue: null });
+                expect(getter("nullValue")).toBeNull();
             });
 
             it("supports number keys", () => {
-                const getter = createRequiredGetter<number, string>({
-                    1: "one",
-                    2: "two",
-                });
-
+                const getter = createRequiredGetter<number, string>({ 1: "one", 2: "two" });
                 expect(getter(1)).toBe("one");
             });
 
             it("supports symbol keys", () => {
                 const key = Symbol("test");
-
-                const getter = createRequiredGetter({
-                    [key]: 123,
-                });
-
+                const getter = createRequiredGetter({ [key]: 123 });
                 expect(getter(key)).toBe(123);
             });
         });
 
-        describe("when the key does not exist", () => {
+        describe("when the key does not exist or is undefined", () => {
             it("throws with the default message when no context is provided", () => {
-                const getter = createRequiredGetter<string, number>({
-                    a: 1,
-                });
-
+                const getter = createRequiredGetter<string, number>({ a: 1 });
                 expect(() => getter("b")).toThrow("Falta propidad: b");
             });
 
             it("throws with the contextualized message", () => {
-                const getter = createRequiredGetter<string, number>(
-                    {
-                        a: 1,
-                    },
-                    "rango",
-                );
-
+                const getter = createRequiredGetter<string, number>({ a: 1 }, "rango");
                 expect(() => getter("b")).toThrow("Falta rango: b");
+            });
+
+            it("throws if the key exists but is explicitly set to undefined", () => {
+                const getter = createRequiredGetter({ explicitUndefined: undefined });
+                expect(() => getter("explicitUndefined")).toThrow("Falta propidad: explicitUndefined");
             });
 
             it("includes symbol keys in the error message", () => {
                 const key = Symbol("missing");
-
                 const getter = createRequiredGetter<symbol, number>({}, "symbol key");
-
                 expect(() => getter(key)).toThrow("Falta symbol key: Symbol(missing)");
             });
         });
@@ -200,6 +192,16 @@ describe("Helper functions", () => {
         it("should join valid property paths with commas", () => {
             const mask = buildFieldsMask<MockGASSchema>("spreadsheetId", "properties.title", "sheets.properties.sheetId");
             expect(mask).toBe("spreadsheetId,properties.title,sheets.properties.sheetId");
+        });
+
+        it("should handle a single path without adding trailing commas", () => {
+            const mask = buildFieldsMask<MockGASSchema>("spreadsheetId");
+            expect(mask).toBe("spreadsheetId");
+        });
+
+        it("should return an empty string when no paths are provided", () => {
+            const mask = buildFieldsMask<MockGASSchema>();
+            expect(mask).toBe("");
         });
     });
 });

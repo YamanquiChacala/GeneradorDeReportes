@@ -1,20 +1,20 @@
 export interface StrictNameRange extends GoogleAppsScript.Sheets.Schema.NamedRange {
-    namedRangeId: string;
-    name: string;
-    range: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly namedRangeId: string;
+    readonly name: string;
+    range: GoogleAppsScript.Sheets.Schema.GridRange; // Explicitly not readonly, since it's mutated.
 }
 
 export interface MappedNamedRange {
-    namedRange: StrictNameRange;
-    sheet: GoogleAppsScript.Sheets.Schema.Sheet;
+    readonly namedRange: StrictNameRange;
+    readonly sheet: GoogleAppsScript.Sheets.Schema.Sheet;
 }
 
 export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
-    mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
-    mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
-    mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
-    dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
-    extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[];
+    readonly mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
+    readonly mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
+    readonly mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
+    readonly dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
+    readonly extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[];
 }
 
 export interface NestedSheetSchema {
@@ -48,19 +48,19 @@ export interface OffsetGridRangeProperties {
 }
 
 export interface ResizeRangeParams {
-    target: MappedNamedRange;
-    targetRows?: number;
-    targetCols?: number;
-    rowOffset?: number;
-    colOffset?: number;
-    rowBehavior?: RangeBehavior;
-    colBehavior?: RangeBehavior;
+    readonly target: MappedNamedRange;
+    readonly targetRows?: number;
+    readonly targetCols?: number;
+    readonly rowOffset?: number;
+    readonly colOffset?: number;
+    readonly rowBehavior?: RangeBehavior;
+    readonly colBehavior?: RangeBehavior;
 }
 
 export interface RangeOperationResult {
-    requests: GoogleAppsScript.Sheets.Schema.Request[];
-    rowOffset: number;
-    colOffset: number;
+    readonly requests: GoogleAppsScript.Sheets.Schema.Request[];
+    readonly rowOffset: number;
+    readonly colOffset: number;
 }
 
 export enum RangeBehavior {
@@ -86,4 +86,19 @@ export enum Colors {
     SCIENCE = "#fce5cd",
     NATURE = "#d9ead3",
     HUMANITIES = "#ead1dc",
+}
+
+export enum InputType {
+    STRING = "string",
+    NUMBER = "number",
+    BOOLEAN = "boolean",
+    DATE = "date",
+    TIME = "time",
+    ARRAY = "array",
+}
+
+export enum ParamType {
+    STRING = "string",
+    NUMBER = "number",
+    BOOLEAN = "boolean",
 }

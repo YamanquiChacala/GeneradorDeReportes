@@ -4,7 +4,7 @@ import { type CalendarDates, type CalendarGrid, type DayData, DayType, type Mont
 /**
  * Ensures the user given dates are in order and valid
  */
-export function validateDates(dates: [number, number, number, number]): string | null {
+export function validateDates(dates: readonly [number, number, number, number]): string | null {
     if (dates.length < 4 || dates.some((d) => !d)) return "Faltan fechas.";
     if (!(dates[0] < dates[1] && dates[1] < dates[2] && dates[2] < dates[3])) return "Fechas en desorden.";
     if (dates[3] - dates[0] > MORE_THAN_A_YEAR) return "Calendario demasiado largo.";
@@ -15,7 +15,7 @@ export function validateDates(dates: [number, number, number, number]): string |
  * Calculates the data to create the calendar form the period dates.
  * Every date must be in Unix Epoch milliseconds.
  */
-export function calculateCalendarDates(dates: [number, number, number, number]): CalendarDates {
+export function calculateCalendarDates(dates: readonly [number, number, number, number]): CalendarDates {
     const dateError = validateDates(dates);
     if (dateError) {
         throw new Error(dateError);

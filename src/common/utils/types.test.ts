@@ -1,4 +1,4 @@
-import { Icon } from "./types";
+import { Icon, isColorKey } from "./types";
 
 describe("Types for General Utils", () => {
     describe("Icon", () => {
@@ -17,6 +17,33 @@ describe("Types for General Utils", () => {
             // Neither the prefix nor the name can be empty
             expect(parts[0]?.length).toBeGreaterThan(0);
             expect(parts[1]?.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe("isColorKey", () => {
+        it("returns true for valid CSS color keys", () => {
+            expect(isColorKey("aliceblue")).toBe(true);
+            expect(isColorKey("red")).toBe(true);
+            expect(isColorKey("chartreuse")).toBe(true);
+            expect(isColorKey("rebeccapurple")).toBe(true);
+        });
+
+        it("returns false for invalid color names or random strings", () => {
+            expect(isColorKey("notacolor")).toBe(false);
+            expect(isColorKey("")).toBe(false);
+            expect(isColorKey("123456")).toBe(false);
+        });
+
+        it("returns false for hex codes (since they are values, not keys)", () => {
+            expect(isColorKey("#FFFFFF")).toBe(false);
+            expect(isColorKey("#000000")).toBe(false);
+            expect(isColorKey("#FF0000")).toBe(false);
+        });
+
+        it("returns false for uppercase/mixed case valid strings (keys are strictly lowercase)", () => {
+            expect(isColorKey("AliceBlue")).toBe(false);
+            expect(isColorKey("RED")).toBe(false);
+            expect(isColorKey("RebeccaPurple")).toBe(false);
         });
     });
 });

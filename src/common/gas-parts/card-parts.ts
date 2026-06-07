@@ -1,38 +1,16 @@
 import { Urls } from "../gas-utils/types";
-import type { Icon, IconifyParams } from "../utils";
+import type { IconifyParams } from "../utils";
 import { iconifyUrl, webColor } from "../utils";
 
-interface BaseHeaderParams {
-    title: string;
-    subtitle?: string;
-    imageUrl: string;
-    imageAltText: string;
-    cropCircle?: boolean;
+interface CommonHeaderParams {
+    readonly title: string;
+    readonly subtitle?: string;
+    readonly cropCircle?: boolean;
 }
 
-interface HeaderImageParams {
-    title: string;
-    subtitle?: string;
-    image?: string;
-    cropCircle?: boolean;
-}
-
-interface HeaderIconParams {
-    title: string;
-    subtitle?: string;
-    cropCircle?: boolean;
-    iconName: Icon;
-    color?: string;
-    width?: number;
-    height?: number;
-    box?: boolean;
-}
-
-interface TextButtonParams {
-    text: string;
-    action: GoogleAppsScript.Card_Service.Action;
-    style?: GoogleAppsScript.Card_Service.TextButtonStyle;
-    backgroundColor?: string;
+interface BaseHeaderParams extends CommonHeaderParams {
+    readonly imageUrl: string;
+    readonly imageAltText: string;
 }
 
 /**
@@ -47,14 +25,20 @@ function baseHeader({ title, subtitle, imageUrl, imageAltText, cropCircle }: Bas
     return newHeader;
 }
 
+interface HeaderImageParams extends CommonHeaderParams {
+    readonly image?: string;
+}
+
 /**
  * Header with a local hosted image.
  */
-export function headerImage({ title, subtitle, image = "school", cropCircle = false }: HeaderImageParams): GoogleAppsScript.Card_Service.CardHeader {
+export function headerImage({ title, subtitle, cropCircle = false, image = "school" }: HeaderImageParams): GoogleAppsScript.Card_Service.CardHeader {
     const imageUrl = `${Urls.MEDIA_SERVER}images/${image}_64.png`;
 
     return baseHeader({ title, subtitle, imageUrl, imageAltText: image, cropCircle });
 }
+
+type HeaderIconParams = CommonHeaderParams & IconifyParams;
 
 /**
  * Header using an Iconify icon.
@@ -68,10 +52,17 @@ export function headerIcon({ title, subtitle, cropCircle, iconName, color, width
 /**
  * Builds am IconImage using the Iconify API.
  */
-export function icon(args: IconifyParams): GoogleAppsScript.Card_Service.IconImage {
+export function iconImage(args: IconifyParams): GoogleAppsScript.Card_Service.IconImage {
     const { url, name: displayName } = iconifyUrl(args);
 
     return CardService.newIconImage().setIconUrl(url).setAltText(displayName);
+}
+
+interface TextButtonParams {
+    readonly text: string;
+    readonly action: GoogleAppsScript.Card_Service.Action;
+    readonly style?: GoogleAppsScript.Card_Service.TextButtonStyle;
+    readonly backgroundColor?: string;
 }
 
 /**

@@ -85,6 +85,6 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
 /**
  * Tests that a named range is a StrictNameRange
  */
-function isStrictNameRange(namedRange: GoogleAppsScript.Sheets.Schema.NamedRange): namedRange is StrictNameRange {
+export function isStrictNameRange(namedRange: GoogleAppsScript.Sheets.Schema.NamedRange): namedRange is StrictNameRange {
     return namedRange.namedRangeId != null && namedRange.name != null && namedRange.range != null;
 }

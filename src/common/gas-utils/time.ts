@@ -9,7 +9,7 @@ export function getSheetsDate(epoch: number): number {
 }
 
 /**
- * Converts a Sheets Epock into a Unix Epoch.
+ * Converts a Sheets Epoch into a Unix Epoch.
  */
 
 export function getEpochDate(sheetsDate: number): number {

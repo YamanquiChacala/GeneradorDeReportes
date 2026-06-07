@@ -1,11 +1,11 @@
 import { Dimension } from "./api-types";
 import { getCellBoolean, getCellData, getCellDataArray, getCellEffectiveValue, getCellNumber, getCellText, getCellUnixEpoch, resizeMappedRange } from "./mapped-range";
-import type { MappedNamedRange } from "./types";
+import { type MappedNamedRange, RangeBehavior } from "./types";
 
-describe("MappedNamedRange Utilities", () => {
+describe("GAS Utils, Mapped Range", () => {
     // Simulates a 5x5 Named Range (A1:E5) with sparse data chunks, but the sheet is 10x10.
     const mockMappedRange: MappedNamedRange = {
-        namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
+        namedRange: { namedRangeId: "range-1", name: "TestRange", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
         sheet: {
             properties: {
                 gridProperties: { rowCount: 10, columnCount: 10 },
@@ -50,7 +50,7 @@ describe("MappedNamedRange Utilities", () => {
 
     // Mock an unbounded range (e.g., A:Z) where endRowIndex and endColumnIndex are inherently undefined.
     const mockUnboundedRange: MappedNamedRange = {
-        namedRange: { namedRangeId: "", name: "", range: { sheetId: 2 } }, // No end indexes
+        namedRange: { namedRangeId: "range-2", name: "UnboundRange", range: { sheetId: 2 } }, // No end indexes
         sheet: {
             properties: {
                 gridProperties: { rowCount: 100, columnCount: 26 },
@@ -233,16 +233,35 @@ describe("MappedNamedRange Utilities", () => {
 
         beforeEach(() => {
             testRange = {
-                namedRange: { namedRangeId: "", name: "", range: { sheetId: 123, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 } },
+                namedRange: {
+                    namedRangeId: "range-123",
+                    name: "TestRange",
+                    range: { sheetId: 123, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 },
+                },
                 sheet: {},
             };
         });
 
-        it("should insert dimensions when the target size is larger than the current size", () => {
+        it("should default to IGNORE behavior and return empty requests while still calculating accurate bounds", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 8, // Should be ignored by default
+                targetCols: 8, // Should be ignored by default
+                rowOffset: 2,
+            });
+
+            expect(result.requests).toHaveLength(0);
+            expect(testRange.namedRange.range.endRowIndex).toBe(7); // Orig 5 + Offset 2
+            expect(testRange.namedRange.range.startRowIndex).toBe(2);
+        });
+
+        it("should trigger INSERT_DELETE and insert dimensions when target size is larger", () => {
             const result = resizeMappedRange({
                 target: testRange,
                 targetRows: 8,
                 targetCols: 7,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
             });
 
             expect(result.requests).toHaveLength(2);
@@ -255,11 +274,13 @@ describe("MappedNamedRange Utilities", () => {
             expect(testRange.namedRange.range.endRowIndex).toBe(8);
         });
 
-        it("should delete dimensions when the target size is smaller than the current size", () => {
+        it("should trigger INSERT_DELETE and delete dimensions when target size is smaller", () => {
             const result = resizeMappedRange({
                 target: testRange,
                 targetRows: 2,
                 targetCols: 3,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
             });
 
             expect(result.requests).toHaveLength(2);
@@ -271,20 +292,50 @@ describe("MappedNamedRange Utilities", () => {
             });
         });
 
-        it("should destroy the range entirely when collapsing to 0", () => {
+        it("should trigger MODIFY_RANGE and update named range definitions without inserting/deleting cells", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 10,
+                rowBehavior: RangeBehavior.MODIFY_RANGE,
+                colBehavior: RangeBehavior.MODIFY_RANGE,
+            });
+
+            expect(result.requests).toHaveLength(1);
+            expect(result.requests[0]?.updateNamedRange?.namedRange?.range).toEqual({
+                sheetId: 123,
+                endRowIndex: 10,
+                endColumnIndex: 5, // Untouched col target means it stays at 5
+            });
+            expect(result.requests[0]?.updateNamedRange?.fields).toBe("range");
+            expect(testRange.namedRange.range.endRowIndex).toBe(10);
+        });
+
+        it("should destroy the range entirely when collapsing to 0 with INSERT_DELETE", () => {
             const result = resizeMappedRange({
                 target: testRange,
                 targetRows: 0,
                 targetCols: 0,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
             });
 
             expect(result.requests).toHaveLength(2);
             expect(testRange.namedRange.range.endRowIndex).toBe(0);
         });
 
-        it("should return empty requests and leave dimensions unchanged if target size matches current size", () => {
-            const result = resizeMappedRange({ target: testRange });
-            expect(result.requests).toHaveLength(0);
+        it("should handle mixed behaviors correctly (e.g. INSERT_DELETE rows, IGNORE cols)", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 10,
+                targetCols: 10,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.IGNORE,
+            });
+
+            expect(result.requests).toHaveLength(1); // Only the row insertion
+            expect(result.requests[0]?.insertDimension?.range?.dimension).toBe(Dimension.ROWS);
+            expect(testRange.namedRange.range.endRowIndex).toBe(10);
+            expect(testRange.namedRange.range.endColumnIndex).toBe(5); // Ignored, stayed at 5
         });
 
         it("should handle offset calculations correctly if the current range is already offset", () => {
@@ -293,35 +344,95 @@ describe("MappedNamedRange Utilities", () => {
                 targetRows: 10,
                 rowOffset: 5,
                 colOffset: 5,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
             });
+
+            // Actual start row is 0 + 5 = 5. diff is 5.
+            // insert is actualStartRow + 1 = 6, to 6 + 5 = 11.
             expect(result.requests[0]?.insertDimension?.range?.startIndex).toBe(6);
             expect(result.rowOffset).toBe(10);
         });
 
-        // NEW: Covers fallback rule `sheetId = target.range.sheetId ?? 0;`
         it("should default the sheetId to 0 if it is omitted from the target range object", () => {
             const statelessRange: MappedNamedRange = {
-                namedRange: { namedRangeId: "", name: "", range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } }, // Missing sheetId
+                namedRange: { namedRangeId: "", name: "", range: { startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } },
                 sheet: {},
             };
-            const result = resizeMappedRange({ target: statelessRange, targetRows: 5 });
+            const result = resizeMappedRange({
+                target: statelessRange,
+                targetRows: 5,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+            });
             expect(result.requests[0]?.insertDimension?.range?.sheetId).toBe(0);
         });
 
-        // NEW: Covers fallback definitions `actualEndRow = actualRange.endRowIndex ?? 0` and `actualEndCol = actualRange.endColumnIndex ?? 0`
         it("should fall back to 0 end-indexes safely when resizing open, horizontally/vertically unbounded ranges", () => {
             const openRange: MappedNamedRange = {
-                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, startColumnIndex: 0 } }, // Missing endRowIndex and endColumnIndex
+                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, startColumnIndex: 0 } },
                 sheet: {},
             };
             const result = resizeMappedRange({
                 target: openRange,
-                targetRows: 5, // Triggers insert dimension from baseline 0
+                targetRows: 5,
                 targetCols: 5,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
             });
+
             expect(result.requests).toHaveLength(2);
             expect(result.requests[0]?.insertDimension?.range?.endIndex).toBe(6);
             expect(openRange.namedRange.range.endRowIndex).toBe(5);
+        });
+
+        it("should fall back to current sizes if target dimensions are omitted but behavior is active", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                // Omit targetRows and targetCols entirely
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.MODIFY_RANGE,
+            });
+
+            expect(result.requests).toHaveLength(1);
+            expect(testRange.namedRange.range.endRowIndex).toBe(5);
+        });
+
+        it("should evaluate rangeChanged as false when no dimensions or offsets are modified", () => {
+            // Covers: The 'all false' path of the rangeChanged boolean chain
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 5, // Same as current
+                targetCols: 5, // Same as current
+                rowBehavior: RangeBehavior.MODIFY_RANGE,
+                colBehavior: RangeBehavior.MODIFY_RANGE,
+            });
+
+            // Even with MODIFY_RANGE, no request is pushed because rangeChanged is false
+            expect(result.requests).toHaveLength(1);
+        });
+
+        it("should detect changes purely on column start index for rangeChanged short-circuit", () => {
+            // Covers: Bypassing row checks in rangeChanged to trigger on startColumnIndex
+            const result = resizeMappedRange({
+                target: testRange,
+                colOffset: 2, // Changes startColumnIndex
+                rowBehavior: RangeBehavior.IGNORE,
+                colBehavior: RangeBehavior.MODIFY_RANGE,
+            });
+
+            expect(result.requests).toHaveLength(1);
+            expect(result.requests[0]?.updateNamedRange?.namedRange?.range?.startColumnIndex).toBe(2);
+        });
+
+        it("should detect changes purely on column end index for rangeChanged short-circuit", () => {
+            // Covers: Bypassing row and start-col checks to trigger on endColumnIndex
+            const result = resizeMappedRange({
+                target: testRange,
+                targetCols: 10, // Changes endColumnIndex
+                colBehavior: RangeBehavior.MODIFY_RANGE,
+            });
+
+            expect(result.requests).toHaveLength(1);
+            expect(result.requests[0]?.updateNamedRange?.namedRange?.range?.endColumnIndex).toBe(10);
         });
     });
 });

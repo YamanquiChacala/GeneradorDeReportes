@@ -1,12 +1,12 @@
 import { createAttendaceFormulas, type StudentRow } from "../report-utils";
-import type { Trimesters } from "./types";
+import { TemplateSize, type Trimesters } from "./types";
 
 interface MonthGroupMeta {
     year: number;
     month: number;
     startCol: number;
     count: number;
-    template: 1 | 2 | 5;
+    template: TemplateSize;
 }
 
 /**
@@ -37,15 +37,15 @@ export function calculateCalendarHeaders(
         let text = "";
 
         if (group.count === 1) {
-            group.template = 1;
+            group.template = TemplateSize.SMALL;
             const name = names1[group.month] ?? "";
             text = `${name}\n${shortYear}`;
         } else if (group.count >= 2 && group.count <= 4) {
-            group.template = 2;
+            group.template = TemplateSize.MEDIUM;
             const name = names2[group.month] ?? "";
             text = `${name}\n${longYear}`;
         } else {
-            group.template = 5;
+            group.template = TemplateSize.LARGE;
             const name = names5[group.month] ?? "";
             text = `${name}\n${longYear}`;
         }
@@ -67,12 +67,12 @@ export function calculateCalendarHeaders(
         const targetCol = frozenCols + i;
 
         if (!currentGroup) {
-            currentGroup = { year, month, startCol: targetCol, count: 1, template: 1 };
+            currentGroup = { year, month, startCol: targetCol, count: 1, template: TemplateSize.SMALL };
         } else if (currentGroup.year === year && currentGroup.month === month) {
             currentGroup.count++;
         } else {
             finalizeGroup(currentGroup);
-            currentGroup = { year, month, startCol: targetCol, count: 1, template: 1 };
+            currentGroup = { year, month, startCol: targetCol, count: 1, template: TemplateSize.SMALL };
         }
 
         const dayName = dayNames[dayOfWeek] ?? "";

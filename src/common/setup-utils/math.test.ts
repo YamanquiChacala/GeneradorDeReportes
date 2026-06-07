@@ -1,7 +1,7 @@
 import type { AcademicField, WeightedSubject } from "../report-utils";
 import { calculateAttendanceGridSize, calculatePerClassLayout, getRandomId, normalizeSubjectWeights, normalizeTrimesterWeights } from "./math";
 
-describe("Setup Math Utils", () => {
+describe("Setup Utils. Math", () => {
     describe("getRandomId", () => {
         let randomSpy: jest.SpyInstance;
 

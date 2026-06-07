@@ -1,8 +1,7 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
-import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
+import type { ExtractRangeNames, NestedSheetSchema, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
     buildAddBandingRequest,
-    buildAddNamedRangeRequest,
     buildCopyPasteRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
@@ -30,6 +29,25 @@ import {
 import { getDistinctHues, getUpperBoundIndex } from "../../common/utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
+
+/**
+ * Generates batch update `addNamedRange` request.
+ */
+function buildAddNamedRangeRequest<T extends NestedSheetSchema>(
+    name: ExtractRangeNames<T>,
+    range: GoogleAppsScript.Sheets.Schema.GridRange,
+    namedRangeId?: string,
+): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        addNamedRange: {
+            namedRange: {
+                namedRangeId,
+                name,
+                range,
+            },
+        },
+    };
+}
 
 /**
  * Initializes an attendance sheet with the persistent data.

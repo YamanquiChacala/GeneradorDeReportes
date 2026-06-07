@@ -1,17 +1,29 @@
 export interface IconifyParams {
-    iconName: Icon;
-    color?: string;
-    width?: number;
-    height?: number;
-    box?: boolean;
+    readonly iconName: Icon;
+    readonly color?: string;
+    readonly width?: number;
+    readonly height?: number;
+    readonly box?: boolean;
+}
+
+export interface RGBColor {
+    readonly r: number;
+    readonly g: number;
+    readonly b: number;
+}
+
+export interface HSLColor {
+    readonly h: number;
+    readonly s: number;
+    readonly l: number;
 }
 
 export enum Icon {
     WARNING = "material-symbols/warning-rounded",
     FOLDER_QUESTION = "mdi/folder-question",
     FOLDER = "noto/file-folder", // 📁
-    CLIPBOARD = "noto/clipboard", // 📋
-    CHART = "noto/bar-chart", // 📊
+    CLIPBOARD = "noto/clipboard", // 📋 Used to represent the Setup
+    CHART = "noto/bar-chart", // 📊 Used to represent the Report
 }
 
 export enum CssColorMap {

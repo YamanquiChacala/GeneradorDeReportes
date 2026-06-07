@@ -1,6 +1,8 @@
 import { getRandomId } from "../setup-utils";
+import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
+import { createRequiredGetter } from "./helpers";
+import { resizeMappedRange } from "./mapped-range";
 import {
-    createRequiredGetter,
     type ExtractDynamicRangeKeys,
     type ExtractRangeNames,
     type ExtractSheetNames,
@@ -9,17 +11,15 @@ import {
     type ParsedSpreadsheet,
     RangeBehavior,
     type RangeOperationResult,
-    resizeMappedRange,
     type StrictNameRange,
-} from ".";
-import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
+} from "./types";
 
 /**
  * Generates batch update `copyPaste` request to copy data from `origin` into `destination` ranges.
  */
 export function buildCopyPasteRequest(
-    source: GoogleAppsScript.Sheets.Schema.GridRange,
-    destination: GoogleAppsScript.Sheets.Schema.GridRange,
+    source: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    destination: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
     pasteType: PasteType,
 ): GoogleAppsScript.Sheets.Schema.Request {
     return {
@@ -35,7 +35,7 @@ export function buildCopyPasteRequest(
 /**
  * Generates batch upate `mergeCells` request.
  */
-export function buildMergeCellsRequest(range: GoogleAppsScript.Sheets.Schema.GridRange, mergeType: MergeType): GoogleAppsScript.Sheets.Schema.Request {
+export function buildMergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, mergeType: MergeType): GoogleAppsScript.Sheets.Schema.Request {
     return {
         mergeCells: {
             range,
@@ -45,30 +45,11 @@ export function buildMergeCellsRequest(range: GoogleAppsScript.Sheets.Schema.Gri
 }
 
 /**
- * Generates batch update `addNamedRange` request.
- */
-export function buildAddNamedRangeRequest<T extends NestedSheetSchema>(
-    name: ExtractRangeNames<T>,
-    range: GoogleAppsScript.Sheets.Schema.GridRange,
-    namedRangeId?: string,
-): GoogleAppsScript.Sheets.Schema.Request {
-    return {
-        addNamedRange: {
-            namedRange: {
-                namedRangeId,
-                name,
-                range,
-            },
-        },
-    };
-}
-
-/**
  * Generate batch update `addBanding` request.
  */
 export function buildAddBandingRequest(
-    range: GoogleAppsScript.Sheets.Schema.GridRange,
-    bandingProperties: GoogleAppsScript.Sheets.Schema.BandingProperties,
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    bandingProperties: Readonly<GoogleAppsScript.Sheets.Schema.BandingProperties>,
 ): GoogleAppsScript.Sheets.Schema.Request {
     return {
         addBanding: {
@@ -81,14 +62,14 @@ export function buildAddBandingRequest(
 }
 
 interface BuildUpdateSheetPropertiesParams {
-    sheetId: number;
-    index?: number;
-    hidden?: boolean;
-    rowCount?: number;
-    columnCount?: number;
-    frozenRowCount?: number;
-    frozenColumnCount?: number;
-    hideGridlines?: boolean;
+    readonly sheetId: number;
+    readonly index?: number;
+    readonly hidden?: boolean;
+    readonly rowCount?: number;
+    readonly columnCount?: number;
+    readonly frozenRowCount?: number;
+    readonly frozenColumnCount?: number;
+    readonly hideGridlines?: boolean;
 }
 
 /**
@@ -158,9 +139,9 @@ export function buildUpdateSheetPropertiesRequest({
 }
 
 interface BuildUpdateCellsRequestParams {
-    destination: GoogleAppsScript.Sheets.Schema.GridRange;
-    data: GoogleAppsScript.Sheets.Schema.CellData[][];
-    fields: string;
+    readonly destination: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    readonly fields: string;
 }
 
 /**
@@ -201,13 +182,13 @@ export function buildUpdateCellsRequest({ destination, data, fields }: BuildUpda
 }
 
 interface BuildTransferRequestParams {
-    destination: MappedNamedRange;
-    data: GoogleAppsScript.Sheets.Schema.CellData[][];
-    fields: string;
-    rowBehavior?: RangeBehavior;
-    colBehavior?: RangeBehavior;
-    rowOffset?: number;
-    colOffset?: number;
+    readonly destination: MappedNamedRange;
+    readonly data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    readonly fields: string;
+    readonly rowBehavior?: RangeBehavior;
+    readonly colBehavior?: RangeBehavior;
+    readonly rowOffset?: number;
+    readonly colOffset?: number;
 }
 
 export function buildTransferRequests({
@@ -252,24 +233,24 @@ export function buildTransferRequests({
 }
 
 interface BaseAddSheetParams<T extends NestedSheetSchema> {
-    parsedData: ParsedSpreadsheet<T>;
-    sourceSheetTitle: ExtractSheetNames<T>;
-    sourceSheetId: number;
-    insertSheetIndex: number;
+    readonly parsedData: ParsedSpreadsheet<T>;
+    readonly sourceSheetTitle: ExtractSheetNames<T>;
+    readonly sourceSheetId: number;
+    readonly insertSheetIndex: number;
 }
 
 // Option A: Single sheet tied to the schema
 interface AddSchemaSheetParams<T extends NestedSheetSchema> extends BaseAddSheetParams<T> {
-    schema: T;
-    schemaSheetKey: Extract<keyof T["sheets"], string>;
-    multipleSheetNames?: never;
+    readonly schema: T;
+    readonly schemaSheetKey: Extract<keyof T["sheets"], string>;
+    readonly multipleSheetNames?: never;
 }
 
 // Option B: Multiple non-schema sheets
 interface AddExtraSheetsParams<T extends NestedSheetSchema> extends BaseAddSheetParams<T> {
-    schema?: never;
-    schemaSheetKey?: never;
-    multipleSheetNames: string[];
+    readonly schema?: never;
+    readonly schemaSheetKey?: never;
+    readonly multipleSheetNames: string[];
 }
 
 type AddNewSheetParams<T extends NestedSheetSchema> = AddSchemaSheetParams<T> | AddExtraSheetsParams<T>;
@@ -348,21 +329,21 @@ export function addNewSheet<T extends NestedSheetSchema>({
 }
 
 interface BaseAddNamedRangeParams<T extends NestedSheetSchema> {
-    parsedData: ParsedSpreadsheet<T>;
-    sheetTitle: ExtractSheetNames<T>;
-    gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly parsedData: ParsedSpreadsheet<T>;
+    readonly sheetTitle: ExtractSheetNames<T>;
+    readonly gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
 }
 
 interface AddStaticNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
-    staticRangeKey: ExtractRangeNames<T>;
-    rangeName?: never;
-    dynamicRangeKey?: never;
+    readonly staticRangeKey: ExtractRangeNames<T>;
+    readonly rangeName?: never;
+    readonly dynamicRangeKey?: never;
 }
 
 interface AddDynamicNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
-    staticRangeKey?: never;
-    rangeName: string;
-    dynamicRangeKey: ExtractDynamicRangeKeys<T>;
+    readonly staticRangeKey?: never;
+    readonly rangeName: string;
+    readonly dynamicRangeKey: ExtractDynamicRangeKeys<T>;
 }
 
 type AddNamedRangeParams<T extends NestedSheetSchema> = AddStaticNamedRangeParams<T> | AddDynamicNamedRangeParams<T>;

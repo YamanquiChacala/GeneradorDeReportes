@@ -5,9 +5,9 @@ import { getEpochDate } from "./time";
 import { type MappedNamedRange, RangeBehavior, type RangeOperationResult, type ResizeRangeParams } from "./types";
 
 interface GetCellParams {
-    mappedRange: MappedNamedRange;
-    rowOffset?: number;
-    columnOffset?: number;
+    readonly mappedRange: MappedNamedRange;
+    readonly rowOffset?: number;
+    readonly columnOffset?: number;
 }
 
 export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = false, unboundColumns = false): GoogleAppsScript.Sheets.Schema.CellData[][] {

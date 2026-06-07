@@ -1,22 +1,20 @@
-type InputType = "string" | "number" | "boolean" | "date" | "time" | "array";
+import { InputType, ParamType } from "./types";
 
-type MappedInput<T extends InputType> = T extends "string"
+type MappedInput<T extends InputType> = T extends InputType.STRING
     ? string
-    : T extends "number"
+    : T extends InputType.NUMBER
       ? number
-      : T extends "boolean"
+      : T extends InputType.BOOLEAN
         ? boolean
-        : T extends "date"
+        : T extends InputType.DATE
           ? number
-          : T extends "time"
+          : T extends InputType.TIME
             ? { hours: number; minutes: number }
-            : T extends "array"
+            : T extends InputType.ARRAY
               ? string[]
               : never;
 
-type ParamType = "string" | "number" | "boolean";
-
-type MappedParam<T extends ParamType> = T extends "string" ? string : T extends "number" ? number : T extends "boolean" ? boolean : never;
+type MappedParam<T extends ParamType> = T extends ParamType.STRING ? string : T extends ParamType.NUMBER ? number : T extends ParamType.BOOLEAN ? boolean : never;
 
 /** The part of the event object dealing with form inputs */
 type GASFormInputs = GoogleAppsScript.Addons.CommonEventObject["formInputs"];
@@ -54,15 +52,15 @@ export function defineActionParameters<T extends Record<string, ParamType>>(sche
                 if (val === undefined) continue;
 
                 switch (type) {
-                    case "string":
+                    case ParamType.STRING:
                         result[key] = val;
                         break;
-                    case "number": {
+                    case ParamType.NUMBER: {
                         const num = Number(val);
                         if (!Number.isNaN(num)) result[key] = num;
                         break;
                     }
-                    case "boolean":
+                    case ParamType.BOOLEAN:
                         result[key] = val === "true";
                         break;
                 }
@@ -78,13 +76,11 @@ export function defineActionParameters<T extends Record<string, ParamType>>(sche
 export function getInputs<T extends Record<string, InputType>>(formInputs: GASFormInputs, schema: T): Partial<{ [K in keyof T]: MappedInput<T[K]> }> {
     const result: Record<string, unknown> = {};
 
-    // if (!formInputs) return result as Partial<{ [K in keyof T]: MappedInput<T[K]> }>;
-
     for (const [key, expectedType] of Object.entries(schema)) {
         const rawField = formInputs[key];
 
-        // 1. Boolean (Checkboxe, Switch). Anything except "false" or and empty string is true
-        if (expectedType === "boolean") {
+        // Boolean (Checkboxe, Switch). Anything except "false" or and empty string is true
+        if (expectedType === InputType.BOOLEAN) {
             const firstStringValue = rawField?.stringInputs?.value[0];
             result[key] = rawField !== undefined && firstStringValue !== "false" && firstStringValue !== "";
             continue;
@@ -93,8 +89,8 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
         // If rawField doesn't exist and isn't a boolean, it's safely undefined
         if (!rawField) continue;
 
-        // 2. Dates (DatePickers, DateTimePicker).
-        if (expectedType === "date") {
+        // Dates (DatePickers, DateTimePicker).
+        if (expectedType === InputType.DATE) {
             const epoch = rawField.dateInput?.msSinceEpoch ?? rawField.dateTimeInput?.msSinceEpoch;
             if (epoch) {
                 result[key] = Number(epoch);
@@ -112,8 +108,8 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
             continue;
         }
 
-        // 3. Time (TimePicker)
-        if (expectedType === "time") {
+        // Time (TimePicker)
+        if (expectedType === InputType.TIME) {
             if (rawField.timeInput) {
                 result[key] = {
                     hours: rawField.timeInput.hours,
@@ -124,20 +120,20 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
             continue;
         }
 
-        // 4. Handle standard String Inputs (Text, Selects, Radios)
+        // Handle standard String Inputs (Text, Selects, Radios)
         const stringVals = rawField.stringInputs?.value;
         if (!stringVals || stringVals.length === 0) continue;
 
         switch (expectedType) {
-            case "string":
+            case InputType.STRING:
                 result[key] = stringVals[0] ?? "";
                 break;
-            case "number": {
+            case InputType.NUMBER: {
                 const parsedNum = Number(stringVals[0]);
                 if (!Number.isNaN(parsedNum)) result[key] = parsedNum;
                 break;
             }
-            case "array":
+            case InputType.ARRAY:
                 result[key] = stringVals;
                 break;
         }

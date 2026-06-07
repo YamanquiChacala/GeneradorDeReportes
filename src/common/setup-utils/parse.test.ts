@@ -3,19 +3,23 @@ import { parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } f
 
 // Helper functions to quickly mock Google Apps Script CellData
 type CellData = GoogleAppsScript.Sheets.Schema.CellData;
+
 const str = (v: string, bgCol?: GoogleAppsScript.Sheets.Schema.Color): CellData => ({
     effectiveValue: { stringValue: v },
     effectiveFormat: bgCol ? { backgroundColor: bgCol } : undefined,
 });
+
 const num = (v: number): CellData => ({ effectiveValue: { numberValue: v } });
+
 const bool = (v: boolean): CellData => ({ effectiveValue: { boolValue: v } });
+
 const empty = (): CellData => ({});
 
 // Mock Colors
 const RED_BG = { red: 1, green: 0, blue: 0 };
 const BLUE_BG = { red: 0, green: 0, blue: 1 };
 
-describe("Setup Parse Utils", () => {
+describe("Setup Utils. Parse", () => {
     describe("parseAcademicFieldsAndSubjects", () => {
         it("handles simple input correctly", () => {
             const simpleSubjectData: readonly CellData[][] = [

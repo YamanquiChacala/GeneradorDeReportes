@@ -27,6 +27,7 @@ import {
     DEFAULT_COMMENT,
     generatePeriodString,
     getShortCommentFormula,
+    Period,
     type ReportPersistentData,
     TRIMESTER_NAMES,
 } from "../../common/report-utils";
@@ -232,7 +233,7 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
     const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de formato de estudiante");
 
-    const period = 0;
+    const period = Period.FIRST;
 
     const dataData: GoogleAppsScript.Sheets.Schema.CellData[][] = [[], [], []]; // First three rows empty.
 
@@ -339,7 +340,7 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     for (const [periodIndex, subjectRange] of subjects.entries()) {
-        const period = periodIndex as 0 | 1 | 2;
+        const period = periodIndex as Period;
         const subjectData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
         for (const [index, weightedSubject] of persistenData.subjects.entries()) {

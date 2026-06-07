@@ -48,3 +48,9 @@ export interface Student {
 interface StudentSpace {
     type: "separator";
 }
+
+export enum Period {
+    FIRST = 0,
+    SECOND = 1,
+    THIRD = 2,
+}

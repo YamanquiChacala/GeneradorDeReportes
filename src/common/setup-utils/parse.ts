@@ -143,7 +143,7 @@ export function parseStudentList(studentSetupData: readonly GoogleAppsScript.She
  */
 export function parseCalendarDays(
     initialDay: number,
-    calendarRawData: GoogleAppsScript.Sheets.Schema.CellData[][],
+    calendarRawData: readonly GoogleAppsScript.Sheets.Schema.CellData[][],
 ): {
     sheetDays: GoogleAppsScript.Sheets.Schema.CellData[][];
     days: number[];

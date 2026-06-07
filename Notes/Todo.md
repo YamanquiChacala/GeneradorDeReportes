@@ -4,6 +4,7 @@
 * [ ] Remove any direct use of `duplicateSheet:` and instead use `addNewSheet`.
 * [ ] Remove any direct use of `buildAddNamedRangeRequest` or `addNamedRange:` and instead use `addNewNamedRange`.
 * [ ] Replace string union types with string enums.
+* [ ] Research markdown github "badges".
 
 # Report initial creation
 ## Persistent Data

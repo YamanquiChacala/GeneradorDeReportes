@@ -1,8 +1,8 @@
 import { MORE_THAN_A_YEAR } from "../utils";
 import { calculateCalendarDates, calculateCalendarGrid, validateDates } from "./dates";
-import type { CalendarDates } from "./types";
+import { type CalendarDates, DayType } from "./types";
 
-describe("Setup Date Utilities", () => {
+describe("Setup Utilities. Dates", () => {
     describe("validateDates", () => {
         it("returns null on dates in order", () => {
             expect(validateDates([1000, 2000, 3000, 4000])).toBeNull();
@@ -138,24 +138,24 @@ describe("Setup Date Utilities", () => {
 
             if (week1) {
                 const sunday = week1.days[0]; // Apr 19 (Out of user bounds)
-                expect(sunday?.dayType).toBe("rest");
+                expect(sunday?.dayType).toBe(DayType.REST);
                 expect(sunday?.inBounds).toBe(false);
 
                 const monday = week1.days[1]; // Apr 20 (dateStart -> tr1)
-                expect(monday?.dayType).toBe("trimester1");
+                expect(monday?.dayType).toBe(DayType.TRIM1);
                 expect(monday?.inBounds).toBe(true);
 
                 const friday = week1.days[5]; // Apr 24 (dateTrimester1 boundary -> tr1)
-                expect(friday?.dayType).toBe("trimester1");
+                expect(friday?.dayType).toBe(DayType.TRIM1);
                 expect(friday?.inBounds).toBe(true);
             }
 
             if (week2) {
                 const wednesday = week2.days[3]; // Apr 29 (> end trimester2)
-                expect(wednesday?.dayType).toBe("trimester2");
+                expect(wednesday?.dayType).toBe(DayType.TRIM2);
 
                 const thursday = week2.days[4]; // Apr 30 (> dateTrimester2 -> tr3)
-                expect(thursday?.dayType).toBe("trimester3");
+                expect(thursday?.dayType).toBe(DayType.TRIM3);
             }
         });
 
@@ -168,7 +168,7 @@ describe("Setup Date Utilities", () => {
 
                 expect(saturday?.isWeekday).toBe(false);
                 expect(saturday?.inBounds).toBe(true);
-                expect(saturday?.dayType).toBe("rest");
+                expect(saturday?.dayType).toBe(DayType.REST);
             }
         });
     });

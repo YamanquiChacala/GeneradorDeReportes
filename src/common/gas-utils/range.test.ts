@@ -1,6 +1,6 @@
-import { createRange, createSingleCellRange, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from ".";
+import { createRange, createSingleCellRange, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from "./range";
 
-describe("Range", () => {
+describe("GAS Utils, Range", () => {
     describe("createRange", () => {
         it("should create an unbound range with no width or height", () => {
             const range = createRange(10, 5, 2);
@@ -19,6 +19,15 @@ describe("Range", () => {
                 startColumnIndex: 2,
                 endRowIndex: 8,
                 endColumnIndex: 6,
+            });
+        });
+
+        it("should omit end indexes if height or width are 0 or negative", () => {
+            const range = createRange(10, 5, 2, 0, -1);
+            expect(range).toEqual({
+                sheetId: 10,
+                startRowIndex: 5,
+                startColumnIndex: 2,
             });
         });
     });
@@ -67,6 +76,17 @@ describe("Range", () => {
             });
         });
 
+        it("should override the sheetId if a new one is provided in the properties", () => {
+            const result = offsetGridRange({ origin, sheetId: 99 });
+            expect(result).toEqual({
+                sheetId: 99,
+                startRowIndex: 2,
+                endRowIndex: 4,
+                startColumnIndex: 2,
+                endColumnIndex: 4,
+            });
+        });
+
         it("should safely default missing origin indexes to 0", () => {
             const emptyOrigin: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 1 };
             const result = offsetGridRange({ origin: emptyOrigin, rowOffset: 1, colOffset: 1, height: 1, width: 1 });
@@ -79,7 +99,7 @@ describe("Range", () => {
             });
         });
 
-        it("should prevent startRowIndex and startColumnIndex from becoming negative", () => {
+        it("should prevent startRowIndex and startColumnIndex from becoming negative and correctly omit them (acting as 0)", () => {
             const result = offsetGridRange({ origin, rowOffset: -5, colOffset: -5 });
             expect(result).toEqual({
                 sheetId: 1,

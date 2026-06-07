@@ -10,7 +10,7 @@ import {
     createStudentPerSubjectAttendanceFormula,
     getShortCommentFormula,
 } from "./formulas";
-import type { AcademicField } from "./types";
+import { type AcademicField, Period } from "./types";
 
 // Mock the dependencies
 jest.mock("../gas-utils", () => ({
@@ -18,7 +18,7 @@ jest.mock("../gas-utils", () => ({
     getColumnLetter: jest.fn(),
 }));
 
-describe("Formula Generators", () => {
+describe("Report Utils. Formula Generators", () => {
     // Reusable dummy data
     const mockRange: MappedNamedRange = {
         namedRange: { namedRangeId: "", name: "", range: { startRowIndex: 2, endRowIndex: 5, startColumnIndex: 1, endColumnIndex: 4 } },
@@ -36,52 +36,40 @@ describe("Formula Generators", () => {
 
     describe("createAttendaceFormulas", () => {
         it("should return empty strings if startCol is -1", () => {
-            // Arrange
             const row = 0;
             const startCol = -1;
             const endCol = 5;
 
-            // Act
             const result = createAttendaceFormulas(row, startCol, endCol);
 
-            // Assert
             expect(result).toEqual({ percent: '=""', count: '=""' });
             expect(getColumnLetter).not.toHaveBeenCalled();
         });
 
         it("should return empty strings if startCol is greater than endCol", () => {
-            // Arrange
             const row = 0;
             const startCol = 5;
-            const endCol = 2; // startCol > endCol
+            const endCol = 2;
 
-            // Act
             const result = createAttendaceFormulas(row, startCol, endCol);
 
-            // Assert
             expect(result).toEqual({ percent: '=""', count: '=""' });
             expect(getColumnLetter).not.toHaveBeenCalled();
         });
 
         it("should calculate the correct formulas with A1 notation when valid inputs are provided", () => {
-            // Arrange
-            const row = 4; // Remember the function does row + 1, so this will be row 5 in the formula
+            const row = 4; // Function does row + 1, resulting in row 5
             const startCol = 1;
             const endCol = 5;
 
-            // Set up our mocked returns for getColumnLetter
-            // First call gets 'A', second call gets 'E'
             (getColumnLetter as jest.Mock).mockReturnValueOnce("A").mockReturnValueOnce("E");
 
-            // Act
             const result = createAttendaceFormulas(row, startCol, endCol);
 
-            // Assert
             expect(getColumnLetter).toHaveBeenCalledTimes(2);
             expect(getColumnLetter).toHaveBeenNthCalledWith(1, startCol);
             expect(getColumnLetter).toHaveBeenNthCalledWith(2, endCol);
 
-            // Check that the range ($A5:$E5) was correctly injected into the formulas
             expect(result).toEqual({
                 percent: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, (COUNTA($A5:$E5) - SUM($A5:$E5)) / COUNTA($A5:$E5), "")',
                 count: '=IF(COUNTA($A5:$E5) >= COLUMNS($A5:$E5) / 10, SUM($A5:$E5), "")',
@@ -93,13 +81,11 @@ describe("Formula Generators", () => {
         it("should calculate correct offsets and inject them into the LET formula", () => {
             (getColumnLetter as jest.Mock).mockReturnValue("D");
 
-            // startColumnIndex (1) + colOffset (2) = 3 (which maps to "D" in our mock)
-            // startRowIndex (2) + rowOffset (5) + 1 = 8
             const formula = getShortCommentFormula(mockRange, 5, 2);
 
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("raw_text, D8");
-            expect(formula).toContain("cleaned_accents"); // Verify formula body presence
+            expect(formula).toContain("cleaned_accents");
             expect(formula.startsWith("=LET(")).toBe(true);
         });
 
@@ -109,53 +95,49 @@ describe("Formula Generators", () => {
             const formula = getShortCommentFormula(mockRangeOpen, 0, 0);
 
             expect(getColumnLetter).toHaveBeenCalledWith(0);
-            expect(formula).toContain("raw_text, A1"); // 0 + 0 + 1 = 1
+            expect(formula).toContain("raw_text, A1");
         });
     });
 
     describe("createStudentGeneralAttendanceFormula", () => {
-        it("should generate attendance formula and calculate correct column offsets for Period 0 with false absences multiplier", () => {
-            (getA1Notation as jest.Mock)
-                .mockReturnValueOnce("$A$1") // firstName
-                .mockReturnValueOnce("$B$1"); // lastName
-            (getColumnLetter as jest.Mock).mockReturnValue("C"); // 3 + 0*2 = 3
+        it("should generate attendance formula and calculate correct column offsets for Period FIRST with false absences multiplier", () => {
+            (getA1Notation as jest.Mock).mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
+            (getColumnLetter as jest.Mock).mockReturnValue("C");
 
-            const formula = createStudentGeneralAttendanceFormula(0, mockRange, mockRange, "Attendance", false);
+            const formula = createStudentGeneralAttendanceFormula(Period.FIRST, mockRange, mockRange, "Attendance", false);
 
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("return_data, 'Attendance'!C:C");
             expect(formula).toContain("XLOOKUP($A$1&$B$1");
-            expect(formula).toContain("ROUND(raw_result * { 10 }"); // Checking the false absences array multiplier
+            expect(formula).toContain("ROUND(raw_result * { 10 }");
         });
 
         it("should shift the return column by 1 and change multiplier if absences is true", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
-            (getColumnLetter as jest.Mock).mockReturnValue("D"); // 4 + 0*2 = 4
+            (getColumnLetter as jest.Mock).mockReturnValue("D");
 
-            const formula = createStudentGeneralAttendanceFormula(0, mockRange, mockRange, "Attendance", true);
+            const formula = createStudentGeneralAttendanceFormula(Period.FIRST, mockRange, mockRange, "Attendance", true);
 
             expect(getColumnLetter).toHaveBeenCalledWith(4);
             expect(formula).toContain("return_data, 'Attendance'!D:D");
-            expect(formula).toContain("ROUND(raw_result * { 1 }"); // Checking the true absences array multiplier
+            expect(formula).toContain("ROUND(raw_result * { 1 }");
         });
 
         it("should shift the return column by 2 for each period", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
-            (getColumnLetter as jest.Mock).mockReturnValue("G"); // 3 + 2*2 = 7
+            (getColumnLetter as jest.Mock).mockReturnValue("G");
 
-            createStudentGeneralAttendanceFormula(2, mockRange, mockRange, "Attendance", false);
+            createStudentGeneralAttendanceFormula(Period.THIRD, mockRange, mockRange, "Attendance", false);
 
             expect(getColumnLetter).toHaveBeenCalledWith(7);
         });
 
         it("should default absences to false if omitted, calculating the correct column offset and multiplier", () => {
             (getA1Notation as jest.Mock).mockReturnValue("$A$1");
-            (getColumnLetter as jest.Mock).mockReturnValue("C"); // Default false: 3 + 0*2 = 3
+            (getColumnLetter as jest.Mock).mockReturnValue("C");
 
-            // Notice: completely omitting the 5th `absences` argument here
-            const formula = createStudentGeneralAttendanceFormula(0, mockRange, mockRange, "Attendance");
+            const formula = createStudentGeneralAttendanceFormula(Period.FIRST, mockRange, mockRange, "Attendance");
 
-            // It should calculate as if absences was false
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("return_data, 'Attendance'!C:C");
             expect(formula).toContain("ROUND(raw_result * { 10 }");
@@ -164,13 +146,10 @@ describe("Formula Generators", () => {
 
     describe("createIndividualSubjectAverageFormula", () => {
         it("should format the weighted average formula and pass correct constraints to A1 utility", () => {
-            (getA1Notation as jest.Mock)
-                .mockReturnValueOnce("B2:D2") // values
-                .mockReturnValueOnce("'Weights'!$B$1:$D$1"); // weights
+            (getA1Notation as jest.Mock).mockReturnValueOnce("B2:D2").mockReturnValueOnce("'Weights'!$B$1:$D$1");
 
             const formula = createIndividualSubjectAverageFormula(mockRange, 2, mockRange);
 
-            // Verify configuration for values
             expect(getA1Notation).toHaveBeenNthCalledWith(1, {
                 mappedRange: mockRange,
                 rowOffset: 2,
@@ -180,7 +159,6 @@ describe("Formula Generators", () => {
                 lockColumns: true,
             });
 
-            // Verify configuration for weights
             expect(getA1Notation).toHaveBeenNthCalledWith(2, {
                 mappedRange: mockRange,
                 includeSheetName: true,
@@ -199,33 +177,27 @@ describe("Formula Generators", () => {
 
             const formula = createFinalSubjectAverageFormula(mockRange, mockRange, mockRange, 1);
 
-            // mockRange.range.endColumnIndex is 4. colOffset should be 4 - 2 = 2.
             expect(getA1Notation).toHaveBeenCalledWith(expect.objectContaining({ colOffset: 2 }));
-
             expect(formula).toContain("COUNT(E2, F2, G2)=3");
             expect(formula).toContain("ROUND(AVERAGE(E2, F2, G2),1)");
         });
 
         it("should fallback to 0 if trim3 is missing endColumnIndex", () => {
             createFinalSubjectAverageFormula(mockRange, mockRange, mockRangeOpen, 1);
-            // 0 - 2 = -2
             expect(getA1Notation).toHaveBeenCalledWith(expect.objectContaining({ colOffset: -2 }));
         });
     });
 
     describe("createStudentPerSubjectAttendanceFormula", () => {
         it("should calculate correct return column based on period and build complex LET formula", () => {
-            (getA1Notation as jest.Mock)
-                .mockReturnValueOnce("$A$5") // subjectA1
-                .mockReturnValueOnce("$A$1") // firstNameA1
-                .mockReturnValueOnce("$B$1"); // lastNameA1
-            (getColumnLetter as jest.Mock).mockReturnValue("E"); // 3 + 1*2 = 5
+            (getA1Notation as jest.Mock).mockReturnValueOnce("$A$5").mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
+            (getColumnLetter as jest.Mock).mockReturnValue("E");
 
-            const formula = createStudentPerSubjectAttendanceFormula(1, mockRange, 2, mockRange, mockRange, "AttData");
+            const formula = createStudentPerSubjectAttendanceFormula(Period.SECOND, mockRange, 2, mockRange, mockRange, "AttData");
 
             expect(getColumnLetter).toHaveBeenCalledWith(5);
             expect(formula).toContain("MATCH($A$5, AttData!A:A, 0)");
-            expect(formula).toContain("OFFSET(AttData!E$1"); // Verifies return_data offset
+            expect(formula).toContain("OFFSET(AttData!E$1");
             expect(formula).toContain("XLOOKUP($A$1 & $B$1");
         });
     });
@@ -238,7 +210,6 @@ describe("Formula Generators", () => {
 
             const formula = createFieldFormula(mockField, 2, 1, mockRange, mockRange);
 
-            // Check that it requested exactly `field.subjects` height for values
             expect(getA1Notation).toHaveBeenNthCalledWith(
                 1,
                 expect.objectContaining({
@@ -249,7 +220,6 @@ describe("Formula Generators", () => {
                 }),
             );
 
-            // Check weights configuration
             expect(getA1Notation).toHaveBeenNthCalledWith(
                 2,
                 expect.objectContaining({
@@ -285,13 +255,10 @@ describe("Formula Generators", () => {
 
     describe("createAllSubjectsAverageFormula", () => {
         it("should request values and weights from A1 utility and build the weighted average formula", () => {
-            (getA1Notation as jest.Mock)
-                .mockReturnValueOnce("E$2:E$10") // valuesA1
-                .mockReturnValueOnce("'Weights'!F$2:F$10"); // weightsA1
+            (getA1Notation as jest.Mock).mockReturnValueOnce("E$2:E$10").mockReturnValueOnce("'Weights'!F$2:F$10");
 
             const formula = createAllSubjectsAverageFormula(mockRange, mockRange, 4, 1);
 
-            // Values configuration check
             expect(getA1Notation).toHaveBeenNthCalledWith(1, {
                 mappedRange: mockRange,
                 colOffset: 4,
@@ -299,7 +266,6 @@ describe("Formula Generators", () => {
                 lockRows: true,
             });
 
-            // Weights configuration check
             expect(getA1Notation).toHaveBeenNthCalledWith(2, {
                 mappedRange: mockRange,
                 colOffset: 1,
