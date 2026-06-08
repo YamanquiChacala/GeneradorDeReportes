@@ -235,21 +235,18 @@ export function buildTransferRequests({
 interface BaseAddSheetParams<T extends NestedSheetSchema> {
     readonly parsedData: ParsedSpreadsheet<T>;
     readonly sourceSheetTitle: ExtractSheetNames<T>;
-    readonly sourceSheetId: number;
     readonly insertSheetIndex: number;
 }
 
 // Option A: Single sheet tied to the schema
 interface AddSchemaSheetParams<T extends NestedSheetSchema> extends BaseAddSheetParams<T> {
-    readonly schema: T;
-    readonly schemaSheetKey: Extract<keyof T["sheets"], string>;
+    readonly schemaSheetName: ExtractSheetNames<T>;
     readonly multipleSheetNames?: never;
 }
 
 // Option B: Multiple non-schema sheets
 interface AddExtraSheetsParams<T extends NestedSheetSchema> extends BaseAddSheetParams<T> {
-    readonly schema?: never;
-    readonly schemaSheetKey?: never;
+    readonly schemaSheetName?: never;
     readonly multipleSheetNames: string[];
 }
 
@@ -261,18 +258,20 @@ type AddNewSheetParams<T extends NestedSheetSchema> = AddSchemaSheetParams<T> | 
 export function addNewSheet<T extends NestedSheetSchema>({
     parsedData,
     sourceSheetTitle,
-    sourceSheetId,
     insertSheetIndex,
-    schema,
-    schemaSheetKey,
+    schemaSheetName,
     multipleSheetNames,
 }: AddNewSheetParams<T>): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newSheetIds: number[] } {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     const newSheetIds: number[] = [];
 
+    const getSheetNamedRanges = createRequiredGetter(parsedData.mappedSheetNamedRanges, "lista de rangos en hoja");
+    const getSheet = createRequiredGetter(parsedData.mappedSheets, "hoja");
+
+    const sourceSheetId = getSheet(sourceSheetTitle).properties?.sheetId ?? 0;
+
     // Temporarly remove named ranges before duplicating template
-    // biome-ignore lint/style/noNonNullAssertion: `ExtractSheetNames<T>` are the keys of the object.
-    const templateNamedRanges = parsedData.mappedSheetNamedRanges[sourceSheetTitle]!;
+    const templateNamedRanges = getSheetNamedRanges(sourceSheetTitle);
     for (const namedRange of templateNamedRanges) {
         requests.push({ deleteNamedRange: { namedRangeId: namedRange.namedRangeId } });
     }
@@ -280,12 +279,11 @@ export function addNewSheet<T extends NestedSheetSchema>({
     let sheetNamesToCreate: string[] = [];
     let isSchemaBound = false;
 
-    if (schema && schemaSheetKey) {
-        // biome-ignore lint/style/noNonNullAssertion: `schemaSheetKey` is defined as a valid key of `sheets`
-        sheetNamesToCreate = [schema.sheets[schemaSheetKey]!.sheetName];
+    if (schemaSheetName) {
+        sheetNamesToCreate = [schemaSheetName];
         isSchemaBound = true;
     } else {
-        // biome-ignore lint/style/noNonNullAssertion: if `schema` is not defined, `multipleSheetNames` must be.
+        // biome-ignore lint/style/noNonNullAssertion: if `schemaSheetName` is not defined, `multipleSheetNames` must be.
         sheetNamesToCreate = multipleSheetNames!;
     }
 
@@ -305,8 +303,17 @@ export function addNewSheet<T extends NestedSheetSchema>({
         };
 
         if (isSchemaBound) {
-            parsedData.mappedSheets[targetSheetName as ExtractSheetNames<T>] = newSheet;
-            parsedData.mappedSheetNamedRanges[targetSheetName as ExtractSheetNames<T>] = [];
+            const targetName = targetSheetName as ExtractSheetNames<T>;
+            // If the sheet already exists, delete it and recreate it.
+            const oldNamedRanges = parsedData.mappedSheetNamedRanges[targetName] ?? [];
+            for (const oldRange of oldNamedRanges) {
+                requests.push({ deleteNamedRange: { namedRangeId: oldRange.namedRangeId } });
+            }
+            const oldSheet = parsedData.mappedSheets[targetName];
+            if (oldSheet) requests.push({ deleteSheet: { sheetId: oldSheet.properties?.sheetId } });
+            // Create new one
+            parsedData.mappedSheets[targetName] = newSheet;
+            parsedData.mappedSheetNamedRanges[targetName] = [];
         } else {
             parsedData.extraSheets.push(newSheet);
         }

@@ -37,3 +37,11 @@
 ## Persistant Data
 * [ ] Normalize weights (for grades and subjects) 
 * [ ] Change weights
+
+
+# Function Flow
+- `buildDriveCard` - Main Drive entry point.
+    - `buildCreateSetupFileCard` - Card Form to create a new Setup file.
+        - `onCreateSetupFile` - Callback to create a new Setup file.
+            - `createSetupFile` - Creates the new Setup file.
+                - `generateCalendar` - Add the calendar to the Setup file.

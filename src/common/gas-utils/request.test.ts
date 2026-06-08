@@ -258,9 +258,13 @@ describe("GAS Util, Requests", () => {
 
         beforeEach(() => {
             mockParsedData = {
-                mappedSheets: {},
+                mappedSheets: {
+                    TemplateSheet: { properties: { sheetId: 1 } },
+                    BoundSheet: { properties: {} },
+                },
                 mappedSheetNamedRanges: {
                     TemplateSheet: [{ namedRangeId: "nr-1", name: "TempRange", range: { sheetId: 1 } }],
+                    BoundSheet: [],
                 },
                 mappedRanges: {},
                 dynamicMappedRanges: {},
@@ -268,32 +272,69 @@ describe("GAS Util, Requests", () => {
             };
         });
 
-        it("should handle schema-bound duplication, managing state and named ranges", () => {
+        it("should handle schema-bound duplication for a NEW sheet, managing state and named ranges", () => {
             const { requests, newSheetIds } = addNewSheet({
                 parsedData: mockParsedData,
                 sourceSheetTitle: "TemplateSheet",
-                sourceSheetId: 1,
                 insertSheetIndex: 2,
-                schema: mockSchema,
-                schemaSheetKey: "newTemplate",
+                schemaSheetName: "DataSheet",
             });
 
             expect(requests.length).toBeGreaterThan(0);
             expect(requests[0]?.deleteNamedRange?.namedRangeId).toBe("nr-1");
-            expect(requests[1]?.duplicateSheet?.newSheetName).toBe("BoundSheet");
+            expect(requests[1]?.duplicateSheet?.newSheetName).toBe("DataSheet");
             expect(requests[2]?.addNamedRange?.namedRange?.namedRangeId).toBe("nr-1");
 
             expect(newSheetIds).toEqual([9999]);
-            expect(mockParsedData.mappedSheets.BoundSheet).toBeDefined();
-            expect(mockParsedData.mappedSheetNamedRanges.BoundSheet).toEqual([]);
+            expect(mockParsedData.mappedSheets.DataSheet).toBeDefined();
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toEqual([]);
             expect(mockParsedData.extraSheets).toHaveLength(0);
+        });
+
+        it("should delete existing schema-bound sheet and its named ranges before duplication", () => {
+            // Setup existing sheet and named ranges in the parsed data
+            mockParsedData.mappedSheets.DataSheet = { properties: { sheetId: 555 } };
+            mockParsedData.mappedSheetNamedRanges.DataSheet = [
+                { namedRangeId: "old-nr-1", name: "OldRange", range: { sheetId: 555 } },
+                { namedRangeId: "old-nr-2", name: "OldRangeTwo", range: { sheetId: 555 } },
+            ];
+
+            const { requests, newSheetIds } = addNewSheet({
+                parsedData: mockParsedData,
+                sourceSheetTitle: "TemplateSheet",
+                insertSheetIndex: 2,
+                schemaSheetName: "DataSheet",
+            });
+
+            // Analyze the sequence of generated requests
+            // const deleteTemplateNrReq = requests[0];
+            const deleteOldNr1Req = requests[1];
+            const deleteOldNr2Req = requests[2];
+            const deleteOldSheetReq = requests[3];
+            const duplicateReq = requests[4];
+            // const restoreTemplateNrReq = requests[5];
+
+            // Assertions on the specific deletion logic
+            expect(deleteOldNr1Req?.deleteNamedRange?.namedRangeId).toBe("old-nr-1");
+            expect(deleteOldNr2Req?.deleteNamedRange?.namedRangeId).toBe("old-nr-2");
+            expect(deleteOldSheetReq?.deleteSheet?.sheetId).toBe(555);
+
+            // Assert duplication still happens correctly
+            expect(duplicateReq?.duplicateSheet?.newSheetName).toBe("DataSheet");
+            expect(duplicateReq?.duplicateSheet?.insertSheetIndex).toBe(2);
+
+            // Assert State mutations
+            expect(newSheetIds).toEqual([9999]);
+            // The old sheet object should be replaced with the new one (having the mocked 9999 ID)
+            expect(mockParsedData.mappedSheets.DataSheet?.properties?.sheetId).toBe(9999);
+            // The old named ranges should be wiped clean for the new sheet
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toEqual([]);
         });
 
         it("should handle non-schema multiple sheet duplications", () => {
             const { requests, newSheetIds } = addNewSheet({
                 parsedData: mockParsedData,
-                sourceSheetTitle: "TemplateSheet",
-                sourceSheetId: 1,
+                sourceSheetTitle: "BoundSheet",
                 insertSheetIndex: 2,
                 multipleSheetNames: ["ExtraOne", "ExtraTwo"],
             });
