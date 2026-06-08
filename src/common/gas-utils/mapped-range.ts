@@ -208,11 +208,13 @@ export function resizeMappedRange({
     });
 
     // Check if the range actually changed coordinates or size
+    const normalize = (value: number | undefined): number => value ?? 0;
+
     const rangeChanged =
-        originalRange.startRowIndex !== newRange.startRowIndex ||
-        originalRange.endRowIndex !== newRange.endRowIndex ||
-        originalRange.startColumnIndex !== newRange.startColumnIndex ||
-        originalRange.endColumnIndex !== newRange.endColumnIndex;
+        normalize(originalRange.startRowIndex) !== normalize(newRange.startRowIndex) ||
+        normalize(originalRange.endRowIndex) !== normalize(newRange.endRowIndex) ||
+        normalize(originalRange.startColumnIndex) !== normalize(newRange.startColumnIndex) ||
+        normalize(originalRange.endColumnIndex) !== normalize(newRange.endColumnIndex);
 
     // If we are modifying bounds without relying purely on Sheets' auto-shift, update the NamedRange directly
     if (rangeChanged && (rowBehavior === RangeBehavior.MODIFY_RANGE || colBehavior === RangeBehavior.MODIFY_RANGE)) {

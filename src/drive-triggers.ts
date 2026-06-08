@@ -3,7 +3,7 @@ import { FileType } from "./common/gas-utils";
 import { buildCreateSetupFileCard } from "./setup/cards";
 
 /**
- *
+ * Main entry point of program from Drive.
  */
 export function buildDriveCard(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.Card {
     const selectedFile = e.drive?.selectedItems?.[0];

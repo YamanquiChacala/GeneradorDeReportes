@@ -3,7 +3,7 @@ import { FileType } from "./common/gas-utils";
 import { buildEditSetupFileCard } from "./setup/cards";
 
 /**
- *
+ * Main entry point of program from Sheets
  */
 export function buildSheetsCard(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.Card {
     if (!e.sheets?.addonHasFileScopePermission) {

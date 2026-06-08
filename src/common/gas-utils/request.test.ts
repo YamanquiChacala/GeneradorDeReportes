@@ -109,6 +109,16 @@ describe("GAS Util, Requests", () => {
             expect(fields).toContain("gridProperties.frozenColumnCount");
             expect(fields).not.toContain("gridProperties.hideGridlines");
         });
+
+        it("should return an empty request if no options are changed", () => {
+            const req = buildUpdateSheetPropertiesRequest({ sheetId: 1, hideGridlines: false });
+            expect(req).toEqual({
+                updateSheetProperties: {
+                    properties: { sheetId: 1 },
+                    fields: "",
+                },
+            });
+        });
     });
 
     describe("buildUpdateCellsRequest", () => {
@@ -233,7 +243,7 @@ describe("GAS Util, Requests", () => {
             data: {
                 sheetName: "DataSheet",
                 ranges: { staticKey: "StaticRange" },
-                dynamicRanges: { dynPrefix: "DynPrefix_" },
+                dynamicRanges: { dynPrefix: "DynPrefix_", dyn2Prefix: "Dyn2" },
             },
             newTemplate: {
                 sheetName: "BoundSheet",
@@ -302,11 +312,12 @@ describe("GAS Util, Requests", () => {
         beforeEach(() => {
             mockParsedData = {
                 mappedSheets: {
+                    TemplateSheet: { properties: { sheetId: 12, title: "TemplateSheet" } },
                     DataSheet: { properties: { sheetId: 42, title: "DataSheet" } },
                 },
-                mappedSheetNamedRanges: {},
+                mappedSheetNamedRanges: { DataSheet: [] },
                 mappedRanges: {},
-                dynamicMappedRanges: {},
+                dynamicMappedRanges: { dyn2Prefix: [] },
                 extraSheets: [],
             };
         });
@@ -340,6 +351,23 @@ describe("GAS Util, Requests", () => {
             expect(mockParsedData.mappedRanges.TempRange?.sheet.properties?.sheetId).toBe(42);
         });
 
+        it("should successfully add a static named range when still not declared in mappedSheetNamedRanges", () => {
+            const req = addNewNamedRange({
+                parsedData: mockParsedData,
+                sheetTitle: "TemplateSheet",
+                gridRange: { startRowIndex: 1, endRowIndex: 2 },
+                staticRangeKey: "TempRange",
+            });
+
+            expect(req.addNamedRange?.namedRange?.namedRangeId).toBe("mock-uuid-1234");
+            expect(req.addNamedRange?.namedRange?.name).toBe("TempRange");
+            expect(req.addNamedRange?.namedRange?.range?.sheetId).toBe(12);
+
+            expect(mockParsedData.mappedSheetNamedRanges.TemplateSheet).toHaveLength(1);
+            expect(mockParsedData.mappedRanges.TempRange).toBeDefined();
+            expect(mockParsedData.mappedRanges.TempRange?.sheet.properties?.sheetId).toBe(12);
+        });
+
         it("should successfully add a dynamic named range and update state", () => {
             const req = addNewNamedRange({
                 parsedData: mockParsedData,
@@ -354,6 +382,22 @@ describe("GAS Util, Requests", () => {
             expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
             expect(mockParsedData.dynamicMappedRanges.dynPrefix).toHaveLength(1);
             expect(mockParsedData.dynamicMappedRanges.dynPrefix?.[0]?.namedRange.name).toBe("dyn_A_1");
+        });
+
+        it("should successfully add a dynamic named range and update state", () => {
+            const req = addNewNamedRange({
+                parsedData: mockParsedData,
+                sheetTitle: "DataSheet",
+                gridRange: { startRowIndex: 5, endRowIndex: 10 },
+                rangeName: "dyn2_A_1",
+                dynamicRangeKey: "dyn2Prefix",
+            });
+
+            expect(req.addNamedRange?.namedRange?.name).toBe("dyn2_A_1");
+
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.dyn2Prefix).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.dyn2Prefix?.[0]?.namedRange.name).toBe("dyn2_A_1");
         });
     });
 });

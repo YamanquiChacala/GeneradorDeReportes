@@ -292,6 +292,18 @@ describe("GAS Utils, Mapped Range", () => {
             });
         });
 
+        it("should trigger INSERT_DELETE but not modify if the target is already the right size", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 5,
+                targetCols: 5,
+                rowBehavior: RangeBehavior.INSERT_DELETE,
+                colBehavior: RangeBehavior.INSERT_DELETE,
+            });
+
+            expect(result.requests).toHaveLength(0);
+        });
+
         it("should trigger MODIFY_RANGE and update named range definitions without inserting/deleting cells", () => {
             const result = resizeMappedRange({
                 target: testRange,
@@ -392,8 +404,7 @@ describe("GAS Utils, Mapped Range", () => {
                 colBehavior: RangeBehavior.MODIFY_RANGE,
             });
 
-            expect(result.requests).toHaveLength(1);
-            expect(testRange.namedRange.range.endRowIndex).toBe(5);
+            expect(result.requests).toHaveLength(0);
         });
 
         it("should evaluate rangeChanged as false when no dimensions or offsets are modified", () => {
@@ -407,7 +418,7 @@ describe("GAS Utils, Mapped Range", () => {
             });
 
             // Even with MODIFY_RANGE, no request is pushed because rangeChanged is false
-            expect(result.requests).toHaveLength(1);
+            expect(result.requests).toHaveLength(0);
         });
 
         it("should detect changes purely on column start index for rangeChanged short-circuit", () => {
@@ -415,7 +426,7 @@ describe("GAS Utils, Mapped Range", () => {
             const result = resizeMappedRange({
                 target: testRange,
                 colOffset: 2, // Changes startColumnIndex
-                rowBehavior: RangeBehavior.IGNORE,
+                rowBehavior: RangeBehavior.MODIFY_RANGE,
                 colBehavior: RangeBehavior.MODIFY_RANGE,
             });
 

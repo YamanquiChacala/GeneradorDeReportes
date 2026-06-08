@@ -19,6 +19,7 @@ module.exports = {
         "!src/common/**/*.gas.test.ts", // Exclude GAS test files from the report
         "!src/common/**/*.d.ts", // Exclude TypeScript definition files
         "!src/common/gas-parts/*",
+        "!**/*base64*",
     ],
     // 'text' gives the terminal output. 'html' gives the browser report.
     // 'lcov' creates the lcov.info file needed for VSCode Coverage Gutter.

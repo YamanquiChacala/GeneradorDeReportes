@@ -271,11 +271,10 @@ export function addNewSheet<T extends NestedSheetSchema>({
     const newSheetIds: number[] = [];
 
     // Temporarly remove named ranges before duplicating template
-    const templateNamedRanges = parsedData.mappedSheetNamedRanges[sourceSheetTitle] ?? [];
+    // biome-ignore lint/style/noNonNullAssertion: `ExtractSheetNames<T>` are the keys of the object.
+    const templateNamedRanges = parsedData.mappedSheetNamedRanges[sourceSheetTitle]!;
     for (const namedRange of templateNamedRanges) {
-        if (namedRange.namedRangeId) {
-            requests.push({ deleteNamedRange: { namedRangeId: namedRange.namedRangeId } });
-        }
+        requests.push({ deleteNamedRange: { namedRangeId: namedRange.namedRangeId } });
     }
 
     let sheetNamesToCreate: string[] = [];
