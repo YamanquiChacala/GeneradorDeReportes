@@ -2,6 +2,7 @@ import { getRandomId } from "../setup-utils";
 import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
 import { createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
+import { offsetGridRange } from "./range";
 import {
     type ExtractDynamicRangeKeys,
     type ExtractRangeNames,
@@ -59,6 +60,75 @@ export function buildAddBandingRequest(
             },
         },
     };
+}
+
+/**
+ * Generates batch updates to either modify or create a protectedRange.
+ */
+export function buildProtectSheetRequest<T extends NestedSheetSchema>(
+    parsedData: ParsedSpreadsheet<T>,
+    sheetName: ExtractSheetNames<T>,
+    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
+): GoogleAppsScript.Sheets.Schema.Request {
+    const getSheet = createRequiredGetter(parsedData.mappedSheets, "hoja para proteger");
+    const sheet = getSheet(sheetName);
+
+    return buildSingleSheetProtectRequest(sheet, unprotectedRanges);
+}
+
+/**
+ * Generates batch updates to add or modify protectedRanges of a series of sheets.
+ */
+export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
+    parsedData: ParsedSpreadsheet<T>,
+    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
+): GoogleAppsScript.Sheets.Schema.Request[] {
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    for (const sheet of parsedData.extraSheets) {
+        const sheetId = sheet.properties?.sheetId ?? 0;
+        const sheetUnprotectedRanges = unprotectedRanges?.map((range) => offsetGridRange({ origin: range, sheetId }));
+        requests.push(buildSingleSheetProtectRequest(sheet, sheetUnprotectedRanges));
+    }
+
+    return requests;
+}
+
+/**
+ * Helper function to generate a protect request for a single sheet.
+ * Mutates the sheet.protectedRanges property in place.
+ */
+function buildSingleSheetProtectRequest(
+    sheet: GoogleAppsScript.Sheets.Schema.Sheet,
+    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
+): GoogleAppsScript.Sheets.Schema.Request {
+    const sheetId = sheet.properties?.sheetId;
+    const sheetName = sheet.properties?.title;
+    const protectedRanges = sheet.protectedRanges;
+
+    const newProtectedRange: GoogleAppsScript.Sheets.Schema.ProtectedRange = {
+        range: { sheetId },
+        description: sheetName,
+        warningOnly: false,
+        unprotectedRanges,
+    };
+
+    let request: GoogleAppsScript.Sheets.Schema.Request;
+
+    if (!protectedRanges || protectedRanges.length === 0) {
+        newProtectedRange.protectedRangeId = getRandomId();
+        request = { addProtectedRange: { protectedRange: newProtectedRange } };
+    } else if (protectedRanges.length !== 1) {
+        throw new Error("Demasiados rangos protegidos en la hoja.");
+    } else {
+        newProtectedRange.protectedRangeId = protectedRanges[0]?.protectedRangeId;
+        request = { updateProtectedRange: { protectedRange: newProtectedRange } };
+    }
+
+    // Update the sheet object
+    sheet.protectedRanges = [newProtectedRange];
+
+    return request;
 }
 
 interface BuildUpdateSheetPropertiesParams {

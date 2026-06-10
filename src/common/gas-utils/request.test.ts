@@ -5,6 +5,8 @@ import {
     buildAddBandingRequest,
     buildCopyPasteRequest,
     buildMergeCellsRequest,
+    buildProtectExtraSheetRequests,
+    buildProtectSheetRequest,
     buildTransferRequests,
     buildUpdateCellsRequest,
     buildUpdateSheetPropertiesRequest,
@@ -17,6 +19,26 @@ jest.mock("../setup-utils", () => ({
 }));
 
 describe("GAS Util, Requests", () => {
+    // --- State Mutation Tests Setup ---
+    const mockSchema = {
+        sheets: {
+            template: {
+                sheetName: "TemplateSheet",
+                ranges: { tempRange: "TempRange" },
+            },
+            data: {
+                sheetName: "DataSheet",
+                ranges: { staticKey: "StaticRange" },
+                dynamicRanges: { dynPrefix: "DynPrefix_", dyn2Prefix: "Dyn2" },
+            },
+            newTemplate: {
+                sheetName: "BoundSheet",
+            },
+        },
+    } as const;
+
+    type MockSchema = typeof mockSchema;
+
     beforeAll(() => {
         global.Utilities = {
             getUuid: jest.fn(() => "mock-uuid-1234"),
@@ -150,6 +172,208 @@ describe("GAS Util, Requests", () => {
         });
     });
 
+    describe("buildProtectSheetRequest", () => {
+        let mockParsedData: ParsedSpreadsheet<MockSchema>;
+
+        beforeEach(() => {
+            mockParsedData = {
+                mappedSheets: {
+                    TemplateSheet: {
+                        properties: { sheetId: 1, title: "Template" },
+                        protectedRanges: [{ protectedRangeId: 25, range: { sheetId: 1 }, description: "old1" }],
+                    },
+                    DataSheet: { properties: { title: "Data" } },
+                    BoundSheet: { properties: { sheetId: 2, title: "Bound" }, protectedRanges: [{ range: { sheetId: 1 } }, { range: { sheetId: 1 } }] },
+                },
+                mappedSheetNamedRanges: {},
+                mappedRanges: {},
+                dynamicMappedRanges: {},
+                extraSheets: [],
+            };
+        });
+
+        it("crates `addProtectedRange` to a sheet that doesn't have protection", () => {
+            const response = buildProtectSheetRequest(mockParsedData, "DataSheet");
+
+            expect(response).toEqual({
+                addProtectedRange: {
+                    protectedRange: {
+                        protectedRangeId: 9999,
+                        range: { sheetId: undefined },
+                        description: "Data",
+                        warningOnly: false,
+                    },
+                },
+            });
+
+            expect(mockParsedData.mappedSheets.DataSheet?.protectedRanges).toEqual([
+                {
+                    protectedRangeId: 9999,
+                    range: { sheetId: undefined },
+                    description: "Data",
+                    warningOnly: false,
+                    unprotectedRanges: undefined,
+                },
+            ]);
+        });
+
+        it("crates `addProtectedRange` and adds unprotected ranges", () => {
+            const unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { endRowIndex: 1, endColumnIndex: 1 },
+                { startRowIndex: 1, startColumnIndex: 1, endRowIndex: 2, endColumnIndex: 2 },
+            ];
+            const response = buildProtectSheetRequest(mockParsedData, "DataSheet", unprotectedRanges);
+
+            expect(response).toEqual({
+                addProtectedRange: {
+                    protectedRange: {
+                        protectedRangeId: 9999,
+                        range: { sheetId: undefined },
+                        description: "Data",
+                        warningOnly: false,
+                        unprotectedRanges,
+                    },
+                },
+            });
+        });
+
+        it("crates `updateProtectedRange` to a sheet that already has protection", () => {
+            const response = buildProtectSheetRequest(mockParsedData, "TemplateSheet");
+
+            expect(response).toEqual({
+                updateProtectedRange: {
+                    protectedRange: {
+                        protectedRangeId: 25,
+                        range: { sheetId: 1 },
+                        description: "Template",
+                        warningOnly: false,
+                    },
+                },
+            });
+        });
+
+        it("throws if a sheet has too many protected ranges", () => {
+            expect(() => buildProtectSheetRequest(mockParsedData, "BoundSheet")).toThrow();
+        });
+    });
+
+    describe("buildProtectExtraSheetRequests", () => {
+        let mockParsedData: ParsedSpreadsheet<MockSchema>;
+
+        beforeEach(() => {
+            // Resetting the mock before each test to ensure clean state for mutation checks
+            mockParsedData = {
+                mappedSheets: {}, // Omitted for brevity since extraSheets is the focus here
+                mappedSheetNamedRanges: {},
+                mappedRanges: {},
+                dynamicMappedRanges: {},
+                extraSheets: [
+                    {
+                        properties: { sheetId: 3, title: "Extra1" },
+                    },
+                    {
+                        properties: { sheetId: 4, title: "Extra2" },
+                        protectedRanges: [{ protectedRangeId: 42, range: { sheetId: 4 }, description: "old4" }],
+                    },
+                    {
+                        // Corner case: Missing sheetId in properties
+                        properties: { title: "Extra3_NoId" },
+                    },
+                ],
+            };
+        });
+
+        it("returns an empty array if extraSheets is empty", () => {
+            const emptyMockData: ParsedSpreadsheet<MockSchema> = {
+                mappedSheets: {}, // Omitted for brevity since extraSheets is the focus here
+                mappedSheetNamedRanges: {},
+                mappedRanges: {},
+                dynamicMappedRanges: {},
+                extraSheets: [],
+            };
+            const response = buildProtectExtraSheetRequests(emptyMockData);
+            expect(response).toEqual([]);
+        });
+
+        it("generates both add and update requests for all extra sheets", () => {
+            const response = buildProtectExtraSheetRequests(mockParsedData);
+
+            expect(response).toHaveLength(3);
+
+            // Extra1: Should generate an add request
+            expect(response[0]).toEqual({
+                addProtectedRange: {
+                    protectedRange: {
+                        protectedRangeId: 9999,
+                        range: { sheetId: 3 },
+                        description: "Extra1",
+                        warningOnly: false,
+                    },
+                },
+            });
+
+            // Extra2: Should generate an update request
+            expect(response[1]).toEqual({
+                updateProtectedRange: {
+                    protectedRange: {
+                        protectedRangeId: 42,
+                        range: { sheetId: 4 },
+                        description: "Extra2",
+                        warningOnly: false,
+                    },
+                },
+            });
+
+            // Extra3_NoId: Should default sheetId to undefined in the range
+            expect(response[2]).toEqual({
+                addProtectedRange: {
+                    protectedRange: {
+                        protectedRangeId: 9999,
+                        range: { sheetId: undefined },
+                        description: "Extra3_NoId",
+                        warningOnly: false,
+                    },
+                },
+            });
+        });
+
+        it("applies offsetGridRange to unprotectedRanges using the correct sheetId", () => {
+            const unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [{ startRowIndex: 1, endRowIndex: 5 }];
+
+            const response = buildProtectExtraSheetRequests(mockParsedData, unprotectedRanges);
+
+            expect(response[0]?.addProtectedRange?.protectedRange?.unprotectedRanges).toEqual([{ startRowIndex: 1, endRowIndex: 5, sheetId: 3 }]);
+
+            expect(response[1]?.updateProtectedRange?.protectedRange?.unprotectedRanges).toEqual([{ startRowIndex: 1, endRowIndex: 5, sheetId: 4 }]);
+
+            expect(response[2]?.addProtectedRange?.protectedRange?.unprotectedRanges).toEqual([{ startRowIndex: 1, endRowIndex: 5, sheetId: 0 }]);
+        });
+
+        it("mutates the extraSheets objects to include the newly generated protected ranges", () => {
+            buildProtectExtraSheetRequests(mockParsedData);
+
+            expect(mockParsedData.extraSheets[0]?.protectedRanges).toEqual([
+                {
+                    protectedRangeId: 9999,
+                    range: { sheetId: 3 },
+                    description: "Extra1",
+                    warningOnly: false,
+                    unprotectedRanges: undefined,
+                },
+            ]);
+
+            expect(mockParsedData.extraSheets[1]?.protectedRanges).toEqual([
+                {
+                    protectedRangeId: 42,
+                    range: { sheetId: 4 },
+                    description: "Extra2",
+                    warningOnly: false,
+                    unprotectedRanges: undefined,
+                },
+            ]);
+        });
+    });
+
     describe("buildTransferRequests", () => {
         let mockDestination: MappedNamedRange;
 
@@ -232,26 +456,6 @@ describe("GAS Util, Requests", () => {
             expect(mockDestination.namedRange.range.endRowIndex).toBe(0);
         });
     });
-
-    // --- State Mutation Tests Setup ---
-    const mockSchema = {
-        sheets: {
-            template: {
-                sheetName: "TemplateSheet",
-                ranges: { tempRange: "TempRange" },
-            },
-            data: {
-                sheetName: "DataSheet",
-                ranges: { staticKey: "StaticRange" },
-                dynamicRanges: { dynPrefix: "DynPrefix_", dyn2Prefix: "Dyn2" },
-            },
-            newTemplate: {
-                sheetName: "BoundSheet",
-            },
-        },
-    } as const;
-
-    type MockSchema = typeof mockSchema;
 
     describe("State Mutation: addNewSheet", () => {
         let mockParsedData: ParsedSpreadsheet<MockSchema>;

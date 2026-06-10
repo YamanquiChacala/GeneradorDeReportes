@@ -29,6 +29,7 @@
 # General
 * [x] Switch from using `formattedValue` to use `effectiveValue`.
 * [x] Use `createRequiredGetter` and siplified names everywhere.
+* [ ] Request "sheets.protectedRanges" to be able to edit them from the `protectedRangeId: number`;
 
 # Menu
 ## Assistance
