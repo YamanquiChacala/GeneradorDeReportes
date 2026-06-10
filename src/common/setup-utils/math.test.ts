@@ -1,38 +1,7 @@
 import type { AcademicField, WeightedSubject } from "../report-utils";
-import { calculateAttendanceGridSize, calculatePerClassLayout, getRandomId, normalizeSubjectWeights, normalizeTrimesterWeights } from "./math";
+import { calculateAttendanceGridSize, calculatePerClassLayout, normalizeSubjectWeights, normalizeTrimesterWeights } from "./math";
 
 describe("Setup Utils. Math", () => {
-    describe("getRandomId", () => {
-        let randomSpy: jest.SpyInstance;
-
-        beforeEach(() => {
-            // Spy on Math.random to control its output for deterministic tests
-            randomSpy = jest.spyOn(Math, "random");
-        });
-
-        afterEach(() => {
-            randomSpy.mockRestore();
-        });
-
-        it("returns the minimum possible value when Math.random is 0", () => {
-            randomSpy.mockReturnValue(0);
-            expect(getRandomId()).toBe(0);
-        });
-
-        it("returns a predictable ID based on Math.random output", () => {
-            randomSpy.mockReturnValue(0.5);
-            // 0.5 * (2^31 - 1) = 0.5 * 2147483647 = 1073741823.5
-            // Math.floor(1073741823.5) = 1073741823
-            expect(getRandomId()).toBe(1073741823);
-        });
-
-        it("returns the maximum possible value when Math.random is close to 1", () => {
-            randomSpy.mockReturnValue(0.9999999999);
-            // Should be exactly 2^31 - 2 due to flooring
-            expect(getRandomId()).toBe(2147483646);
-        });
-    });
-
     describe("calculateAttendanceGridSize", () => {
         it("calculates the correct grid size when attendancePerClass is false", () => {
             const frozenRows = 2;

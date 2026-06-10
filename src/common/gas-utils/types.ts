@@ -15,6 +15,7 @@ export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
     readonly mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
     readonly dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
     readonly extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[];
+    readonly usedIds: Set<number>;
 }
 
 export interface NestedSheetSchema {

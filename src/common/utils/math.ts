@@ -1,4 +1,16 @@
 /**
+ * Generates a random 30 bit integer ID
+ */
+export function getRandomId(usedIds: Set<number>): number {
+    let newId: number;
+    do {
+        newId = Math.floor(Math.random() * 0x80000000);
+    } while (usedIds.has(newId));
+    usedIds.add(newId);
+    return newId;
+}
+
+/**
  * Calculates how much to move in a circle of `n` elements to go over every element without repeating, while jumping as much as possible.
  */
 export function getStep(n: number) {

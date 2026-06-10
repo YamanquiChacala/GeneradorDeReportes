@@ -10,7 +10,7 @@ import {
     type ParsedSpreadsheet,
 } from "../../common/gas-utils";
 import type { ReportPersistentData } from "../../common/report-utils";
-import { getRandomId } from "../../common/setup-utils";
+import { getRandomId } from "../../common/utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
@@ -93,7 +93,7 @@ function buildSheetsRequests(
     for (const studentRow of persistenData.students) {
         if (studentRow.type === "student") {
             // Create a random id for the sheet.
-            const newSheetId = getRandomId();
+            const newSheetId = getRandomId(new Set());
 
             insertSheetIndex++;
 

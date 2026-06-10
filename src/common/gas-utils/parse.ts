@@ -9,8 +9,9 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
     const mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>> = {};
     const dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>> = {};
     const extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[] = [];
+    const usedIds = new Set<number>();
 
-    if (!spreadsheet?.sheets) return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets };
+    if (!spreadsheet?.sheets) return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets, usedIds };
 
     const allowedSheetNames = new Set<string>();
     const allowedRangeNames = new Set<string>();
@@ -34,9 +35,45 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
 
     const sheetIdLookup: Record<number, GoogleAppsScript.Sheets.Schema.Sheet> = {};
 
+    // Collect spreadsheet-level Developer Metadata IDs if present
+    if (spreadsheet.developerMetadata) {
+        for (const meta of spreadsheet.developerMetadata) {
+            if (meta.metadataId != null) usedIds.add(meta.metadataId);
+        }
+    }
+
     for (const sheet of spreadsheet.sheets) {
         sheetIdLookup[sheet.properties?.sheetId ?? 0] = sheet;
         const sheetTitle = sheet.properties?.title;
+
+        // Track the sheet ID
+        if (sheet.properties?.sheetId != null) {
+            usedIds.add(sheet.properties.sheetId);
+        }
+
+        // Track Protected Ranges
+        if (sheet.protectedRanges) {
+            for (const pr of sheet.protectedRanges) {
+                if (pr.protectedRangeId != null) usedIds.add(pr.protectedRangeId);
+            }
+        }
+
+        // Track other elements that consume numeric IDs just to be safe
+        if (sheet.charts) {
+            for (const chart of sheet.charts) {
+                if (chart.chartId != null) usedIds.add(chart.chartId);
+            }
+        }
+        if (sheet.bandedRanges) {
+            for (const br of sheet.bandedRanges) {
+                if (br.bandedRangeId != null) usedIds.add(br.bandedRangeId);
+            }
+        }
+        if (sheet.filterViews) {
+            for (const fv of sheet.filterViews) {
+                if (fv.filterViewId != null) usedIds.add(fv.filterViewId);
+            }
+        }
 
         if (sheetTitle != null) {
             if (allowedSheetNames.has(sheetTitle)) {
@@ -79,7 +116,7 @@ export function parseSpreadsheet<T extends NestedSheetSchema>(spreadsheet: Googl
         }
     }
 
-    return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets };
+    return { mappedSheets, mappedSheetNamedRanges, mappedRanges, dynamicMappedRanges, extraSheets, usedIds };
 }
 
 /**

@@ -14,7 +14,7 @@ import {
 import { type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
 
 // Mock the random ID generator for consistent test assertions
-jest.mock("../setup-utils", () => ({
+jest.mock("../utils", () => ({
     getRandomId: jest.fn(() => 9999),
 }));
 
@@ -189,6 +189,7 @@ describe("GAS Util, Requests", () => {
                 mappedRanges: {},
                 dynamicMappedRanges: {},
                 extraSheets: [],
+                usedIds: new Set(),
             };
         });
 
@@ -280,6 +281,7 @@ describe("GAS Util, Requests", () => {
                         properties: { title: "Extra3_NoId" },
                     },
                 ],
+                usedIds: new Set(),
             };
         });
 
@@ -290,6 +292,7 @@ describe("GAS Util, Requests", () => {
                 mappedRanges: {},
                 dynamicMappedRanges: {},
                 extraSheets: [],
+                usedIds: new Set(),
             };
             const response = buildProtectExtraSheetRequests(emptyMockData);
             expect(response).toEqual([]);
@@ -473,6 +476,7 @@ describe("GAS Util, Requests", () => {
                 mappedRanges: {},
                 dynamicMappedRanges: {},
                 extraSheets: [],
+                usedIds: new Set(),
             };
         });
 
@@ -564,6 +568,7 @@ describe("GAS Util, Requests", () => {
                 mappedRanges: {},
                 dynamicMappedRanges: { dyn2Prefix: [] },
                 extraSheets: [],
+                usedIds: new Set(),
             };
         });
 

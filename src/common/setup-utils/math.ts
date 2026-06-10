@@ -2,13 +2,6 @@ import type { AcademicField, WeightedSubject } from "../report-utils";
 import type { SubjectBlockLayout } from "./types";
 
 /**
- * Generates a random 30 bit integer ID
- */
-export function getRandomId(): number {
-    return Math.floor(Math.random() * (2 ** 31 - 1));
-}
-
-/**
  * Calculate the size of the Attendance sheet.
  */
 export function calculateAttendanceGridSize(

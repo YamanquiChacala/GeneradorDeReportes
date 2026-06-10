@@ -1,4 +1,4 @@
-import { getRandomId } from "../setup-utils";
+import { getRandomId } from "../utils";
 import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
 import { createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
@@ -73,7 +73,7 @@ export function buildProtectSheetRequest<T extends NestedSheetSchema>(
     const getSheet = createRequiredGetter(parsedData.mappedSheets, "hoja para proteger");
     const sheet = getSheet(sheetName);
 
-    return buildSingleSheetProtectRequest(sheet, unprotectedRanges);
+    return buildSingleSheetProtectRequest(sheet, parsedData.usedIds, unprotectedRanges);
 }
 
 /**
@@ -88,7 +88,7 @@ export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
     for (const sheet of parsedData.extraSheets) {
         const sheetId = sheet.properties?.sheetId ?? 0;
         const sheetUnprotectedRanges = unprotectedRanges?.map((range) => offsetGridRange({ origin: range, sheetId }));
-        requests.push(buildSingleSheetProtectRequest(sheet, sheetUnprotectedRanges));
+        requests.push(buildSingleSheetProtectRequest(sheet, parsedData.usedIds, sheetUnprotectedRanges));
     }
 
     return requests;
@@ -100,6 +100,7 @@ export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
  */
 function buildSingleSheetProtectRequest(
     sheet: GoogleAppsScript.Sheets.Schema.Sheet,
+    usedIds: Set<number>,
     unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
 ): GoogleAppsScript.Sheets.Schema.Request {
     const sheetId = sheet.properties?.sheetId;
@@ -116,7 +117,7 @@ function buildSingleSheetProtectRequest(
     let request: GoogleAppsScript.Sheets.Schema.Request;
 
     if (!protectedRanges || protectedRanges.length === 0) {
-        newProtectedRange.protectedRangeId = getRandomId();
+        newProtectedRange.protectedRangeId = getRandomId(usedIds);
         request = { addProtectedRange: { protectedRange: newProtectedRange } };
     } else if (protectedRanges.length !== 1) {
         throw new Error("Demasiados rangos protegidos en la hoja.");
@@ -359,7 +360,7 @@ export function addNewSheet<T extends NestedSheetSchema>({
 
     // Mass duplication
     for (const [index, targetSheetName] of sheetNamesToCreate.entries()) {
-        const newSheetId = getRandomId();
+        const newSheetId = getRandomId(parsedData.usedIds);
         newSheetIds.push(newSheetId);
 
         const targetIndex = insertSheetIndex + index;

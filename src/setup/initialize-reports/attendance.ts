@@ -22,11 +22,10 @@ import {
     calculateCalendarHeaders,
     calculatePerClassLayout,
     generateStudentGrid,
-    getRandomId,
     type Range,
     type Trimesters,
 } from "../../common/setup-utils";
-import { getDistinctHues, getUpperBoundIndex } from "../../common/utils";
+import { getDistinctHues, getRandomId, getUpperBoundIndex } from "../../common/utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
@@ -59,7 +58,7 @@ export function createAttendanceSheet(
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
     // Copy Attendance template
-    const attendanceSheetId = getRandomId();
+    const attendanceSheetId = getRandomId(new Set());
 
     const { frozenCols } = getFrozenRowCols(parsedReport.mappedRanges);
     const trimesters = calculateTrimesters(persistentData, frozenCols);
