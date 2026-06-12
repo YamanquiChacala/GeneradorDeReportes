@@ -5,6 +5,7 @@ import {
     buildCopyPasteRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
+    buildProtectSheetRequest,
     buildUpdateCellsRequest,
     buildUpdateSheetPropertiesRequest,
     createRange,
@@ -32,6 +33,7 @@ export function generateCalendar(setupFileId: string) {
     const fieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
         "sheets.properties.sheetId",
         "sheets.properties.title",
+        "sheets.protectedRanges",
         "sheets.data.rowData.values.effectiveValue",
         "namedRanges",
     );
@@ -45,14 +47,14 @@ export function generateCalendar(setupFileId: string) {
     const { requests: setupRequests, newSheetId: calendarSheetId } = buildSheetSetupRequests(parsedSetup, dates.totalRows);
 
     // Generate the Day-by-Day data and formats
-    const { rowDataArray, monthBlocks, requests: dayRequests } = buildDayDataAndFormats(dates, parsedSetup.mappedRanges, calendarSheetId);
+    const { calendarData, monthBlocks, requests: dayRequests } = buildDayDataAndFormats(dates, parsedSetup.mappedRanges, calendarSheetId);
 
     // Compile all API Requests
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
         ...setupRequests,
         ...dayRequests,
-        ...buildMonthLabelRequests(monthBlocks, rowDataArray, parsedSetup.mappedRanges, calendarSheetId),
-        ...buildFinalizationRequests(parsedSetup, rowDataArray, dates, calendarSheetId),
+        ...buildMonthLabelRequests(monthBlocks, calendarData, parsedSetup.mappedRanges, calendarSheetId),
+        ...buildFinalizationRequests(parsedSetup, calendarData, dates, calendarSheetId),
     ];
 
     // Execute Batch Update
@@ -131,7 +133,7 @@ function buildDayDataAndFormats(
     mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
     calendarSheetId: number,
 ): {
-    rowDataArray: GoogleAppsScript.Sheets.Schema.CellData[][];
+    calendarData: GoogleAppsScript.Sheets.Schema.CellData[][];
     monthBlocks: MonthBlock[];
     requests: GoogleAppsScript.Sheets.Schema.Request[];
 } {
@@ -139,7 +141,7 @@ function buildDayDataAndFormats(
     const getMappedRange = createRequiredGetter(mappedRanges, "rango del calendario");
 
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    const rowDataArray: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    const calendarData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
     const grid = calculateCalendarGrid(dates);
 
@@ -177,10 +179,10 @@ function buildDayDataAndFormats(
             requests.push(buildCopyPasteRequest(formatSource.namedRange.range, destinationRange, PasteType.PASTE_FORMAT));
         });
 
-        rowDataArray.push(rowCells);
+        calendarData.push(rowCells);
     });
 
-    return { rowDataArray, monthBlocks: grid.monthBlocks, requests };
+    return { calendarData, monthBlocks: grid.monthBlocks, requests };
 }
 
 /**
@@ -188,7 +190,7 @@ function buildDayDataAndFormats(
  */
 function buildMonthLabelRequests(
     monthBlocks: MonthBlock[],
-    rowDataArray: GoogleAppsScript.Sheets.Schema.CellData[][],
+    calendarData: GoogleAppsScript.Sheets.Schema.CellData[][],
     mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
     calendarSheetId: number,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
@@ -218,7 +220,7 @@ function buildMonthLabelRequests(
         requests.push(buildMergeCellsRequest(monthMergeRange, MergeType.MERGE_ALL));
 
         // Inject text into the pre-existing row data array
-        const targetRowData = rowDataArray[block.startRow - 1]; // Array starts on row 1, blocks on 0, so we have to substract the header.
+        const targetRowData = calendarData[block.startRow - 1]; // Array starts on row 1, blocks on 0, so we have to substract the header.
         if (targetRowData) {
             targetRowData[0] = { userEnteredValue: { stringValue: monthYearText } };
         }
@@ -232,7 +234,7 @@ function buildMonthLabelRequests(
  */
 function buildFinalizationRequests(
     parsedData: ParsedSpreadsheet<typeof SetupSheetSchema>,
-    rowDataArray: GoogleAppsScript.Sheets.Schema.CellData[][],
+    calendarData: GoogleAppsScript.Sheets.Schema.CellData[][],
     dates: CalendarDates,
     calendarSheetId: number,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
@@ -242,7 +244,7 @@ function buildFinalizationRequests(
 
     const fillCalendarRequest = buildUpdateCellsRequest({
         destination: calendarRange,
-        data: rowDataArray,
+        data: calendarData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue", "dataValidation"),
     });
     if (fillCalendarRequest) requests.push(fillCalendarRequest);
@@ -277,15 +279,7 @@ function buildFinalizationRequests(
     );
 
     // Protect the sheet
-    requests.push({
-        addProtectedRange: {
-            protectedRange: {
-                range: { sheetId: calendarSheetId },
-                description: SetupSheetSchema.sheets.calendar.sheetName,
-                warningOnly: false,
-            },
-        },
-    });
+    requests.push(buildProtectSheetRequest(parsedData, SetupSheetSchema.sheets.calendar.sheetName));
 
     return requests;
 }

@@ -41,8 +41,30 @@
 
 
 # Function Flow
-- `buildDriveCard` - Main Drive entry point.
-    - `buildCreateSetupFileCard` - Card Form to create a new Setup file.
-        - `onCreateSetupFile` - Callback to create a new Setup file.
-            - `createSetupFile` - Creates the new Setup file.
-                - `generateCalendar` - Add the calendar to the Setup file.
+
+- 📄 [`buildDriveCard`](../src/drive-triggers.ts) - Main Drive entry point.
+    - 📄 [`buildCreateSetupFileCard`](../src/setup/cards.ts) - Card Form to create a new Setup file.
+        - ⚡ [`onCreateSetupFile`](../src/setup/callbacks.ts) - Callback to create a new Setup file.
+            - 🔀 [`createSetupFile`](../src/setup/crete-setup-file/index.ts) - Creates the new Setup file.
+                - 🛠️ [`generateCalendar`](../src/setup/generate-calendar/index.ts) - Add the calendar to the Setup file.
+    - 📄 TODO Make copy of setup
+    - 📄 TODO Open in sheets to edit
+
+- 📄 [`buildSheetsCard`](../src/sheet-triggers.ts) - Main Sheets entry point.
+    - 📄 [`buildRequestAuthorizationCard`](../src/common/gas-parts/premade-cards.ts) - Ask the user for editing permission.
+        - ⚡ [`onAskPermission`](../src/common/gas-parts/callbacks.ts) - Callback to show Google's default permission query.
+    - 📄 [`buildEditSetupFileCard`](../src/setup/cards.ts) - Setup file editing and report creation card.
+        - ⚡ [`onGenerateCalendar`](../src/setup/callbacks.ts) - Callback to regenerate the calendar.
+            - 🛠️ [`generateCalendar`](../src/setup/generate-calendar/index.ts) - Add the calendar to the Setup file.
+        - ⚡ [`onCopySetupFile`](../src/setup/callbacks.ts)
+            - 🛠️ [`copySetupFile`](../src/setup/copy-setup-file/index.ts) - Creates a copy of the setup file with a given name.
+        - ⚡ [`onInitializeReport`](../src/setup/callbacks.ts) - Uses the setup to initialize a report
+            - 🔀 [`initializeReport`](../src/setup/initialize-reports/index.ts) - Creates a new Report file
+    - 📄 TODO Report file editing (this is the biggest UI entry point)
+
+
+
+📄 (page)
+⚡ (zap)
+⚒️ (hammer)
+🔀 (twisted)

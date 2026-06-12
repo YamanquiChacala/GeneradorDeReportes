@@ -22,7 +22,6 @@ type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
  */
 export function initializeReport(setupFileId: string, parentId: string) {
     // Fetch and parse setup file data
-
     const setupFieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
         "sheets.properties.sheetId",
         "sheets.properties.title",
@@ -37,6 +36,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
         "sheets.properties.title",
         "sheets.properties.gridProperties.rowCount",
         "sheets.properties.gridProperties.columnCount",
+        "sheets.protectedRanges.protectedRangeId",
         "sheets.data.rowData.values.effectiveValue",
         "namedRanges",
     );
