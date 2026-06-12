@@ -81,7 +81,7 @@ function createReportFile(parentId: string, setupMappedRanges: Partial<Record<Ra
     const groupMappedRange = getRange(SetupSheetSchema.sheets.groupData.ranges.groupName);
     const groupName = getCellText({ mappedRange: groupMappedRange });
 
-    if (!groupName) throw new Error("Falta nombre del grupo.");
+    if (groupName === "") throw new Error("Falta nombre del grupo.");
 
     const fileName = sanitizeFileName(groupName);
 

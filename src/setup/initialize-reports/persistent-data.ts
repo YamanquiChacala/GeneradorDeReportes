@@ -64,7 +64,7 @@ export function fillPersistentData(
     // Build response
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...subjectRequests, ...studentRequests, ...calendarDaysRequests, propertiesRequest];
 
-    // Build memory version of the sheet, for use without calling get again.
+    // Build memory version of the persistent data, for use without calling get again.
     const persistentData: ReportPersistentData = {
         protectedSections: {
             habilities: false,

@@ -57,11 +57,11 @@ export function createAttendanceSheet(
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
+    const frozenArea = getFrozenArea(parsedReport.mappedRanges);
+    const trimesters = calculateTrimesters(persistentData, frozenArea);
+
     // Copy Attendance template
     const attendanceSheetId = getRandomId(new Set());
-
-    const { frozenCols } = getFrozenRowCols(parsedReport.mappedRanges);
-    const trimesters = calculateTrimesters(persistentData, frozenCols);
 
     const copyTemplateRequests = copyAttendanceTemplate(parsedReport, persistentData, attendanceSheetId);
 
@@ -84,33 +84,6 @@ export function createAttendanceSheet(
 }
 
 /**
- * Get the start of the editable area.
- */
-function getFrozenRowCols(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>): { frozenRows: number; frozenCols: number } {
-    const getRange = createRequiredGetter(mappedRanges, "rango de formato de calendario");
-
-    const namedRange = getRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.frozenArea).namedRange;
-
-    return {
-        frozenRows: namedRange.range.startRowIndex ?? 0,
-        frozenCols: namedRange.range.startColumnIndex ?? 0,
-    };
-}
-
-/**
- * Calculate trimester column indexes.
- */
-function calculateTrimesters(data: ReportPersistentData, frozenCols: number): Trimesters {
-    const format = (start: number, end: number): Range => (start <= end ? { start: start + frozenCols, end: end + frozenCols } : { start: -1, end: -1 });
-
-    return {
-        trim1Range: format(getUpperBoundIndex(data.calendar, data.configData.dates[0] - 1), getUpperBoundIndex(data.calendar, data.configData.dates[1]) - 1),
-        trim2Range: format(getUpperBoundIndex(data.calendar, data.configData.dates[1]), getUpperBoundIndex(data.calendar, data.configData.dates[2]) - 1),
-        trim3Range: format(getUpperBoundIndex(data.calendar, data.configData.dates[2]), getUpperBoundIndex(data.calendar, data.configData.dates[3]) - 1),
-    };
-}
-
-/**
  * Copies the template and adjusts the properties of the new sheet.
  */
 function copyAttendanceTemplate(
@@ -124,7 +97,7 @@ function copyAttendanceTemplate(
 
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
-    const { frozenRows, frozenCols } = getFrozenRowCols(parsedReport.mappedRanges);
+    const { frozenRows, frozenCols } = getFrozenArea(parsedReport.mappedRanges);
 
     const { finalRowCount, finalColumnCount } = calculateAttendanceGridSize(
         frozenRows,
@@ -207,7 +180,7 @@ function addDateHeaders(sheetId: number, namedRanges: Partial<Record<RangeName, 
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     if (days.length === 0) return requests;
 
-    const { frozenRows, frozenCols } = getFrozenRowCols(namedRanges);
+    const { frozenRows, frozenCols } = getFrozenArea(namedRanges);
 
     // Helper to safely extract 12 month strings from a specific template range
     const extractMonthNames = (rangeName: keyof typeof namedRanges, colStep: number): string[] => {
@@ -311,7 +284,7 @@ function addStudentLists(
 
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de asistencia");
 
-    const { frozenRows, frozenCols } = getFrozenRowCols(mappedRanges);
+    const { frozenRows, frozenCols } = getFrozenArea(mappedRanges);
     const { trim1Range, trim2Range, trim3Range } = trimesters;
 
     const studentListDataRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
@@ -435,7 +408,7 @@ function formatMainArea(
 
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de asistencia");
 
-    const { frozenRows, frozenCols } = getFrozenRowCols(mappedRanges);
+    const { frozenRows, frozenCols } = getFrozenArea(mappedRanges);
 
     // Clean up format
     const noFormatSource = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.formatAttendanceCell).namedRange.range;
@@ -478,4 +451,37 @@ function protectSheet(sheetId: number, unprotectedRanges: GoogleAppsScript.Sheet
     });
 
     return requests;
+}
+
+interface FrozenArea {
+    rows: number;
+    cols: number;
+}
+
+/**
+ * Get the start of the editable area.
+ */
+function getFrozenArea(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>): FrozenArea {
+    const getRange = createRequiredGetter(mappedRanges, "rango de reporte");
+
+    const mappedRange = getRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.frozenArea);
+
+    return {
+        rows: mappedRange.namedRange.range.startRowIndex ?? 0,
+        cols: mappedRange.namedRange.range.startColumnIndex ?? 0,
+    };
+}
+
+/**
+ * Calculate trimester column indexes.
+ */
+function calculateTrimesters(data: ReportPersistentData, frozenArea: FrozenArea): Trimesters {
+    const frozenCols = frozenArea.cols;
+    const format = (start: number, end: number): Range => (start <= end ? { start: start + frozenCols, end: end + frozenCols } : { start: -1, end: -1 });
+
+    return {
+        trim1Range: format(getUpperBoundIndex(data.calendar, data.configData.dates[0] - 1), getUpperBoundIndex(data.calendar, data.configData.dates[1]) - 1),
+        trim2Range: format(getUpperBoundIndex(data.calendar, data.configData.dates[1]), getUpperBoundIndex(data.calendar, data.configData.dates[2]) - 1),
+        trim3Range: format(getUpperBoundIndex(data.calendar, data.configData.dates[2]), getUpperBoundIndex(data.calendar, data.configData.dates[3]) - 1),
+    };
 }
