@@ -22,5 +22,9 @@
     "push": "npm run build && clasp push",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."
+  },
+  "allowScripts": {
+    "esbuild@0.28.0": true,
+    "unrs-resolver@1.12.2": true
   }
 }
