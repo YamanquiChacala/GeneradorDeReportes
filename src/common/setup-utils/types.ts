@@ -1,14 +1,3 @@
-export interface Range {
-    readonly start: number;
-    readonly end: number;
-}
-
-export interface Trimesters {
-    readonly trim1Range: Range;
-    readonly trim3Range: Range;
-    readonly trim2Range: Range;
-}
-
 export interface SubjectBlockLayout {
     readonly subjectIndex: number;
     readonly titleFormatStartRow: number;

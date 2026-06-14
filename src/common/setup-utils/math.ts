@@ -1,19 +1,18 @@
-import type { AcademicField, WeightedSubject } from "../report-utils";
+import type { AcademicField, FrozenArea, WeightedSubject } from "../report-utils";
 import type { SubjectBlockLayout } from "./types";
 
 /**
  * Calculate the size of the Attendance sheet.
  */
 export function calculateAttendanceGridSize(
-    frozenRows: number,
-    frozenCols: number,
+    frozenArea: FrozenArea,
     calendarLength: number,
     studentsCount: number,
     subjectsCount: number,
     attendancePerClass: boolean,
 ): { finalRowCount: number; finalColumnCount: number } {
-    const finalColumnCount = frozenCols + calendarLength;
-    let finalRowCount = frozenRows;
+    const finalColumnCount = frozenArea.cols + calendarLength;
+    let finalRowCount = frozenArea.rows;
 
     if (attendancePerClass) {
         finalRowCount += (2 + studentsCount) * subjectsCount;

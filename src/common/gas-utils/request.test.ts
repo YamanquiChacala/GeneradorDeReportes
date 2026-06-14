@@ -8,6 +8,7 @@ import {
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
     buildTransferRequests,
+    buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
     buildUpdateSheetPropertiesRequest,
 } from "./request";
@@ -67,6 +68,16 @@ describe("GAS Util, Requests", () => {
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
             expect(request.mergeCells?.mergeType).toBe(MergeType.MERGE_ALL);
+        });
+    });
+
+    describe("buildUnmergeCellsRequest", () => {
+        it("should build a valid unmergeCells rquest", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const request = buildUnmergeCellsRequest(range);
+
+            expect(request.unmergeCells).toBeDefined();
+            expect(request.unmergeCells?.range).toBe(range);
         });
     });
 
@@ -566,7 +577,7 @@ describe("GAS Util, Requests", () => {
                 },
                 mappedSheetNamedRanges: { DataSheet: [] },
                 mappedRanges: {},
-                dynamicMappedRanges: { dyn2Prefix: [] },
+                dynamicMappedRanges: { Dyn2: [] },
                 extraSheets: [],
                 usedIds: new Set(),
             };
@@ -624,14 +635,14 @@ describe("GAS Util, Requests", () => {
                 sheetTitle: "DataSheet",
                 gridRange: { startRowIndex: 5, endRowIndex: 10 },
                 rangeName: "dyn_A_1",
-                dynamicRangeKey: "dynPrefix",
+                dynamicRangeKey: "DynPrefix_",
             });
 
             expect(req.addNamedRange?.namedRange?.name).toBe("dyn_A_1");
 
             expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.dynPrefix).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.dynPrefix?.[0]?.namedRange.name).toBe("dyn_A_1");
+            expect(mockParsedData.dynamicMappedRanges.DynPrefix_).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.DynPrefix_?.[0]?.namedRange.name).toBe("dyn_A_1");
         });
 
         it("should successfully add a dynamic named range and update state", () => {
@@ -640,14 +651,14 @@ describe("GAS Util, Requests", () => {
                 sheetTitle: "DataSheet",
                 gridRange: { startRowIndex: 5, endRowIndex: 10 },
                 rangeName: "dyn2_A_1",
-                dynamicRangeKey: "dyn2Prefix",
+                dynamicRangeKey: "Dyn2",
             });
 
             expect(req.addNamedRange?.namedRange?.name).toBe("dyn2_A_1");
 
             expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.dyn2Prefix).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.dyn2Prefix?.[0]?.namedRange.name).toBe("dyn2_A_1");
+            expect(mockParsedData.dynamicMappedRanges.Dyn2).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.Dyn2?.[0]?.namedRange.name).toBe("dyn2_A_1");
         });
     });
 });

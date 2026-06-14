@@ -96,16 +96,16 @@ describe("GAS Utils, Parse", () => {
             expect("OtherConfigRange" in result.mappedRanges).toBe(false);
 
             // Check dynamic named ranges mapping
-            expect(result.dynamicMappedRanges.students).toBeDefined();
-            expect(result.dynamicMappedRanges.students?.length).toBe(2);
-            expect(result.dynamicMappedRanges.students?.map((r) => r.namedRange.range.sheetId)).toEqual([1, 1]);
+            expect(result.dynamicMappedRanges.student).toBeDefined();
+            expect(result.dynamicMappedRanges.student?.length).toBe(2);
+            expect(result.dynamicMappedRanges.student?.map((r) => r.namedRange.range.sheetId)).toEqual([1, 1]);
 
-            expect(result.dynamicMappedRanges.temps).toBeDefined();
-            expect(result.dynamicMappedRanges.temps?.length).toBe(2);
+            expect(result.dynamicMappedRanges.temp_).toBeDefined();
+            expect(result.dynamicMappedRanges.temp_?.length).toBe(2);
 
             // Verify Static Priority: "student_static" should be in mappedRanges, NOT in dynamicMappedRanges.students
             expect(result.mappedRanges[schema.sheets.config.ranges.overlap]).toBeDefined();
-            expect(result.dynamicMappedRanges.students?.length).toBe(2);
+            expect(result.dynamicMappedRanges.student?.length).toBe(2);
 
             // Check the sheetNamedRanges array mapping
             const configSheetRanges = result.mappedSheetNamedRanges[schema.sheets.config.sheetName];
@@ -116,6 +116,10 @@ describe("GAS Utils, Parse", () => {
             expect(rangeNames).toContain("UsersRange");
             expect(rangeNames).toContain("OtherConfigRange");
             expect(rangeNames).toContain("student00");
+
+            // Basic check for usedIds on standard sheet
+            expect(result.usedIds.has(1)).toBe(true);
+            expect(result.usedIds.has(2)).toBe(true);
         });
 
         it("should safely handle an undefined spreadsheet or missing sheets array", () => {
@@ -125,10 +129,14 @@ describe("GAS Utils, Parse", () => {
             expect(result1.mappedSheetNamedRanges).toEqual({});
             expect(result1.dynamicMappedRanges).toEqual({});
             expect(result1.extraSheets).toEqual([]);
+            expect(result1.usedIds).toBeInstanceOf(Set);
+            expect(result1.usedIds.size).toBe(1);
 
             const result2 = parseSpreadsheet({} as GoogleAppsScript.Sheets.Schema.Spreadsheet, schema);
             expect(result2.mappedSheets).toEqual({});
             expect(result2.extraSheets).toEqual([]);
+            expect(result2.usedIds).toBeInstanceOf(Set);
+            expect(result2.usedIds.size).toBe(1);
         });
 
         it("should gracefully handle a spreadsheet that lacks namedRanges", () => {
@@ -143,6 +151,7 @@ describe("GAS Utils, Parse", () => {
             expect(result.dynamicMappedRanges).toEqual({});
             expect(result.mappedSheetNamedRanges["Configuration"]).toEqual([]);
             expect(result.extraSheets).toEqual([]);
+            expect(result.usedIds.has(1)).toBe(true);
         });
 
         it("should handle sheets missing properties, titles, or IDs", () => {
@@ -162,8 +171,51 @@ describe("GAS Utils, Parse", () => {
 
             expect(result.mappedSheets["Configuration"]).toBeDefined();
             expect(result.mappedRanges["UsersRange"]).toBeDefined();
-            expect(result.dynamicMappedRanges["students"]).toBeDefined();
+            expect(result.dynamicMappedRanges["student"]).toBeDefined();
             expect(result.extraSheets).toHaveLength(0);
+
+            // Should not have added undefined IDs to the set
+            expect(result.usedIds.size).toBe(1);
+        });
+
+        it("should collect usedIds from spreadsheet metadata, sheets, protected ranges, charts, banded ranges, and filter views", () => {
+            const mockSpreadsheet: GoogleAppsScript.Sheets.Schema.Spreadsheet = {
+                developerMetadata: [
+                    { metadataId: 111 },
+                    { visibility: "DOCUMENT" }, // Missing ID
+                ],
+                sheets: [
+                    {
+                        properties: { sheetId: 10, title: "Configuration" },
+                        protectedRanges: [{ protectedRangeId: 20 }],
+                        charts: [{}, { chartId: 30 }],
+                        bandedRanges: [{}, { bandedRangeId: 40 }],
+                        filterViews: [{}, { filterViewId: 50 }],
+                    },
+                    {
+                        properties: { sheetId: 11, title: "Logs" },
+                        protectedRanges: [{ protectedRangeId: 21 }, {}], // Empty obj missing ID
+                        charts: [{ chartId: 31 }],
+                    },
+                    {
+                        // Sheet with no properties or IDs
+                        properties: { title: "NoIdSheet" },
+                    },
+                ],
+            };
+
+            const result = parseSpreadsheet(mockSpreadsheet, schema);
+
+            expect(result.usedIds).toBeInstanceOf(Set);
+
+            // Expected IDs: 111 (metadata), 10, 11 (sheets), 20, 21 (protected ranges), 30, 31 (charts), 40 (banded), 50 (filter)
+            // Total: 9 unique IDs
+            expect(result.usedIds.size).toBe(10);
+
+            const expectedIds = [111, 10, 11, 20, 21, 30, 31, 40, 50];
+            for (const id of expectedIds) {
+                expect(result.usedIds.has(id)).toBe(true);
+            }
         });
 
         it("should safely ignore malformed named ranges or ranges pointing to unknown sheets", () => {
@@ -219,7 +271,7 @@ describe("GAS Utils, Parse", () => {
 
             expect(result.mappedSheets["ValidSheet"]).toBeDefined();
             expect(result.mappedRanges["ValidRange"]).toBeDefined();
-            expect(result.dynamicMappedRanges["validDynamic"]).toBeDefined();
+            expect(result.dynamicMappedRanges["valid_"]).toBeDefined();
         });
 
         it("should fallback to sheetId 0 when a named range omits the sheetId", () => {
@@ -258,7 +310,7 @@ describe("GAS Utils, Parse", () => {
             expect(result.mappedSheets["DefaultSheet"]).toBeDefined();
             expect(result.mappedRanges["ZeroRange"]).toBeDefined();
             expect(result.mappedRanges["ZeroRange"]?.sheet.properties?.title).toBe("DefaultSheet");
-            expect(result.dynamicMappedRanges["dyn"]).toBeDefined();
+            expect(result.dynamicMappedRanges["dyn_"]).toBeDefined();
         });
     });
 });

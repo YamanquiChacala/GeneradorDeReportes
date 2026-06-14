@@ -4,13 +4,12 @@ import { calculateAttendanceGridSize, calculatePerClassLayout, normalizeSubjectW
 describe("Setup Utils. Math", () => {
     describe("calculateAttendanceGridSize", () => {
         it("calculates the correct grid size when attendancePerClass is false", () => {
-            const frozenRows = 2;
-            const frozenCols = 3;
+            const frozenArea = { rows: 2, cols: 3 };
             const calendarLength = 30;
             const studentsCount = 25;
             const subjectsCount = 5; // Should be ignored in this branch
 
-            const result = calculateAttendanceGridSize(frozenRows, frozenCols, calendarLength, studentsCount, subjectsCount, false);
+            const result = calculateAttendanceGridSize(frozenArea, calendarLength, studentsCount, subjectsCount, false);
 
             expect(result).toEqual({
                 finalRowCount: 2 + 1 + 25, // 28
@@ -19,13 +18,12 @@ describe("Setup Utils. Math", () => {
         });
 
         it("calculates the correct grid size when attendancePerClass is true", () => {
-            const frozenRows = 2;
-            const frozenCols = 3;
+            const frozenArea = { rows: 2, cols: 3 };
             const calendarLength = 30;
             const studentsCount = 20;
             const subjectsCount = 4;
 
-            const result = calculateAttendanceGridSize(frozenRows, frozenCols, calendarLength, studentsCount, subjectsCount, true);
+            const result = calculateAttendanceGridSize(frozenArea, calendarLength, studentsCount, subjectsCount, true);
 
             expect(result).toEqual({
                 finalRowCount: 2 + (2 + 20) * 4, // 2 + (22 * 4) = 90

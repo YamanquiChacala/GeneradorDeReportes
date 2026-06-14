@@ -54,3 +54,19 @@ export enum Period {
     SECOND = 1,
     THIRD = 2,
 }
+
+export interface FrozenArea {
+    rows: number;
+    cols: number;
+}
+
+export interface Range {
+    readonly start: number;
+    readonly end: number;
+}
+
+export interface TrimesterRanges {
+    readonly trim1: Range;
+    readonly trim2: Range;
+    readonly trim3: Range;
+}

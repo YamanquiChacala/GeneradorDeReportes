@@ -13,7 +13,7 @@ export interface ParsedSpreadsheet<T extends NestedSheetSchema> {
     readonly mappedSheets: Partial<Record<ExtractSheetNames<T>, GoogleAppsScript.Sheets.Schema.Sheet>>;
     readonly mappedSheetNamedRanges: Partial<Record<ExtractSheetNames<T>, StrictNameRange[]>>;
     readonly mappedRanges: Partial<Record<ExtractRangeNames<T>, MappedNamedRange>>;
-    readonly dynamicMappedRanges: Partial<Record<ExtractDynamicRangeKeys<T>, MappedNamedRange[]>>;
+    readonly dynamicMappedRanges: Partial<Record<ExtractDynamicRangeNames<T>, MappedNamedRange[]>>;
     readonly extraSheets: GoogleAppsScript.Sheets.Schema.Sheet[];
     readonly usedIds: Set<number>;
 }
@@ -35,8 +35,8 @@ export type ExtractRangeNames<T extends NestedSheetSchema> = {
     [K in keyof T["sheets"]]: T["sheets"][K] extends { ranges?: infer R } ? (R extends undefined ? never : R[keyof R]) : never;
 }[keyof T["sheets"]];
 
-export type ExtractDynamicRangeKeys<T extends NestedSheetSchema> = {
-    [K in keyof T["sheets"]]: T["sheets"][K] extends { dynamicRanges?: infer D } ? (D extends undefined ? never : keyof D) : never;
+export type ExtractDynamicRangeNames<T extends NestedSheetSchema> = {
+    [K in keyof T["sheets"]]: T["sheets"][K] extends { dynamicRanges?: infer R } ? (R extends undefined ? never : R[keyof R]) : never;
 }[keyof T["sheets"]];
 
 export interface OffsetGridRangeProperties {

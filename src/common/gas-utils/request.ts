@@ -4,7 +4,7 @@ import { createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
 import {
-    type ExtractDynamicRangeKeys,
+    type ExtractDynamicRangeNames,
     type ExtractRangeNames,
     type ExtractSheetNames,
     type MappedNamedRange,
@@ -41,6 +41,17 @@ export function buildMergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.S
         mergeCells: {
             range,
             mergeType,
+        },
+    };
+}
+
+/**
+ * Generates batch update `unmergeCells` request.
+ */
+export function buildUnmergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        unmergeCells: {
+            range,
         },
     };
 }
@@ -420,7 +431,7 @@ interface AddStaticNamedRangeParams<T extends NestedSheetSchema> extends BaseAdd
 interface AddDynamicNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
     readonly staticRangeKey?: never;
     readonly rangeName: string;
-    readonly dynamicRangeKey: ExtractDynamicRangeKeys<T>;
+    readonly dynamicRangeKey: ExtractDynamicRangeNames<T>;
 }
 
 type AddNamedRangeParams<T extends NestedSheetSchema> = AddStaticNamedRangeParams<T> | AddDynamicNamedRangeParams<T>;
@@ -463,7 +474,7 @@ export function addNewNamedRange<T extends NestedSheetSchema>({
         const key = staticRangeKey as ExtractRangeNames<T>;
         parsedData.mappedRanges[key] = newMappedNamedRange;
     } else {
-        const key = dynamicRangeKey as ExtractDynamicRangeKeys<T>;
+        const key = dynamicRangeKey as ExtractDynamicRangeNames<T>;
         if (!parsedData.dynamicMappedRanges[key]) {
             parsedData.dynamicMappedRanges[key] = [];
         }

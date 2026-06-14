@@ -5,6 +5,7 @@
 * [ ] Remove any direct use of `buildAddNamedRangeRequest` or `addNamedRange:` and instead use `addNewNamedRange`.
 * [ ] Replace string union types with string enums.
 * [ ] Research markdown github "badges".
+* [ ] Replace `sheet` with a stric version to avoid having to `?? 0` everywhere.
 
 # Report initial creation
 ## Persistent Data

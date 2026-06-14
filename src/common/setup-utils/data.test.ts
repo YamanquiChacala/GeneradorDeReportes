@@ -1,6 +1,6 @@
-import { createAttendaceFormulas, type StudentRow } from "../report-utils";
+import { createAttendaceFormulas, type StudentRow, type TrimesterRanges } from "../report-utils";
 import { calculateCalendarHeaders, generateStudentGrid } from "./data";
-import { TemplateSize, type Trimesters } from "./types";
+import { TemplateSize } from "./types";
 
 // 1. Setup Typed Mocks
 jest.mock("../report-utils", () => ({
@@ -126,10 +126,10 @@ describe("Setup Utils. Data", () => {
             jest.clearAllMocks();
         });
 
-        const mockTrimesters: Trimesters = {
-            trim1Range: { start: 1, end: 5 },
-            trim2Range: { start: 6, end: 10 },
-            trim3Range: { start: 11, end: 15 },
+        const mockTrimesters: TrimesterRanges = {
+            trim1: { start: 1, end: 5 },
+            trim2: { start: 6, end: 10 },
+            trim3: { start: 11, end: 15 },
         };
 
         it("should return an empty array if no students are provided", () => {

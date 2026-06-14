@@ -1,5 +1,5 @@
-import { createAttendaceFormulas, type StudentRow } from "../report-utils";
-import { TemplateSize, type Trimesters } from "./types";
+import { createAttendaceFormulas, type StudentRow, type TrimesterRanges } from "../report-utils";
+import { TemplateSize } from "./types";
 
 interface MonthGroupMeta {
     year: number;
@@ -89,16 +89,16 @@ export function calculateCalendarHeaders(
 /**
  * Builds the data for the student list in Attendance
  */
-export function generateStudentGrid(students: StudentRow[], initialRow: number, trimesters: Trimesters): GoogleAppsScript.Sheets.Schema.CellData[][] {
+export function generateStudentGrid(students: StudentRow[], initialRow: number, trimesters: TrimesterRanges): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const result: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
     for (let i = 0; i < students.length; i++) {
         const studentRow = students[i];
 
         if (studentRow?.type === "student") {
-            const trim1 = createAttendaceFormulas(initialRow + i, trimesters.trim1Range.start, trimesters.trim1Range.end);
-            const trim2 = createAttendaceFormulas(initialRow + i, trimesters.trim2Range.start, trimesters.trim2Range.end);
-            const trim3 = createAttendaceFormulas(initialRow + i, trimesters.trim3Range.start, trimesters.trim3Range.end);
+            const trim1 = createAttendaceFormulas(initialRow + i, trimesters.trim1.start, trimesters.trim1.end);
+            const trim2 = createAttendaceFormulas(initialRow + i, trimesters.trim2.start, trimesters.trim2.end);
+            const trim3 = createAttendaceFormulas(initialRow + i, trimesters.trim3.start, trimesters.trim3.end);
 
             result.push([
                 { userEnteredValue: { numberValue: studentRow.id } },
