@@ -280,16 +280,13 @@ function addStudentLists(
             studentListFormatRequests.push(buildCopyPasteRequest(subjectTitleFormatOrigin, subjectTitleFormatDestination, PasteType.PASTE_FORMAT));
 
             // Format Students
-            const studentRowFormatDestination = createRange(sheetId, layout.studentStartRow, data.students.length, frozenArea.cols);
+            const studentRowFormatDestination = createRange(sheetId, layout.studentStartRow, 0, data.students.length, frozenArea.cols);
             studentListFormatRequests.push(buildCopyPasteRequest(studentRowFormatOrigin, studentRowFormatDestination, PasteType.PASTE_FORMAT));
 
             // Banding
             const hue = hues[layout.subjectIndex] ?? 0;
             const studentListBandingDestination = createRange(sheetId, layout.bandingStartRow, 0, layout.bandingNumRows, -1);
             studentListFormatRequests.push(buildAddBandingRequest(studentListBandingDestination, createBanding(hue, true)));
-
-            // Borders
-            // TODO: Add `innerVertical` borders to colums 3 - frozen
 
             // Named ranges
             const strIndex = String(layout.subjectIndex).padStart(2, "0");
