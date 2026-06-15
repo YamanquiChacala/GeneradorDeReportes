@@ -7,15 +7,16 @@ import {
     buildTransferRequests,
     buildUpdateSheetPropertiesRequest,
     createRequiredGetter,
+    Dimension,
     getRangeHeight,
     getRangeWidth,
     type MappedNamedRange,
+    MergeType,
     offsetGridRange,
     RangeBehavior,
     resizeMappedRange,
     shrinkRangeWidth,
 } from "../../common/gas-utils";
-import { Dimension, MergeType } from "../../common/gas-utils/api-types";
 import {
     createAllSubjectsAverageFormula,
     createFieldAverageFormula,
