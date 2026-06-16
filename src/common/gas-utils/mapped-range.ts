@@ -154,47 +154,108 @@ export function resizeMappedRange({
     let newColOffset = colOffset;
 
     // Adjust Rows
-    if (rowBehavior === RangeBehavior.INSERT_DELETE) {
+    if (rowBehavior === RangeBehavior.INSERT_DELETE || rowBehavior === RangeBehavior.INSERT_DELETE_CELLS) {
         if (finalTargetRows > currentRows) {
             const diff = finalTargetRows - currentRows;
-            requests.push({
-                insertDimension: {
-                    range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + 1, endIndex: actualStartRow + 1 + diff },
-                    inheritFromBefore: true,
-                },
-            });
-            newRowOffset += diff;
+            if (rowBehavior === RangeBehavior.INSERT_DELETE) {
+                requests.push({
+                    insertDimension: {
+                        range: { sheetId, dimension: Dimension.ROWS, startIndex: actualEndRow - 1, endIndex: actualEndRow - 1 + diff },
+                        inheritFromBefore: true,
+                    },
+                });
+                newRowOffset += diff;
+            } else {
+                requests.push({
+                    insertRange: {
+                        range: {
+                            sheetId,
+                            startRowIndex: actualEndRow - 1,
+                            endRowIndex: actualEndRow - 1 + diff,
+                            startColumnIndex: actualStartCol,
+                            endColumnIndex: actualEndCol,
+                        },
+                        shiftDimension: Dimension.ROWS,
+                    },
+                });
+            }
         } else if (finalTargetRows < currentRows) {
-            const diff = currentRows - finalTargetRows;
-            requests.push({
-                deleteDimension: {
-                    // If finalTargetRows is 0, this deletes from actualStartRow to actualEndRow (destroying it)
-                    range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + finalTargetRows, endIndex: actualEndRow },
-                },
-            });
-            newRowOffset -= diff;
+            if (rowBehavior === RangeBehavior.INSERT_DELETE) {
+                const diff = currentRows - finalTargetRows;
+                requests.push({
+                    deleteDimension: {
+                        // If finalTargetRows is 0, this deletes from actualStartRow to actualEndRow (destroying it)
+                        range: { sheetId, dimension: Dimension.ROWS, startIndex: actualStartRow + finalTargetRows, endIndex: actualEndRow },
+                    },
+                });
+                newRowOffset -= diff;
+            } else {
+                requests.push({
+                    deleteRange: {
+                        range: {
+                            sheetId,
+                            startRowIndex: actualStartRow + finalTargetRows,
+                            endRowIndex: actualEndRow,
+                            startColumnIndex: actualStartCol,
+                            endColumnIndex: actualEndCol,
+                        },
+                        shiftDimension: Dimension.ROWS,
+                    },
+                });
+            }
         }
     }
 
     // Adjust Columns
-    if (colBehavior === RangeBehavior.INSERT_DELETE) {
+    if (colBehavior === RangeBehavior.INSERT_DELETE || colBehavior === RangeBehavior.INSERT_DELETE_CELLS) {
+        const effectiveEndRow = actualStartRow + finalTargetRows;
         if (finalTargetCols > currentCols) {
             const diff = finalTargetCols - currentCols;
-            requests.push({
-                insertDimension: {
-                    range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + 1, endIndex: actualStartCol + 1 + diff },
-                    inheritFromBefore: true,
-                },
-            });
-            newColOffset += diff;
+            if (colBehavior === RangeBehavior.INSERT_DELETE) {
+                requests.push({
+                    insertDimension: {
+                        range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + 1, endIndex: actualStartCol + 1 + diff },
+                        inheritFromBefore: true,
+                    },
+                });
+                newColOffset += diff;
+            } else {
+                requests.push({
+                    insertRange: {
+                        range: {
+                            sheetId,
+                            startRowIndex: actualStartRow,
+                            endRowIndex: effectiveEndRow,
+                            startColumnIndex: actualEndCol - 1,
+                            endColumnIndex: actualEndCol - 1 + diff,
+                        },
+                        shiftDimension: Dimension.COLUMNS,
+                    },
+                });
+            }
         } else if (finalTargetCols < currentCols) {
-            const diff = currentCols - finalTargetCols;
-            requests.push({
-                deleteDimension: {
-                    range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + finalTargetCols, endIndex: actualEndCol },
-                },
-            });
-            newColOffset -= diff;
+            if (colBehavior === RangeBehavior.INSERT_DELETE) {
+                const diff = currentCols - finalTargetCols;
+                requests.push({
+                    deleteDimension: {
+                        range: { sheetId, dimension: Dimension.COLUMNS, startIndex: actualStartCol + finalTargetCols, endIndex: actualEndCol },
+                    },
+                });
+                newColOffset -= diff;
+            } else {
+                requests.push({
+                    deleteRange: {
+                        range: {
+                            sheetId,
+                            startRowIndex: actualStartRow,
+                            endRowIndex: effectiveEndRow,
+                            startColumnIndex: actualStartCol + finalTargetCols,
+                            endColumnIndex: actualEndCol,
+                        },
+                        shiftDimension: Dimension.COLUMNS,
+                    },
+                });
+            }
         }
     }
 

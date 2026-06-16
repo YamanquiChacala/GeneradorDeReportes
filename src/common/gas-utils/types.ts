@@ -67,6 +67,7 @@ export interface RangeOperationResult {
 export enum RangeBehavior {
     IGNORE = "IGNORE",
     INSERT_DELETE = "INSERT_DELETE",
+    INSERT_DELETE_CELLS = "INSERT_DELETE_CELLS",
     MODIFY_RANGE = "MODIFY_RANGE",
 }
 

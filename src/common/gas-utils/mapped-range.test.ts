@@ -255,7 +255,7 @@ describe("GAS Utils, Mapped Range", () => {
             expect(testRange.namedRange.range.startRowIndex).toBe(2);
         });
 
-        it("should trigger INSERT_DELETE and insert dimensions when target size is larger", () => {
+        it("should trigger INSERT_DELETE and insert dimensions right before the end when target size is larger", () => {
             const result = resizeMappedRange({
                 target: testRange,
                 targetRows: 8,
@@ -268,13 +268,13 @@ describe("GAS Utils, Mapped Range", () => {
             expect(result.requests[0]?.insertDimension?.range).toEqual({
                 sheetId: 123,
                 dimension: Dimension.ROWS,
-                startIndex: 1,
-                endIndex: 4,
+                startIndex: 4, // actualEndRow (5) - 1
+                endIndex: 7, // 4 + 3 (diff)
             });
             expect(testRange.namedRange.range.endRowIndex).toBe(8);
         });
 
-        it("should trigger INSERT_DELETE and delete dimensions when target size is smaller", () => {
+        it("should trigger INSERT_DELETE and delete dimensions from the end when target size is smaller", () => {
             const result = resizeMappedRange({
                 target: testRange,
                 targetRows: 2,
@@ -290,6 +290,68 @@ describe("GAS Utils, Mapped Range", () => {
                 startIndex: 2,
                 endIndex: 5,
             });
+        });
+
+        it("should trigger INSERT_DELETE_CELLS and insert cell ranges right before the end when target size is larger", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 8, // diff 3
+                targetCols: 7, // diff 2
+                rowBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+                colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+            });
+
+            expect(result.requests).toHaveLength(2);
+            // Rows
+            expect(result.requests[0]?.insertRange?.range).toEqual({
+                sheetId: 123,
+                startRowIndex: 4, // actualEndRow (5) - 1
+                endRowIndex: 7, // 4 + 3 (diff)
+                startColumnIndex: 0,
+                endColumnIndex: 5,
+            });
+            expect(result.requests[0]?.insertRange?.shiftDimension).toBe(Dimension.ROWS);
+
+            // Columns
+            expect(result.requests[1]?.insertRange?.range).toEqual({
+                sheetId: 123,
+                startRowIndex: 0,
+                endRowIndex: 8, // effectiveEndRow: start(0) + finalTargetRows(8)
+                startColumnIndex: 4, // actualEndCol (5) - 1
+                endColumnIndex: 6, // 4 + 2 (diff)
+            });
+            expect(result.requests[1]?.insertRange?.shiftDimension).toBe(Dimension.COLUMNS);
+        });
+
+        it("should trigger INSERT_DELETE_CELLS and delete cell ranges from the end when target size is smaller", () => {
+            const result = resizeMappedRange({
+                target: testRange,
+                targetRows: 2, // final 2
+                targetCols: 3, // final 3
+                rowBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+                colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+            });
+
+            expect(result.requests).toHaveLength(2);
+            // Rows
+            expect(result.requests[0]?.deleteRange?.range).toEqual({
+                sheetId: 123,
+                startRowIndex: 2, // start(0) + final(2)
+                endRowIndex: 5,
+                startColumnIndex: 0,
+                endColumnIndex: 5,
+            });
+            expect(result.requests[0]?.deleteRange?.shiftDimension).toBe(Dimension.ROWS);
+
+            // Columns
+            expect(result.requests[1]?.deleteRange?.range).toEqual({
+                sheetId: 123,
+                startRowIndex: 0,
+                endRowIndex: 2, // effectiveEndRow
+                startColumnIndex: 3, // start(0) + final(3)
+                endColumnIndex: 5,
+            });
+            expect(result.requests[1]?.deleteRange?.shiftDimension).toBe(Dimension.COLUMNS);
         });
 
         it("should trigger INSERT_DELETE but not modify if the target is already the right size", () => {
@@ -359,9 +421,9 @@ describe("GAS Utils, Mapped Range", () => {
                 rowBehavior: RangeBehavior.INSERT_DELETE,
             });
 
-            // Actual start row is 0 + 5 = 5. diff is 5.
-            // insert is actualStartRow + 1 = 6, to 6 + 5 = 11.
-            expect(result.requests[0]?.insertDimension?.range?.startIndex).toBe(6);
+            // Actual start row is 0 + 5 = 5. Actual end row is 5 + 5 = 10. diff is 5.
+            // insert is actualEndRow (10) - 1 = 9, to 9 + 5 = 14.
+            expect(result.requests[0]?.insertDimension?.range?.startIndex).toBe(9);
             expect(result.rowOffset).toBe(10);
         });
 
@@ -392,7 +454,9 @@ describe("GAS Utils, Mapped Range", () => {
             });
 
             expect(result.requests).toHaveLength(2);
-            expect(result.requests[0]?.insertDimension?.range?.endIndex).toBe(6);
+            // openRange ends at 0. diff is 5. startIndex = 0 - 1 = -1, endIndex = -1 + 5 = 4.
+            expect(result.requests[0]?.insertDimension?.range?.startIndex).toBe(-1);
+            expect(result.requests[0]?.insertDimension?.range?.endIndex).toBe(4);
             expect(openRange.namedRange.range.endRowIndex).toBe(5);
         });
 
@@ -408,7 +472,6 @@ describe("GAS Utils, Mapped Range", () => {
         });
 
         it("should evaluate rangeChanged as false when no dimensions or offsets are modified", () => {
-            // Covers: The 'all false' path of the rangeChanged boolean chain
             const result = resizeMappedRange({
                 target: testRange,
                 targetRows: 5, // Same as current
@@ -422,7 +485,6 @@ describe("GAS Utils, Mapped Range", () => {
         });
 
         it("should detect changes purely on column start index for rangeChanged short-circuit", () => {
-            // Covers: Bypassing row checks in rangeChanged to trigger on startColumnIndex
             const result = resizeMappedRange({
                 target: testRange,
                 colOffset: 2, // Changes startColumnIndex
@@ -435,7 +497,6 @@ describe("GAS Utils, Mapped Range", () => {
         });
 
         it("should detect changes purely on column end index for rangeChanged short-circuit", () => {
-            // Covers: Bypassing row and start-col checks to trigger on endColumnIndex
             const result = resizeMappedRange({
                 target: testRange,
                 targetCols: 10, // Changes endColumnIndex
