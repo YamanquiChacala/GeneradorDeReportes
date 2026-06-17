@@ -23,6 +23,8 @@
 * [x] Only allow write on unprotected period.
 * [ ] Add vertical borders between the final periods.
 
+## Student template
+* [ ] Double check the first row is frozen (the student name)
 ## Student Sheets
 
 

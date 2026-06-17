@@ -236,16 +236,16 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
 
     const period = Period.FIRST;
 
-    const dataData: GoogleAppsScript.Sheets.Schema.CellData[][] = [[], [], []]; // First three rows empty.
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[], [], []]; // First three rows empty.
 
-    dataData.push([{ userEnteredValue: { stringValue: TRIMESTER_NAMES[period] } }]);
-    dataData.push([{ userEnteredValue: { stringValue: generatePeriodString(persistentData, period) } }]);
+    data.push([{ userEnteredValue: { stringValue: TRIMESTER_NAMES[period] } }]);
+    data.push([{ userEnteredValue: { stringValue: generatePeriodString(persistentData, period) } }]);
 
     if (!persistentData.configData.attendancePerClass) {
         const firstNameRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.firstName);
         const lastNameRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.lastName);
 
-        dataData.push([
+        data.push([
             {
                 userEnteredValue: {
                     formulaValue: createStudentGeneralAttendanceFormula(period, firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName, true),
@@ -254,11 +254,11 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
         ]);
     }
 
-    const mappedInfo = getMappedRange(rangeNames.generalInfo);
+    const destination = getMappedRange(rangeNames.generalInfo);
 
     const { requests } = buildTransferRequests({
-        destination: mappedInfo,
-        data: dataData,
+        destination,
+        data,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
     });
 
