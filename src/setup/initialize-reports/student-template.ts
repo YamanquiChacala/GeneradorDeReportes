@@ -236,16 +236,16 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
 
     const period = Period.FIRST;
 
-    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[], [], []]; // First three rows empty.
+    const infoData: GoogleAppsScript.Sheets.Schema.CellData[][] = [[], [], []]; // First three rows empty.
 
-    data.push([{ userEnteredValue: { stringValue: TRIMESTER_NAMES[period] } }]);
-    data.push([{ userEnteredValue: { stringValue: generatePeriodString(persistentData, period) } }]);
+    infoData.push([{ userEnteredValue: { stringValue: TRIMESTER_NAMES[period] } }]);
+    infoData.push([{ userEnteredValue: { stringValue: generatePeriodString(persistentData, period) } }]);
 
     if (!persistentData.configData.attendancePerClass) {
         const firstNameRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.firstName);
         const lastNameRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.lastName);
 
-        data.push([
+        infoData.push([
             {
                 userEnteredValue: {
                     formulaValue: createStudentGeneralAttendanceFormula(period, firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName, true),
@@ -258,7 +258,7 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
 
     const { requests } = buildTransferRequests({
         destination,
-        data,
+        data: infoData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
     });
 
@@ -346,7 +346,7 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
 
         for (const [index, weightedSubject] of persistenData.subjects.entries()) {
             const subjectRow: GoogleAppsScript.Sheets.Schema.CellData[] = [];
-            subjectRow.push({ userEnteredValue: { stringValue: weightedSubject.subject } }, {}, {});
+            subjectRow.push({ userEnteredValue: { stringValue: weightedSubject.subject } }, {}, {}); // Name and two spaces for teachers to put grades.
             if (attendancePerClass) {
                 subjectRow.push(
                     {
@@ -381,7 +381,7 @@ function prepareSubjects(mappedRanges: Partial<Record<RangeName, MappedNamedRang
             });
 
             // Average for the last trimester
-            if (period === 2) {
+            if (period === Period.THIRD) {
                 subjectRow.push({ userEnteredValue: { formulaValue: createFinalSubjectAverageFormula(...subjects, index) } });
             }
 
