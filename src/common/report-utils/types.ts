@@ -33,8 +33,13 @@ export interface WeightedSubject {
 
 export type StudentRow = Student | StudentSpace;
 
+export enum StudentRowType {
+    STUDENT = "STUDENT",
+    SEPARATOR = "SEPARATOR",
+}
+
 export interface Student {
-    type: "student";
+    type: StudentRowType.STUDENT;
     id: number;
     firstName: string;
     lastName: string;
@@ -46,7 +51,7 @@ export interface Student {
 }
 
 interface StudentSpace {
-    type: "separator";
+    type: StudentRowType.SEPARATOR;
 }
 
 export enum Period {

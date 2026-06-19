@@ -428,7 +428,7 @@ function prepareFields(mappedRanges: Partial<Record<RangeName, MappedNamedRange>
     ];
 
     for (const [periodIndex, { academidFieldRange, subjectsRange }] of periodOperations.entries()) {
-        const period = periodIndex as 0 | 1 | 2;
+        const period = periodIndex as Period;
         let subjectOffset = 0;
 
         const fieldData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
@@ -444,7 +444,7 @@ function prepareFields(mappedRanges: Partial<Record<RangeName, MappedNamedRange>
             }
             fieldRow.push({ userEnteredValue: { formulaValue: createIndividualSubjectAverageFormula(academidFieldRange, index, gradingWeithgtsRange) } });
 
-            if (period === 2) {
+            if (period === Period.THIRD) {
                 fieldRow.push({
                     userEnteredValue: {
                         formulaValue: createFinalSubjectAverageFormula(

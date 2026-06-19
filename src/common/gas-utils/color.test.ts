@@ -28,7 +28,7 @@ describe("GAS Utils, Colors", () => {
             const expectedHeaderRgb = hslToRgb({ h: hue, s: HEADER_SAT, l: HEADER_LIGH });
             const result = createBanding(hue, true, false);
 
-            expect(result.headerColor).toEqual({
+            expect(result.headerColorStyle?.rgbColor).toEqual({
                 red: expectedHeaderRgb.r,
                 green: expectedHeaderRgb.g,
                 blue: expectedHeaderRgb.b,
@@ -56,7 +56,7 @@ describe("GAS Utils, Colors", () => {
 
             const result = createBanding(hue, true, true);
 
-            expect(result.headerColor).toEqual({
+            expect(result.headerColorStyle?.rgbColor).toEqual({
                 red: expectedHeaderRgb.r,
                 green: expectedHeaderRgb.g,
                 blue: expectedHeaderRgb.b,

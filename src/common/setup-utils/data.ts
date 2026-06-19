@@ -1,4 +1,4 @@
-import { createAttendaceFormulas, type StudentRow, type TrimesterRanges } from "../report-utils";
+import { createAttendaceFormulas, type StudentRow, StudentRowType, type TrimesterRanges } from "../report-utils";
 import { TemplateSize } from "./types";
 
 interface MonthGroupMeta {
@@ -95,7 +95,7 @@ export function generateStudentGrid(students: StudentRow[], initialRow: number, 
     for (let i = 0; i < students.length; i++) {
         const studentRow = students[i];
 
-        if (studentRow?.type === "student") {
+        if (studentRow?.type === StudentRowType.STUDENT) {
             const trim1 = createAttendaceFormulas(initialRow + i, trimesters.trim1.start, trimesters.trim1.end);
             const trim2 = createAttendaceFormulas(initialRow + i, trimesters.trim2.start, trimesters.trim2.end);
             const trim3 = createAttendaceFormulas(initialRow + i, trimesters.trim3.start, trimesters.trim3.end);

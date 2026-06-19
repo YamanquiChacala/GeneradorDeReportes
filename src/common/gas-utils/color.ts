@@ -9,7 +9,8 @@ export function createBanding(hue: number, header = false, footer = false): Goog
         firstBandColor: LIGHT_GREY_COLOR,
         secondBandColor: hslToColor({ h: hue, s: 1, l: BAND_LIGHT }),
     };
-    if (header) banding.headerColor = hslToColor({ h: hue, s: HEADER_SAT, l: HEADER_LIGH });
+    // TODO: Update to ColorStyle
+    if (header) banding.headerColorStyle = { rgbColor: hslToColor({ h: hue, s: HEADER_SAT, l: HEADER_LIGH }) };
     if (footer) banding.footerColor = hslToColor({ h: hue, s: FOOTER_SAT, l: FOOTER_LIGH });
 
     return banding;

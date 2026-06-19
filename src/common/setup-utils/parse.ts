@@ -1,5 +1,5 @@
 import { colorToHex, getSheetsDate } from "../gas-utils";
-import type { AcademicField, Student, StudentRow, WeightedSubject } from "../report-utils";
+import { type AcademicField, type Student, type StudentRow, StudentRowType, type WeightedSubject } from "../report-utils";
 import { MS_PER_DAY, sanitizeSheetName } from "../utils";
 
 /**
@@ -101,7 +101,7 @@ export function parseStudentList(studentSetupData: readonly GoogleAppsScript.She
         const sheetName = sanitizeSheetName(`${firstName} ${lastName}`);
 
         const student: Student = {
-            type: "student",
+            type: StudentRowType.STUDENT,
             id: studentNumber,
             firstName,
             lastName,
@@ -122,7 +122,7 @@ export function parseStudentList(studentSetupData: readonly GoogleAppsScript.She
             { userEnteredValue: { stringValue: sheetName } },
         ];
         if (emptyBefore && !firstTime) {
-            students.push({ type: "separator" });
+            students.push({ type: StudentRowType.SEPARATOR });
             studentReportData.push([]);
             emptyBefore = false;
         }

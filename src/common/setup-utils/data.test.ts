@@ -1,4 +1,4 @@
-import { createAttendaceFormulas, type StudentRow, type TrimesterRanges } from "../report-utils";
+import { createAttendaceFormulas, type StudentRow, StudentRowType, type TrimesterRanges } from "../report-utils";
 import { calculateCalendarHeaders, generateStudentGrid } from "./data";
 import { TemplateSize } from "./types";
 
@@ -140,7 +140,7 @@ describe("Setup Utils. Data", () => {
 
         it("should push empty arrays for non-student rows", () => {
             // Natively satisfies the StudentSpace interface
-            const students: StudentRow[] = [{ type: "separator" }];
+            const students: StudentRow[] = [{ type: StudentRowType.SEPARATOR }];
 
             const result = generateStudentGrid(students, 5, mockTrimesters);
 
@@ -152,7 +152,7 @@ describe("Setup Utils. Data", () => {
             // Natively satisfies the Student interface
             const students: StudentRow[] = [
                 {
-                    type: "student",
+                    type: StudentRowType.STUDENT,
                     id: 99,
                     firstName: "Jane",
                     lastName: "Doe",

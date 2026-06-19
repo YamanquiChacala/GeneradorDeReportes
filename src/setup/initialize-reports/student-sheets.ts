@@ -9,7 +9,7 @@ import {
     offsetGridRange,
     type ParsedSpreadsheet,
 } from "../../common/gas-utils";
-import type { ReportPersistentData } from "../../common/report-utils";
+import { type ReportPersistentData, StudentRowType } from "../../common/report-utils";
 import { getRandomId } from "../../common/utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
@@ -25,6 +25,8 @@ export function createStudentSheets(
 
     const studentTemplateSheet = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName);
     const studentTemplateId = studentTemplateSheet.properties?.sheetId ?? 0;
+
+    const realStudents = persistentData.students.filter((studentRow) => studentRow.type === StudentRowType.STUDENT);
 
     // Remove named ranges so they don't get copied on each new sheet.
     const { requests: cleanTemplateRequest, studentNamedRanges } = cleanTemplateSheet(parsedReport);
@@ -91,7 +93,7 @@ function buildSheetsRequests(
 
     let insertSheetIndex: number = 0;
     for (const studentRow of persistenData.students) {
-        if (studentRow.type === "student") {
+        if (studentRow.type === StudentRowType.STUDENT) {
             // Create a random id for the sheet.
             const newSheetId = getRandomId(new Set());
 
