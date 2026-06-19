@@ -1,16 +1,16 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import {
+    addNewSheet,
     buildFieldsMask,
+    buildProtectExtraSheetRequests,
     buildUpdateCellsRequest,
-    buildUpdateSheetPropertiesRequest,
     createRequiredGetter,
     type ExtractRangeNames,
-    type MappedNamedRange,
     offsetGridRange,
     type ParsedSpreadsheet,
 } from "../../common/gas-utils";
-import { type ReportPersistentData, StudentRowType } from "../../common/report-utils";
-import { getRandomId } from "../../common/utils";
+import { type ReportPersistentData, type Student, StudentRowType } from "../../common/report-utils";
+import { zip } from "../../common/utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
@@ -21,69 +21,22 @@ export function createStudentSheets(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     persistentData: ReportPersistentData,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
-    const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reportes");
-
-    const studentTemplateSheet = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName);
-    const studentTemplateId = studentTemplateSheet.properties?.sheetId ?? 0;
+    const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
 
     const realStudents = persistentData.students.filter((studentRow) => studentRow.type === StudentRowType.STUDENT);
 
-    // Remove named ranges so they don't get copied on each new sheet.
-    const { requests: cleanTemplateRequest, studentNamedRanges } = cleanTemplateSheet(parsedReport);
-
-    const newSheetsRequests = buildSheetsRequests(studentTemplateId, parsedReport.mappedRanges, persistentData);
-
-    // Return the deleted named ranges to the template.
-    const resetTemplateRequests = resetTemplateSheet(studentNamedRanges);
-
-    // Hide the template
-    const studentTemplateSheetId = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName).properties?.sheetId ?? 0;
-    const propertiesRequest = buildUpdateSheetPropertiesRequest({
-        sheetId: studentTemplateSheetId,
-        hidden: true,
+    const { requests: createSheetsRequests, newSheetIds } = addNewSheet({
+        parsedData: parsedReport,
+        sourceSheetTitle: ReportSheetSchema.sheets.studentTemplate.sheetName,
+        insertSheetIndex: 1,
+        multipleSheetNames: realStudents.map((student) => student.sheetName),
     });
 
-    return [...cleanTemplateRequest, ...newSheetsRequests, ...resetTemplateRequests, propertiesRequest];
-}
-
-/**
- * Prepares the template so it can be copied for each student.
- */
-function cleanTemplateSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>): {
-    requests: GoogleAppsScript.Sheets.Schema.Request[];
-    studentNamedRanges: GoogleAppsScript.Sheets.Schema.NamedRange[];
-} {
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    const studentNamedRanges = parsedReport.mappedSheetNamedRanges[ReportSheetSchema.sheets.studentTemplate.sheetName] ?? [];
-
-    for (const namedRange of studentNamedRanges) requests.push({ deleteNamedRange: { namedRangeId: namedRange.namedRangeId } });
-
-    return { requests, studentNamedRanges };
-}
-
-/**
- * Return named ranges to the template
- */
-function resetTemplateSheet(namedRanges: GoogleAppsScript.Sheets.Schema.NamedRange[]): GoogleAppsScript.Sheets.Schema.Request[] {
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    for (const namedRange of namedRanges) requests.push({ addNamedRange: { namedRange: namedRange } });
-    return requests;
-}
-
-/**
- * Creates a new sheet for each student.
- */
-function buildSheetsRequests(
-    templateId: number,
-    mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
-    persistenData: ReportPersistentData,
-): GoogleAppsScript.Sheets.Schema.Request[] {
-    const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
-    const getMappedRange = createRequiredGetter(mappedRanges, "rango de reporte");
-
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-
-    const fields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue");
+    const fillInDataRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (const [sheetId, student] of zip(newSheetIds, realStudents)) {
+        fillInDataRequests.push(...fillStudentData(parsedReport, sheetId, student));
+    }
 
     const baseUnprotectedRanges = [
         getMappedRange(rangeNames.unprotectedAbilities).namedRange.range,
@@ -91,61 +44,43 @@ function buildSheetsRequests(
         getMappedRange(rangeNames.unprotectedTrim1).namedRange.range,
     ];
 
-    let insertSheetIndex: number = 0;
-    for (const studentRow of persistenData.students) {
-        if (studentRow.type === StudentRowType.STUDENT) {
-            // Create a random id for the sheet.
-            const newSheetId = getRandomId(new Set());
+    const protectSheetsRequests = buildProtectExtraSheetRequests(parsedReport, baseUnprotectedRanges);
 
-            insertSheetIndex++;
+    return [...createSheetsRequests, ...fillInDataRequests, ...protectSheetsRequests];
+}
 
-            // Copy the template sheet
-            requests.push({
-                duplicateSheet: {
-                    insertSheetIndex,
-                    newSheetId,
-                    sourceSheetId: templateId,
-                    newSheetName: studentRow.sheetName,
-                },
-            });
+/**
+ * Fills a student sheet with the data from the student
+ */
+function fillStudentData(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, sheetId: number, student: Student): GoogleAppsScript.Sheets.Schema.Request[] {
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
-            // Add the information to the sheet
-            const simpleCopyOps: Array<{ rangeName: RangeName; value: string }> = [
-                { rangeName: rangeNames.firstName, value: studentRow.firstName },
-                { rangeName: rangeNames.lastName, value: studentRow.lastName },
-            ];
-            for (const op of simpleCopyOps) {
-                const mappedRange = getMappedRange(op.rangeName);
-                const destination = offsetGridRange({ origin: mappedRange.namedRange.range, sheetId: newSheetId });
-                const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { stringValue: op.value } }]];
-                const updateRequest = buildUpdateCellsRequest({ destination, data, fields });
-                if (updateRequest) requests.push(updateRequest);
-            }
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
 
-            const infoMappedRange = getMappedRange(rangeNames.generalInfo);
-            const infoDestinationRange = offsetGridRange({ origin: infoMappedRange.namedRange.range, sheetId: newSheetId, height: 3 });
-            const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
-                [{ userEnteredValue: { stringValue: studentRow.curp } }],
-                [{ userEnteredValue: { stringValue: studentRow.grade } }],
-                [{ userEnteredValue: { stringValue: studentRow.level } }],
-            ];
-            const infoRequest = buildUpdateCellsRequest({ destination: infoDestinationRange, data, fields });
-            if (infoRequest) requests.push(infoRequest);
+    const fields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue");
 
-            // Protect the sheet
-            const unprotectedRanges = baseUnprotectedRanges.map((range) => offsetGridRange({ origin: range, sheetId: newSheetId }));
-            requests.push({
-                addProtectedRange: {
-                    protectedRange: {
-                        range: { sheetId: newSheetId },
-                        description: studentRow.sheetName,
-                        warningOnly: false,
-                        unprotectedRanges,
-                    },
-                },
-            });
-        }
+    const simpleCopyOps: Array<{ rangeName: RangeName; value: string }> = [
+        { rangeName: rangeNames.firstName, value: student.firstName },
+        { rangeName: rangeNames.lastName, value: student.lastName },
+    ];
+    for (const op of simpleCopyOps) {
+        const mappedRange = getMappedRange(op.rangeName);
+        const destination = offsetGridRange({ origin: mappedRange.namedRange.range, sheetId });
+        const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { stringValue: op.value } }]];
+        const updateRequest = buildUpdateCellsRequest({ destination, data, fields });
+        if (updateRequest) requests.push(updateRequest);
     }
+
+    const infoMappedRange = getMappedRange(rangeNames.generalInfo);
+    const infoDestinationRange = offsetGridRange({ origin: infoMappedRange.namedRange.range, height: 3, sheetId });
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+        [{ userEnteredValue: { stringValue: student.curp } }],
+        [{ userEnteredValue: { stringValue: student.grade } }],
+        [{ userEnteredValue: { stringValue: student.level } }],
+    ];
+    const infoRequest = buildUpdateCellsRequest({ destination: infoDestinationRange, data, fields });
+    if (infoRequest) requests.push(infoRequest);
 
     return requests;
 }

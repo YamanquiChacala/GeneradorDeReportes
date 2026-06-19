@@ -1,3 +1,4 @@
+import { StudentRowType } from "../report-utils";
 import { MS_PER_DAY } from "../utils";
 import { parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from "./parse";
 
@@ -119,7 +120,7 @@ describe("Setup Utils. Parse", () => {
 
             expect(students).toEqual([
                 {
-                    type: "student",
+                    type: StudentRowType.STUDENT,
                     id: 1,
                     firstName: "first1",
                     lastName: "last1",
@@ -130,7 +131,7 @@ describe("Setup Utils. Parse", () => {
                     curp: "abc",
                 },
                 {
-                    type: "student",
+                    type: StudentRowType.STUDENT,
                     id: 2,
                     firstName: "first2",
                     lastName: "last2",
@@ -141,7 +142,7 @@ describe("Setup Utils. Parse", () => {
                     curp: "123",
                 },
                 {
-                    type: "student",
+                    type: StudentRowType.STUDENT,
                     id: 3,
                     firstName: "first3",
                     lastName: "last3",
@@ -151,9 +152,9 @@ describe("Setup Utils. Parse", () => {
                     grade: "3°",
                     curp: "aqui",
                 },
-                { type: "separator" }, // Separator correctly inserted between groups
+                { type: StudentRowType.SEPARATOR }, // Separator correctly inserted between groups
                 {
-                    type: "student",
+                    type: StudentRowType.STUDENT,
                     id: 1, // ID resets correctly
                     firstName: "first4",
                     lastName: "last4",

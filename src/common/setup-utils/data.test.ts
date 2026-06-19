@@ -3,9 +3,13 @@ import { calculateCalendarHeaders, generateStudentGrid } from "./data";
 import { TemplateSize } from "./types";
 
 // 1. Setup Typed Mocks
-jest.mock("../report-utils", () => ({
-    createAttendaceFormulas: jest.fn(),
-}));
+jest.mock("../report-utils", () => {
+    const originalModule = jest.requireActual("../report-utils");
+    return {
+        ...originalModule,
+        createAttendaceFormulas: jest.fn(),
+    };
+});
 
 const mockCreateAttendaceFormulas = createAttendaceFormulas as jest.MockedFunction<typeof createAttendaceFormulas>;
 
