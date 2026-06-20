@@ -3,6 +3,8 @@
 ![image](images/Logo.png)
 </div>
 
+[![codecov](https://codecov.io/github/YamanquiChacala/GeneradorDeReportes/graph/badge.svg?token=3H7BTF98TM)](https://codecov.io/github/YamanquiChacala/GeneradorDeReportes)
+
 # 📃 Generador de Reportes  
 
 Un Add-On de **Google Apps** para **automatizar** y **simplificar** la creación de reportes de calificaciones de alumnos en **Google Sheets**.
