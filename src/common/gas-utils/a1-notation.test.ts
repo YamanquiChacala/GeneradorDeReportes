@@ -170,6 +170,26 @@ describe("Gas Utils, A1 Notation", () => {
                 expect(getA1Notation(params)).toBe("'John''s Data'!A1");
             });
 
+            it("should use custom sheet name when specified", () => {
+                const params = createParams(
+                    { startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 },
+                    { includeSheetName: true, customSheetName: "mySheet" },
+                );
+                // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
+                params.mappedRange.sheet.properties!.title = "UnusedName";
+                expect(getA1Notation(params)).toBe("'mySheet'!A1");
+            });
+
+            it("should fallback to sheet name if custom name is empty string", () => {
+                const params = createParams(
+                    { startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 },
+                    { includeSheetName: true, customSheetName: "" },
+                );
+                // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
+                params.mappedRange.sheet.properties!.title = "usedName";
+                expect(getA1Notation(params)).toBe("'usedName'!A1");
+            });
+
             it("should handle empty string sheet names gracefully", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 }, { includeSheetName: true });
                 // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder

@@ -118,3 +118,11 @@ export function generateStudentGrid(students: StudentRow[], initialRow: number, 
 
     return result;
 }
+
+/**
+ * Build the data for the Status Sheet, General Data
+ */
+export function getStatusGeneralData(students: StudentRow[], initialRow: number): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    const result: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    return result;
+}

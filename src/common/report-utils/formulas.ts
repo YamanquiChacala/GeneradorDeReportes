@@ -181,3 +181,25 @@ export function createAllSubjectsAverageFormula(mappedSubjects: MappedNamedRange
     const weightsA1 = getA1Notation({ mappedRange: mappedWeights, colOffset: 1, width: 1, includeSheetName: true, lockRows: true, lockColumns: true });
     return `=IFERROR(ROUND(AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1}), ${decimals}))`;
 }
+
+/**
+ * Helper to create Status formula to validate a whole row
+ */
+export function createSetupRowValidFormula(mappedRange: MappedNamedRange, rowOffset: number, colOffset: number): string {
+    const checkRangeA1 = getA1Notation({ mappedRange, rowOffset, colOffset, height: 1, width: -1, lockColumns: true });
+    return `=IF(COUNTIF(${checkRangeA1}, "✔️") + COUNTIF(${checkRangeA1}, "❌") = 0, "", IF(COUNTIF(${checkRangeA1}, "❌") > 0, "❌", "✔️"))`;
+}
+
+/**
+ * Helper to create Status formula checking simple text
+ */
+export function createSetupTextValidationFormula(a1Cell: string) {
+    return ``;
+}
+
+/**
+ * Helper to create Status formula checking habilities
+ */
+export function createSetupHabilityValidationFormula(a1Cell: string) {
+    return `=IF(ISNUMBER(MATCH(TRUE, ARRAYFORMULA(EXACT(${a1Cell}, {"E", "B", "S", "R"})), 0)), "✔️", "❌")`;
+}

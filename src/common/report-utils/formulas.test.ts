@@ -6,6 +6,7 @@ import {
     createFieldFormula,
     createFinalSubjectAverageFormula,
     createIndividualSubjectAverageFormula,
+    createSetupRowValidFormula,
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
     getShortCommentFormula,
@@ -276,6 +277,25 @@ describe("Report Utils. Formula Generators", () => {
             });
 
             expect(formula).toBe("=IFERROR(ROUND(AVERAGE.WEIGHTED(E$2:E$10, 'Weights'!F$2:F$10), 1))");
+        });
+    });
+
+    describe("createSetupRowValidFormula", () => {
+        it("should use the given values in the formula", () => {
+            (getA1Notation as jest.Mock).mockReturnValueOnce("E2:2");
+
+            const formula = createSetupRowValidFormula(mockRange, 1, 4);
+
+            expect(getA1Notation).toHaveBeenCalledWith({
+                mappedRange: mockRange,
+                rowOffset: 1,
+                colOffset: 4,
+                height: 1,
+                width: -1,
+                lockColumns: true,
+            });
+
+            expect(formula).toBe('=IF(COUNTIF(E2:2, "✔️") + COUNTIF(E2:2, "❌") = 0, "", IF(COUNTIF(E2:2, "❌") > 0, "❌", "✔️"))');
         });
     });
 });

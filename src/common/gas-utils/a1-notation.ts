@@ -18,6 +18,7 @@ export function getColumnLetter(column: number): string {
 interface A1NotationParams {
     readonly mappedRange: MappedNamedRange;
     readonly includeSheetName?: boolean;
+    readonly customSheetName?: string;
     readonly lockRows?: boolean;
     readonly lockColumns?: boolean;
     readonly rowOffset?: number;
@@ -32,6 +33,7 @@ interface A1NotationParams {
 export function getA1Notation({
     mappedRange,
     includeSheetName = false,
+    customSheetName,
     lockRows = false,
     lockColumns = false,
     rowOffset = 0,
@@ -99,9 +101,14 @@ export function getA1Notation({
     }
 
     // Append sheet name if requested
-    if (includeSheetName && mappedRange.sheet.properties?.title) {
-        const escapedTitle = mappedRange.sheet.properties.title.replace(/'/g, "''");
-        return `'${escapedTitle}'!${a1Notation}`;
+    if (includeSheetName) {
+        if (customSheetName) {
+            return `'${customSheetName}'!${a1Notation}`;
+        }
+        if (mappedRange.sheet.properties?.title) {
+            const escapedTitle = mappedRange.sheet.properties.title.replace(/'/g, "''");
+            return `'${escapedTitle}'!${a1Notation}`;
+        }
     }
 
     return a1Notation;
