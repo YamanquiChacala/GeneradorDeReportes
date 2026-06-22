@@ -260,6 +260,7 @@ describe("GAS Util, Requests", () => {
                         description: "Template",
                         warningOnly: false,
                     },
+                    fields: "range,description,warningOnly,unprotectedRanges",
                 },
             });
         });
@@ -335,6 +336,7 @@ describe("GAS Util, Requests", () => {
                         description: "Extra2",
                         warningOnly: false,
                     },
+                    fields: "range,description,warningOnly,unprotectedRanges",
                 },
             });
 

@@ -69,7 +69,8 @@
                 - 🛠️ [`fillPersistentData`](../src/setup/initialize-reports/persistent-data.ts) - Copy the Setup 📋 data over.
                 - 🛠️ [`createAttendanceSheet`](../src/setup/initialize-reports/attendance.ts) - Create attendance sheet.
                 - 🛠️ [`prepareStudentTemplate`](../src/setup/initialize-reports/student-template.ts) - Adapt the student template for the data of this group.
-                - 🛠️ [`createStudentSheets`] (../src/setup/initialize-reports/student-sheets.ts) - Create copies of the student template for each student.
+                - 🛠️ [`createStudentSheets`](../src/setup/initialize-reports/student-sheets.ts) - Create copies of the student template for each student.
+                - 🛠️ ['prepareStatusSheet'](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
 
     - 📄 TODO Report file editing (this is the biggest UI entry point)
 

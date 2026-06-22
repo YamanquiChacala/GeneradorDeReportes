@@ -1,6 +1,6 @@
 import { getRandomId } from "../utils";
 import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
-import { createRequiredGetter } from "./helpers";
+import { buildFieldsMask, createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
 import {
@@ -134,7 +134,12 @@ function buildSingleSheetProtectRequest(
         throw new Error("Demasiados rangos protegidos en la hoja.");
     } else {
         newProtectedRange.protectedRangeId = protectedRanges[0]?.protectedRangeId;
-        request = { updateProtectedRange: { protectedRange: newProtectedRange } };
+        request = {
+            updateProtectedRange: {
+                protectedRange: newProtectedRange,
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.ProtectedRange>("range", "description", "warningOnly", "unprotectedRanges"),
+            },
+        };
     }
 
     // Update the sheet object
