@@ -43,61 +43,72 @@ export function getA1Notation({
 }: A1NotationParams): string {
     const adjustedRange = offsetGridRange({ origin: mappedRange.namedRange.range, rowOffset, colOffset, height, width });
 
-    // Fetch sheet dimensions to cap unbounded ends
-    const gridProps = mappedRange.sheet.properties?.gridProperties;
-    const maxRows = gridProps?.rowCount ?? 1000;
-    const maxCols = gridProps?.columnCount ?? 1000;
+    // Missing start indices in GridRange imply 0
+    const startRowIndex = adjustedRange.startRowIndex ?? 0;
+    const startColIndex = adjustedRange.startColumnIndex ?? 0;
 
-    // Identify bounded vs unbounded states
-    const startRowDefined = adjustedRange.startRowIndex !== undefined;
-    const endRowDefined = adjustedRange.endRowIndex !== undefined;
-    const startColDefined = adjustedRange.startColumnIndex !== undefined;
-    const endColDefined = adjustedRange.endColumnIndex !== undefined;
-
-    // A dimension is fully unbounded only if BOTH start and end are omitted
-    const isRowFullyUnbounded = !startRowDefined && !endRowDefined;
-    const isColFullyUnbounded = !startColDefined && !endColDefined;
+    // Check if endings are explicitly defined
+    const hasEndRow = adjustedRange.endRowIndex !== undefined;
+    const hasEndCol = adjustedRange.endColumnIndex !== undefined;
 
     // Resolve indices (0-based) to 1-based coordinates
-    // Start defaults to 0 (row 1 or col A)
-    const startRow = (adjustedRange.startRowIndex ?? 0) + 1;
-    const startColLetter = getColumnLetter(adjustedRange.startColumnIndex ?? 0);
+    const startRow = startRowIndex + 1;
+    const endRow = hasEndRow ? adjustedRange.endRowIndex : undefined; // endRowIndex is exclusive, so value matches 1-based inclusive end
 
-    // End defaults to the maximum bound of the sheet
-    const endRow = adjustedRange.endRowIndex ?? maxRows;
-    const endColIndex = adjustedRange.endColumnIndex ?? maxCols;
-    const endColLetter = getColumnLetter(endColIndex - 1); // Subtract 1 because endIndex is exclusive
+    const startColLetter = getColumnLetter(startColIndex);
+    // biome-ignore lint/style/noNonNullAssertion: If `hasEndCol` we know it's not undefined
+    const endColLetter = hasEndCol ? getColumnLetter(adjustedRange.endColumnIndex! - 1) : undefined;
 
     // Build lock prefixes
     const rowPrefix = lockRows ? "$" : "";
     const colPrefix = lockColumns ? "$" : "";
 
-    // Build coordinate strings (omit completely if fully unbounded to support A:A or 1:1)
-    const startRowStr = isRowFullyUnbounded ? "" : `${rowPrefix}${startRow}`;
-    const endRowStr = isRowFullyUnbounded ? "" : `${rowPrefix}${endRow}`;
+    // Pre-construct the individual notation parts
+    const sColStr = `${colPrefix}${startColLetter}`;
+    const sRowStr = `${rowPrefix}${startRow}`;
+    const eColStr = hasEndCol ? `${colPrefix}${endColLetter}` : "";
+    const eRowStr = hasEndRow ? `${rowPrefix}${endRow}` : "";
 
-    const startColStr = isColFullyUnbounded ? "" : `${colPrefix}${startColLetter}`;
-    const endColStr = isColFullyUnbounded ? "" : `${colPrefix}${endColLetter}`;
-
-    const startA1 = `${startColStr}${startRowStr}`;
-    const endA1 = `${endColStr}${endRowStr}`;
-
-    // Formulate the final A1 notation
     let a1Notation = "";
 
-    if (isRowFullyUnbounded && isColFullyUnbounded) {
-        // Fallback for an entirely unbounded range (the whole sheet)
-        a1Notation = `${colPrefix}A${rowPrefix}1:${colPrefix}${endColLetter}${rowPrefix}${maxRows}`;
-    } else if (startA1 === endA1) {
-        // If start and end strings are identical, it's a single entity
-        if (isRowFullyUnbounded || isColFullyUnbounded) {
-            a1Notation = `${startA1}:${startA1}`; // Single entire row (1:1) or col (A:A)
+    // Formulate the A1 notation based on unbounded state combinations
+    if (!hasEndRow && !hasEndCol) {
+        // Fallback: Fully unbounded at both ends (e.g., starting at C3 and going to bottom-right).
+        // Requires sheet boundaries to explicitly cap.
+        const gridProps = mappedRange.sheet.properties?.gridProperties;
+        const maxRows = gridProps?.rowCount ?? 1000;
+        const maxCols = gridProps?.columnCount ?? 1000;
+        const maxColLetter = getColumnLetter(maxCols - 1);
+
+        a1Notation = `${sColStr}${sRowStr}:${colPrefix}${maxColLetter}${rowPrefix}${maxRows}`;
+    } else if (!hasEndRow) {
+        // Unbounded rows (goes to bottom), bounded columns
+        if (startRowIndex === 0) {
+            // Entire column(s) -> e.g., A:A or A:B
+            a1Notation = `${sColStr}:${eColStr}`;
         } else {
-            a1Notation = startA1; // Single cell (A1)
+            // Starts at specific row, goes to bottom -> e.g., C3:C
+            a1Notation = `${sColStr}${sRowStr}:${eColStr}`;
+        }
+    } else if (!hasEndCol) {
+        // Unbounded columns (goes to right), bounded rows
+        if (startColIndex === 0) {
+            // Entire row(s) -> e.g., 1:1 or 1:2
+            a1Notation = `${sRowStr}:${eRowStr}`;
+        } else {
+            // Starts at specific column, goes to right -> e.g., C3:3
+            a1Notation = `${sColStr}${sRowStr}:${eRowStr}`;
         }
     } else {
-        // Standard range (A1:B2, A:B, 1:2, or C4:Z1000)
-        a1Notation = `${startA1}:${endA1}`;
+        // Fully bounded (standard ranges)
+        const startA1 = `${sColStr}${sRowStr}`;
+        const endA1 = `${eColStr}${eRowStr}`;
+
+        if (startA1 === endA1) {
+            a1Notation = startA1; // Single cell (e.g., A1)
+        } else {
+            a1Notation = `${startA1}:${endA1}`; // Standard bounded range (e.g., A1:B2)
+        }
     }
 
     // Append sheet name if requested
