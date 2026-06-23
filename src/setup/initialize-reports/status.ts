@@ -1,14 +1,17 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import {
+    buildFieldsMask,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateSheetPropertiesRequest,
     createRange,
     createRequiredGetter,
+    getA1Notation,
     type ParsedSpreadsheet,
+    RangeBehavior,
     Style,
 } from "../../common/gas-utils";
-import { createSetupRowValidFormula, type ReportPersistentData, StudentRowType } from "../../common/report-utils";
+import { createSetupRowValidFormula, createSetupTextValidationFormula, type ReportPersistentData, StudentRowType } from "../../common/report-utils";
 
 /**
  * Fills in the Status sheet with the subjects, students and the formulas to put ✔️ or ❌ everywhere.
@@ -17,14 +20,17 @@ export function prepareStatusSheet(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     persistentData: ReportPersistentData,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
+    let rowOffset = 0;
+
     // Prepare the sheet
     const prepareRequests = prepareSheet(parsedReport, persistentData);
 
     // Fill in the data
-    const colOffset = 0;
+    const { requests: generalInfoRequests, newRowOffset: generalInfoRowOffset } = fillGeneralInfo(parsedReport, persistentData, rowOffset);
+    rowOffset = generalInfoRowOffset;
 
     // Fill in the data
-    return [...prepareRequests];
+    return [...prepareRequests, ...generalInfoRequests];
 }
 
 /**
@@ -52,9 +58,15 @@ function prepareSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
 /**
  * Fill the General Data section of the sheet
  */
-function fillGeneralData(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+function fillGeneralInfo(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    rowOffset: number,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
-    const generalInfoRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.info);
+
+    const statusInfoRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.info);
+    const studentInfoRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.generalInfo);
 
     const userEnteredFormat: GoogleAppsScript.Sheets.Schema.CellFormat = {
         borders: {
@@ -86,11 +98,61 @@ function fillGeneralData(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchem
 
     for (const [index, studentRow] of persistentData.students.entries()) {
         const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+
         if (studentRow.type === StudentRowType.STUDENT) {
-            rowData.push({ userEnteredValue: { formulaValue: createSetupRowValidFormula(generalInfoRange, 1 + index, 4) } }, {});
-        } else {
+            const curpA1Cell = getA1Notation({
+                mappedRange: studentInfoRange,
+                includeSheetName: true,
+                customSheetName: studentRow.sheetName,
+                rowOffset: 0,
+                width: 1,
+                height: 1,
+            });
+            const gradoA1Cell = getA1Notation({
+                mappedRange: studentInfoRange,
+                includeSheetName: true,
+                customSheetName: studentRow.sheetName,
+                rowOffset: 1,
+                width: 1,
+                height: 1,
+            });
+            const nivelA1Cell = getA1Notation({
+                mappedRange: studentInfoRange,
+                includeSheetName: true,
+                customSheetName: studentRow.sheetName,
+                rowOffset: 2,
+                width: 1,
+                height: 1,
+            });
+
+            rowData.push(
+                { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusInfoRange, 1 + rowOffset + index, 4) } },
+                { userEnteredValue: { numberValue: studentRow.id } },
+                { userEnteredValue: { stringValue: studentRow.firstName } },
+                { userEnteredValue: { stringValue: studentRow.lastName } },
+                { userEnteredFormat },
+                { userEnteredValue: { formulaValue: createSetupTextValidationFormula(curpA1Cell) } },
+                {},
+                { userEnteredFormat },
+                { userEnteredValue: { formulaValue: createSetupTextValidationFormula(gradoA1Cell) } },
+                {},
+                { userEnteredFormat },
+                { userEnteredValue: { formulaValue: createSetupTextValidationFormula(nivelA1Cell) } },
+                {},
+            );
         }
+
+        data.push(rowData);
     }
 
-    return [];
+    const result = buildTransferRequests({
+        destination: statusInfoRange,
+        data,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        rowOffset,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
+        colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+    });
+
+    return { requests: result.requests, newRowOffset: result.rowOffset };
 }
