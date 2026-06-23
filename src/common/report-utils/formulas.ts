@@ -1,4 +1,5 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import { DEFAULT_COMMENT } from "./constants";
 import type { AcademicField, Period } from "./types";
 
 /**
@@ -194,7 +195,7 @@ export function createSetupRowValidFormula(mappedRange: MappedNamedRange, rowOff
  * Helper to create Status formula checking simple text
  */
 export function createSetupTextValidationFormula(a1Cell: string) {
-    return ``;
+    return `=IF(REGEXMATCH(TO_TEXT(${a1Cell}), "^\\s*$"), "❌", "✔️")`;
 }
 
 /**
@@ -202,4 +203,19 @@ export function createSetupTextValidationFormula(a1Cell: string) {
  */
 export function createSetupHabilityValidationFormula(a1Cell: string) {
     return `=IF(ISNUMBER(MATCH(TRUE, ARRAYFORMULA(EXACT(${a1Cell}, {"E", "B", "S", "R"})), 0)), "✔️", "❌")`;
+}
+
+/**
+ * Helper to create Status formula checking comments
+ */
+export function createSetupCommentValidationFormula(a1Cell: string) {
+    const comment_start = DEFAULT_COMMENT.slice(0, 20);
+    return `=IF(REGEXMATCH(TO_TEXT(${a1Cell}), "^[\\d\\W]*$|^${comment_start}"), "❌", "✔️")`;
+}
+
+/**
+ * Helper to create Status formula checking grade
+ */
+export function createSetupGradeValidationFormula(a1Cell: string) {
+    return `=IF(AND(ISNUMBER(${a1Cell}), ISBETWEEN(${a1Cell}, 0, 10)), "✔️", "❌")`;
 }

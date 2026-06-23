@@ -6,8 +6,9 @@ import {
     createRange,
     createRequiredGetter,
     type ParsedSpreadsheet,
+    Style,
 } from "../../common/gas-utils";
-import type { ReportPersistentData } from "../../common/report-utils";
+import { createSetupRowValidFormula, type ReportPersistentData, StudentRowType } from "../../common/report-utils";
 
 /**
  * Fills in the Status sheet with the subjects, students and the formulas to put ✔️ or ❌ everywhere.
@@ -53,6 +54,43 @@ function prepareSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
  */
 function fillGeneralData(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const generalInfoRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.info);
+
+    const userEnteredFormat: GoogleAppsScript.Sheets.Schema.CellFormat = {
+        borders: {
+            left: {
+                style: Style.SOLID,
+                colorStyle: { rgbColor: { red: 204, green: 204, blue: 204 } },
+            },
+        },
+    };
+
+    // Header
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+        [
+            { userEnteredValue: { stringValue: "Datos Generales" } },
+            {},
+            {},
+            {},
+            { userEnteredValue: { stringValue: "CURP" }, userEnteredFormat },
+            {},
+            {},
+            { userEnteredValue: { stringValue: "Grado" }, userEnteredFormat },
+            {},
+            {},
+            { userEnteredValue: { stringValue: "Nivel" }, userEnteredFormat },
+            {},
+            {},
+        ],
+    ];
+
+    for (const [index, studentRow] of persistentData.students.entries()) {
+        const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+        if (studentRow.type === StudentRowType.STUDENT) {
+            rowData.push({ userEnteredValue: { formulaValue: createSetupRowValidFormula(generalInfoRange, 1 + index, 4) } }, {});
+        } else {
+        }
+    }
 
     return [];
 }
