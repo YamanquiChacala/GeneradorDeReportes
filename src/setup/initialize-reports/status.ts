@@ -2,9 +2,9 @@ import { ReportSheetSchema } from "../../common/gas-parts";
 import {
     buildFieldsMask,
     buildTransferRequests,
-    buildUnmergeCellsRequest,
+    //buildUnmergeCellsRequest,
     buildUpdateSheetPropertiesRequest,
-    createRange,
+    //createRange,
     createRequiredGetter,
     getA1Notation,
     type ParsedSpreadsheet,
@@ -29,8 +29,12 @@ export function prepareStatusSheet(
     const { requests: generalInfoRequests, newRowOffset: generalInfoRowOffset } = fillGeneralInfo(parsedReport, persistentData, rowOffset);
     rowOffset = generalInfoRowOffset;
 
+    // Fill in Habilities
+    const { requests: habilitiesRequests, newRowOffset: habilitiesRowOffset } = fillHabilities(parsedReport, persistentData, rowOffset);
+    rowOffset = habilitiesRowOffset;
+
     // Fill in the data
-    return [...prepareRequests, ...generalInfoRequests];
+    return [...prepareRequests, ...generalInfoRequests, ...habilitiesRequests];
 }
 
 /**
@@ -49,10 +53,10 @@ function prepareSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     const propertiesRequest = buildUpdateSheetPropertiesRequest({ sheetId: statusSheetId, columnCount: width, hidden: false, frozenColumnCount: frozenCols, index: 1 });
 
     // Remove merged cells to avoid problems with data input
-    const unfrozenRange = createRange(statusSheetId, 0, frozenCols);
-    const unmergeRequest = buildUnmergeCellsRequest(unfrozenRange);
+    //const unfrozenRange = createRange(statusSheetId, 0, frozenCols);
+    //const unmergeRequest = buildUnmergeCellsRequest(unfrozenRange);
 
-    return [propertiesRequest, unmergeRequest];
+    return [propertiesRequest]; // , unmergeRequest];
 }
 
 /**
@@ -155,4 +159,22 @@ function fillGeneralInfo(
     });
 
     return { requests: result.requests, newRowOffset: result.rowOffset };
+}
+
+/**
+ * Fill the Status habilities formulas
+ */
+function fillHabilities(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    rowOffset: number,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "Habilidades de aprendizaje" } }, {}, {}, {}];
+
+    for (const subject of persistentData.subjects) {
+    }
+
+    return {};
 }
