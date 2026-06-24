@@ -1,4 +1,4 @@
-import { type HSLColor, hslToRgb, type RGBColor, rgbToHex } from "../utils";
+import { CssColorMap, type HSLColor, hexToRgb, hslToRgb, isColorKey, type RGBColor, rgbToHex } from "../utils";
 import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from "./constants";
 
 /**
@@ -9,9 +9,8 @@ export function createBanding(hue: number, header = false, footer = false): Goog
         firstBandColor: LIGHT_GREY_COLOR,
         secondBandColor: hslToColor({ h: hue, s: 1, l: BAND_LIGHT }),
     };
-    // TODO: Update to ColorStyle
     if (header) banding.headerColorStyle = { rgbColor: hslToColor({ h: hue, s: HEADER_SAT, l: HEADER_LIGH }) };
-    if (footer) banding.footerColor = hslToColor({ h: hue, s: FOOTER_SAT, l: FOOTER_LIGH });
+    if (footer) banding.footerColorStyle = { rgbColor: hslToColor({ h: hue, s: FOOTER_SAT, l: FOOTER_LIGH }) };
 
     return banding;
 }
@@ -37,5 +36,43 @@ function hslToColor(color: HSLColor): GoogleAppsScript.Sheets.Schema.Color {
         red: rgbColor.r,
         green: rgbColor.g,
         blue: rgbColor.b,
+        alpha: 1,
+    };
+}
+
+export function hexToColor(hex: string): GoogleAppsScript.Sheets.Schema.Color | null {
+    const rgb = hexToRgb(hex);
+    if (rgb == null) {
+        return null;
+    }
+    return {
+        red: rgb.r,
+        green: rgb.g,
+        blue: rgb.b,
+        alpha: 1,
+    };
+}
+
+/**
+ * Retrieves a Google Sheets Schema Color based on a CSS color key.
+ * Returns null if the color key is invalid or the hex fails to parse.
+ */
+export function getColorFromName(colorName: string): GoogleAppsScript.Sheets.Schema.Color | null {
+    if (!isColorKey(colorName)) {
+        return null;
+    }
+
+    const hex = CssColorMap[colorName];
+    const rgb = hexToRgb(hex);
+
+    if (rgb == null) {
+        return null;
+    }
+
+    return {
+        red: rgb.r,
+        green: rgb.g,
+        blue: rgb.b,
+        alpha: 1, // GAS schema expects alpha from 0 to 1; 1 is fully opaque
     };
 }

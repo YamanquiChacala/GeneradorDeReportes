@@ -52,8 +52,8 @@ export const ReportSheetSchema = {
             sheetName: "Estado",
             ranges: {
                 info: "estado_Datos",
-                abilities: "estado_habilidades",
-                comments: "estado_observaciones",
+                abilities: "estado_Habilidades",
+                comments: "estado_Observaciones",
                 trim1: "estado_Periodo1",
                 trim2: "estado_Periodo2",
                 trim3: "estado_Periodo3",

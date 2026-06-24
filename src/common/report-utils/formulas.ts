@@ -201,7 +201,7 @@ export function createSetupTextValidationFormula(a1Cell: string) {
 /**
  * Helper to create Status formula checking habilities
  */
-export function createSetupHabilityValidationFormula(a1Cell: string) {
+export function createSetupAbilityValidationFormula(a1Cell: string) {
     return `=IF(ISNUMBER(MATCH(TRUE, ARRAYFORMULA(EXACT(${a1Cell}, {"E", "B", "S", "R"})), 0)), "✔️", "❌")`;
 }
 

@@ -15,6 +15,7 @@ describe("GAS Utils, Colors", () => {
                     red: expectedSecondBandRgb.r,
                     green: expectedSecondBandRgb.g,
                     blue: expectedSecondBandRgb.b,
+                    alpha: 1,
                 },
             });
 
@@ -32,6 +33,7 @@ describe("GAS Utils, Colors", () => {
                 red: expectedHeaderRgb.r,
                 green: expectedHeaderRgb.g,
                 blue: expectedHeaderRgb.b,
+                alpha: 1,
             });
             expect("footerColor" in result).toBe(false);
         });
@@ -41,10 +43,11 @@ describe("GAS Utils, Colors", () => {
             const expectedFooterRgb = hslToRgb({ h: hue, s: FOOTER_SAT, l: FOOTER_LIGH });
             const result = createBanding(hue, false, true);
 
-            expect(result.footerColor).toEqual({
+            expect(result.footerColorStyle?.rgbColor).toEqual({
                 red: expectedFooterRgb.r,
                 green: expectedFooterRgb.g,
                 blue: expectedFooterRgb.b,
+                alpha: 1,
             });
             expect("headerColor" in result).toBe(false);
         });
@@ -60,11 +63,13 @@ describe("GAS Utils, Colors", () => {
                 red: expectedHeaderRgb.r,
                 green: expectedHeaderRgb.g,
                 blue: expectedHeaderRgb.b,
+                alpha: 1,
             });
-            expect(result.footerColor).toEqual({
+            expect(result.footerColorStyle?.rgbColor).toEqual({
                 red: expectedFooterRgb.r,
                 green: expectedFooterRgb.g,
                 blue: expectedFooterRgb.b,
+                alpha: 1,
             });
         });
 
@@ -77,6 +82,7 @@ describe("GAS Utils, Colors", () => {
                 red: expectedLowSecondBand.r,
                 green: expectedLowSecondBand.g,
                 blue: expectedLowSecondBand.b,
+                alpha: 1,
             });
 
             // Testing hue = 1 (Red boundary, full rotation)
@@ -87,6 +93,7 @@ describe("GAS Utils, Colors", () => {
                 red: expectedHighSecondBand.r,
                 green: expectedHighSecondBand.g,
                 blue: expectedHighSecondBand.b,
+                alpha: 1,
             });
         });
     });

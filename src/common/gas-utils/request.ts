@@ -1,5 +1,6 @@
 import { getRandomId } from "../utils";
-import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
+import { MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
+import { hexToColor } from "./color";
 import { buildFieldsMask, createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
@@ -36,7 +37,10 @@ export function buildCopyPasteRequest(
 /**
  * Generates batch upate `mergeCells` request.
  */
-export function buildMergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, mergeType: MergeType): GoogleAppsScript.Sheets.Schema.Request {
+export function buildMergeCellsRequest(
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    mergeType: MergeType = MergeType.MERGE_ALL,
+): GoogleAppsScript.Sheets.Schema.Request {
     return {
         mergeCells: {
             range,
@@ -52,6 +56,24 @@ export function buildUnmergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets
     return {
         unmergeCells: {
             range,
+        },
+    };
+}
+
+/**
+ * Generates batch update `updateBorders` request to add a border to the right of the range.
+ */
+export function buildRightBorderRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, hexColor: string): GoogleAppsScript.Sheets.Schema.Request {
+    const black: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 0, blue: 0, alpha: 1 };
+    const rgbColor = hexToColor(hexColor) ?? black;
+
+    return {
+        updateBorders: {
+            range,
+            right: {
+                style: Style.SOLID,
+                colorStyle: { rgbColor },
+            },
         },
     };
 }

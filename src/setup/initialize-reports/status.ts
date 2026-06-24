@@ -1,17 +1,26 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import {
     buildFieldsMask,
+    buildMergeCellsRequest,
+    buildRightBorderRequest,
     buildTransferRequests,
-    //buildUnmergeCellsRequest,
+    buildUnmergeCellsRequest,
     buildUpdateSheetPropertiesRequest,
-    //createRange,
+    createRange,
     createRequiredGetter,
     getA1Notation,
+    offsetGridRange,
     type ParsedSpreadsheet,
     RangeBehavior,
-    Style,
 } from "../../common/gas-utils";
-import { createSetupRowValidFormula, createSetupTextValidationFormula, type ReportPersistentData, StudentRowType } from "../../common/report-utils";
+import {
+    createSetupAbilityValidationFormula,
+    createSetupRowValidFormula,
+    createSetupTextValidationFormula,
+    type ReportPersistentData,
+    StudentRowType,
+} from "../../common/report-utils";
+import { CssColorMap } from "../../common/utils";
 
 /**
  * Fills in the Status sheet with the subjects, students and the formulas to put ✔️ or ❌ everywhere.
@@ -29,8 +38,8 @@ export function prepareStatusSheet(
     const { requests: generalInfoRequests, newRowOffset: generalInfoRowOffset } = fillGeneralInfo(parsedReport, persistentData, rowOffset);
     rowOffset = generalInfoRowOffset;
 
-    // Fill in Habilities
-    const { requests: habilitiesRequests, newRowOffset: habilitiesRowOffset } = fillHabilities(parsedReport, persistentData, rowOffset);
+    // Fill in abilities
+    const { requests: habilitiesRequests, newRowOffset: habilitiesRowOffset } = fillAbilities(parsedReport, persistentData, rowOffset);
     rowOffset = habilitiesRowOffset;
 
     // Fill in the data
@@ -50,13 +59,13 @@ function prepareSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     const width = frozenCols + Math.max(9, 4 * persistentData.subjects.length);
 
     // Set the properties
-    const propertiesRequest = buildUpdateSheetPropertiesRequest({ sheetId: statusSheetId, columnCount: width, hidden: false, frozenColumnCount: frozenCols, index: 1 });
+    const propertiesRequest = buildUpdateSheetPropertiesRequest({ sheetId: statusSheetId, hidden: false, columnCount: width, frozenColumnCount: frozenCols, index: 1 });
 
     // Remove merged cells to avoid problems with data input
-    //const unfrozenRange = createRange(statusSheetId, 0, frozenCols);
-    //const unmergeRequest = buildUnmergeCellsRequest(unfrozenRange);
+    const unfrozenRange = createRange(statusSheetId, 0, frozenCols);
+    const unmergeRequest = buildUnmergeCellsRequest(unfrozenRange);
 
-    return [propertiesRequest]; // , unmergeRequest];
+    return [propertiesRequest, unmergeRequest];
 }
 
 /**
@@ -72,15 +81,6 @@ function fillGeneralInfo(
     const statusInfoRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.info);
     const studentInfoRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.generalInfo);
 
-    const userEnteredFormat: GoogleAppsScript.Sheets.Schema.CellFormat = {
-        borders: {
-            left: {
-                style: Style.SOLID,
-                colorStyle: { rgbColor: { red: 204, green: 204, blue: 204 } },
-            },
-        },
-    };
-
     // Header
     const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [
         [
@@ -88,68 +88,71 @@ function fillGeneralInfo(
             {},
             {},
             {},
-            { userEnteredValue: { stringValue: "CURP" }, userEnteredFormat },
+            { userEnteredValue: { stringValue: "CURP" } },
             {},
             {},
-            { userEnteredValue: { stringValue: "Grado" }, userEnteredFormat },
+            { userEnteredValue: { stringValue: "Grado" } },
             {},
             {},
-            { userEnteredValue: { stringValue: "Nivel" }, userEnteredFormat },
+            { userEnteredValue: { stringValue: "Nivel" } },
             {},
             {},
         ],
     ];
 
     for (const [index, studentRow] of persistentData.students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
         const rowData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
 
-        if (studentRow.type === StudentRowType.STUDENT) {
-            const curpA1Cell = getA1Notation({
-                mappedRange: studentInfoRange,
-                includeSheetName: true,
-                customSheetName: studentRow.sheetName,
-                rowOffset: 0,
-                width: 1,
-                height: 1,
-            });
-            const gradoA1Cell = getA1Notation({
-                mappedRange: studentInfoRange,
-                includeSheetName: true,
-                customSheetName: studentRow.sheetName,
-                rowOffset: 1,
-                width: 1,
-                height: 1,
-            });
-            const nivelA1Cell = getA1Notation({
-                mappedRange: studentInfoRange,
-                includeSheetName: true,
-                customSheetName: studentRow.sheetName,
-                rowOffset: 2,
-                width: 1,
-                height: 1,
-            });
+        const curpA1Cell = getA1Notation({
+            mappedRange: studentInfoRange,
+            includeSheetName: true,
+            customSheetName: studentRow.sheetName,
+            rowOffset: 0,
+            width: 1,
+            height: 1,
+        });
+        const gradoA1Cell = getA1Notation({
+            mappedRange: studentInfoRange,
+            includeSheetName: true,
+            customSheetName: studentRow.sheetName,
+            rowOffset: 1,
+            width: 1,
+            height: 1,
+        });
+        const nivelA1Cell = getA1Notation({
+            mappedRange: studentInfoRange,
+            includeSheetName: true,
+            customSheetName: studentRow.sheetName,
+            rowOffset: 2,
+            width: 1,
+            height: 1,
+        });
 
-            rowData.push(
-                { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusInfoRange, 1 + rowOffset + index, 4) } },
-                { userEnteredValue: { numberValue: studentRow.id } },
-                { userEnteredValue: { stringValue: studentRow.firstName } },
-                { userEnteredValue: { stringValue: studentRow.lastName } },
-                { userEnteredFormat },
-                { userEnteredValue: { formulaValue: createSetupTextValidationFormula(curpA1Cell) } },
-                {},
-                { userEnteredFormat },
-                { userEnteredValue: { formulaValue: createSetupTextValidationFormula(gradoA1Cell) } },
-                {},
-                { userEnteredFormat },
-                { userEnteredValue: { formulaValue: createSetupTextValidationFormula(nivelA1Cell) } },
-                {},
-            );
-        }
+        rowData.push(
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusInfoRange, 1 + rowOffset + index, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+            {},
+            { userEnteredValue: { formulaValue: createSetupTextValidationFormula(curpA1Cell) } },
+            {},
+            {},
+            { userEnteredValue: { formulaValue: createSetupTextValidationFormula(gradoA1Cell) } },
+            {},
+            {},
+            { userEnteredValue: { formulaValue: createSetupTextValidationFormula(nivelA1Cell) } },
+            {},
+        );
 
         data.push(rowData);
     }
 
-    const result = buildTransferRequests({
+    const dataTransferResult = buildTransferRequests({
         destination: statusInfoRange,
         data,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
@@ -158,23 +161,100 @@ function fillGeneralInfo(
         colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
     });
 
-    return { requests: result.requests, newRowOffset: result.rowOffset };
+    const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (let i = 0; i < 3; i++) {
+        const borderRange = offsetGridRange({
+            origin: statusInfoRange.namedRange.range,
+            colOffset: 4 + 3 * i,
+            width: 3,
+        });
+        const mergeRange = offsetGridRange({
+            origin: borderRange,
+            height: 1,
+        });
+        formatRequests.push(buildMergeCellsRequest(mergeRange));
+        formatRequests.push(buildRightBorderRequest(borderRange, CssColorMap.lightgray));
+    }
+
+    return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
 }
 
 /**
- * Fill the Status habilities formulas
+ * Fill the Status abilities formulas
  */
-function fillHabilities(
+function fillAbilities(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     persistentData: ReportPersistentData,
     rowOffset: number,
 ): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const statusAbilitiesRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.abilities);
+    const studentAbilitiesRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedAbilities);
+
     const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
+    // Header
     const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "Habilidades de aprendizaje" } }, {}, {}, {}];
-
     for (const subject of persistentData.subjects) {
+        header.push({ userEnteredValue: { stringValue: subject.subject } }, {}, {}, {});
+    }
+    data.push(header);
+
+    for (const [studentIndex, studentRow] of persistentData.students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
+        const studentData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusAbilitiesRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+        ];
+
+        persistentData.subjects.forEach((_, subjectIndex) => {
+            for (let i = 0; i < 4; i++) {
+                const a1Cell = getA1Notation({
+                    mappedRange: studentAbilitiesRange,
+                    includeSheetName: true,
+                    customSheetName: studentRow.sheetName,
+                    rowOffset: subjectIndex,
+                    colOffset: i,
+                    height: 1,
+                    width: 1,
+                    lockRows: true,
+                });
+                studentData.push({ userEnteredValue: { formulaValue: createSetupAbilityValidationFormula(a1Cell) } });
+            }
+        });
+
+        data.push(studentData);
     }
 
-    return {};
+    const dataTransferResult = buildTransferRequests({
+        destination: statusAbilitiesRange,
+        data,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        rowOffset,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
+        colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+    });
+
+    const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (let i = 0; i < persistentData.subjects.length; i++) {
+        const borderRange = offsetGridRange({
+            origin: statusAbilitiesRange.namedRange.range,
+            colOffset: 4 + 4 * i,
+            width: 4,
+        });
+        const mergeRange = offsetGridRange({
+            origin: borderRange,
+            height: 1,
+        });
+        formatRequests.push(buildMergeCellsRequest(mergeRange));
+        formatRequests.push(buildRightBorderRequest(borderRange, CssColorMap.lightgray));
+    }
+
+    return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
 }
