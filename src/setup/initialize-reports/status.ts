@@ -9,12 +9,15 @@ import {
     createRange,
     createRequiredGetter,
     getA1Notation,
+    MergeType,
     offsetGridRange,
     type ParsedSpreadsheet,
     RangeBehavior,
 } from "../../common/gas-utils";
 import {
     createSetupAbilityValidationFormula,
+    createSetupCommentValidationFormula,
+    createSetupGradeValidationFormula,
     createSetupRowValidFormula,
     createSetupTextValidationFormula,
     type ReportPersistentData,
@@ -32,7 +35,7 @@ export function prepareStatusSheet(
     let rowOffset = 0;
 
     // Prepare the sheet
-    const prepareRequests = prepareSheet(parsedReport, persistentData);
+    const { propertiesRequest, unmergeRequest } = prepareSheet(parsedReport, persistentData);
 
     // Fill in the data
     const { requests: generalInfoRequests, newRowOffset: generalInfoRowOffset } = fillGeneralInfo(parsedReport, persistentData, rowOffset);
@@ -42,14 +45,43 @@ export function prepareStatusSheet(
     const { requests: habilitiesRequests, newRowOffset: habilitiesRowOffset } = fillAbilities(parsedReport, persistentData, rowOffset);
     rowOffset = habilitiesRowOffset;
 
+    // Fill in comments
+    const { requests: commnentsRequests, newRowOffset: commentsRowOffset } = fillComments(parsedReport, persistentData, rowOffset);
+    rowOffset = commentsRowOffset;
+
+    // Fill in Period1
+    const { requests: period1Requests, newRowOffset: period1RowOffset } = fillPeriod1(parsedReport, persistentData, rowOffset);
+    rowOffset = period1RowOffset;
+
+    // Fill in Period2
+    const { requests: period2Requests, newRowOffset: period2RowOffset } = fillPeriod2(parsedReport, persistentData, rowOffset);
+    rowOffset = period2RowOffset;
+
+    // Fill in Period3
+    const { requests: period3Requests, newRowOffset: period3RowOffset } = fillPeriod3(parsedReport, persistentData, rowOffset);
+    rowOffset = period3RowOffset;
+
     // Fill in the data
-    return [...prepareRequests, ...generalInfoRequests, ...habilitiesRequests];
+    return [
+        propertiesRequest,
+        unmergeRequest,
+        ...generalInfoRequests,
+        ...habilitiesRequests,
+        ...commnentsRequests,
+        ...period1Requests,
+        ...period2Requests,
+        ...period3Requests,
+        propertiesRequest,
+    ];
 }
 
 /**
  * Resizes, sorts and gets the sheet ready to input information.
  */
-function prepareSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+function prepareSheet(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+): { propertiesRequest: GoogleAppsScript.Sheets.Schema.Request; unmergeRequest: GoogleAppsScript.Sheets.Schema.Request } {
     const getSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
     const statusSheetId = getSheet(ReportSheetSchema.sheets.status.sheetName).properties?.sheetId ?? 0;
 
@@ -65,7 +97,7 @@ function prepareSheet(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     const unfrozenRange = createRange(statusSheetId, 0, frozenCols);
     const unmergeRequest = buildUnmergeCellsRequest(unfrozenRange);
 
-    return [propertiesRequest, unmergeRequest];
+    return { propertiesRequest, unmergeRequest };
 }
 
 /**
@@ -138,7 +170,6 @@ function fillGeneralInfo(
             { userEnteredValue: { numberValue: studentRow.id } },
             { userEnteredValue: { stringValue: studentRow.firstName } },
             { userEnteredValue: { stringValue: studentRow.lastName } },
-            {},
             { userEnteredValue: { formulaValue: createSetupTextValidationFormula(curpA1Cell) } },
             {},
             {},
@@ -146,6 +177,7 @@ function fillGeneralInfo(
             {},
             {},
             { userEnteredValue: { formulaValue: createSetupTextValidationFormula(nivelA1Cell) } },
+            {},
             {},
         );
 
@@ -163,17 +195,13 @@ function fillGeneralInfo(
 
     const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     for (let i = 0; i < 3; i++) {
-        const borderRange = offsetGridRange({
+        const range = offsetGridRange({
             origin: statusInfoRange.namedRange.range,
             colOffset: 4 + 3 * i,
             width: 3,
         });
-        const mergeRange = offsetGridRange({
-            origin: borderRange,
-            height: 1,
-        });
-        formatRequests.push(buildMergeCellsRequest(mergeRange));
-        formatRequests.push(buildRightBorderRequest(borderRange, CssColorMap.lightgray));
+        formatRequests.push(buildMergeCellsRequest(range, MergeType.MERGE_ROWS));
+        formatRequests.push(buildRightBorderRequest(range, CssColorMap.lightgray));
     }
 
     return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
@@ -247,6 +275,320 @@ function fillAbilities(
             origin: statusAbilitiesRange.namedRange.range,
             colOffset: 4 + 4 * i,
             width: 4,
+        });
+        const mergeRange = offsetGridRange({
+            origin: borderRange,
+            height: 1,
+        });
+        formatRequests.push(buildMergeCellsRequest(mergeRange));
+        formatRequests.push(buildRightBorderRequest(borderRange, CssColorMap.lightgray));
+    }
+
+    return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
+}
+
+/**
+ * Fill the Status comments formulas
+ */
+function fillComments(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    rowOffset: number,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const statusCommentsRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.comments);
+    const studentCommentsRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedComments);
+
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    // Header
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "Observaciones" } }, {}, {}, {}];
+    for (const subject of persistentData.subjects) {
+        header.push({ userEnteredValue: { stringValue: subject.subject } }, {}, {});
+    }
+    data.push(header);
+
+    for (const [studentIndex, studentRow] of persistentData.students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
+        const studentData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusCommentsRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+        ];
+
+        persistentData.subjects.forEach((_, subjectIndex) => {
+            const a1Cell = getA1Notation({
+                mappedRange: studentCommentsRange,
+                includeSheetName: true,
+                customSheetName: studentRow.sheetName,
+                rowOffset: subjectIndex,
+                height: 1,
+                width: 1,
+                lockRows: true,
+                lockColumns: true,
+            });
+            studentData.push({ userEnteredValue: { formulaValue: createSetupCommentValidationFormula(a1Cell) } }, {}, {});
+        });
+
+        data.push(studentData);
+    }
+
+    const dataTransferResult = buildTransferRequests({
+        destination: statusCommentsRange,
+        data,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        rowOffset,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
+        colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+    });
+
+    const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (let i = 0; i < persistentData.subjects.length; i++) {
+        const range = offsetGridRange({
+            origin: statusCommentsRange.namedRange.range,
+            colOffset: 4 + 3 * i,
+            width: 3,
+        });
+        formatRequests.push(buildMergeCellsRequest(range, MergeType.MERGE_ROWS));
+        formatRequests.push(buildRightBorderRequest(range, CssColorMap.lightgray));
+    }
+
+    return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
+}
+
+/**
+ * Fill the Status period 1 formulas
+ */
+function fillPeriod1(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    rowOffset: number,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const statusPeriodRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.trim1);
+    const studentPeriodRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim1);
+
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    // Header
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "1er Periodo" } }, {}, {}, {}];
+    for (const subject of persistentData.subjects) {
+        header.push({ userEnteredValue: { stringValue: subject.subject } }, {}, {});
+    }
+    data.push(header);
+
+    for (const [studentIndex, studentRow] of persistentData.students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
+        const studentData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusPeriodRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+        ];
+
+        persistentData.subjects.forEach((_, subjectIndex) => {
+            for (let i = 0; i < 3; i++) {
+                const a1Cell = getA1Notation({
+                    mappedRange: studentPeriodRange,
+                    includeSheetName: true,
+                    customSheetName: studentRow.sheetName,
+                    rowOffset: subjectIndex,
+                    colOffset: i,
+                    height: 1,
+                    width: 1,
+                    lockRows: true,
+                });
+                studentData.push({ userEnteredValue: { formulaValue: createSetupGradeValidationFormula(a1Cell) } });
+            }
+        });
+
+        data.push(studentData);
+    }
+
+    const dataTransferResult = buildTransferRequests({
+        destination: statusPeriodRange,
+        data,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        rowOffset,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
+        colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+    });
+
+    const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (let i = 0; i < persistentData.subjects.length; i++) {
+        const borderRange = offsetGridRange({
+            origin: statusPeriodRange.namedRange.range,
+            colOffset: 4 + 3 * i,
+            width: 3,
+        });
+        const mergeRange = offsetGridRange({
+            origin: borderRange,
+            height: 1,
+        });
+        formatRequests.push(buildMergeCellsRequest(mergeRange));
+        formatRequests.push(buildRightBorderRequest(borderRange, CssColorMap.lightgray));
+    }
+
+    return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
+}
+
+/**
+ * Fill the Status period 2 formulas
+ */
+function fillPeriod2(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    rowOffset: number,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const statusPeriodRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.trim2);
+    const studentPeriodRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim2);
+
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    // Header
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "2do Periodo" } }, {}, {}, {}];
+    for (const subject of persistentData.subjects) {
+        header.push({ userEnteredValue: { stringValue: subject.subject } }, {}, {});
+    }
+    data.push(header);
+
+    for (const [studentIndex, studentRow] of persistentData.students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
+        const studentData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusPeriodRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+        ];
+
+        persistentData.subjects.forEach((_, subjectIndex) => {
+            for (let i = 0; i < 3; i++) {
+                const a1Cell = getA1Notation({
+                    mappedRange: studentPeriodRange,
+                    includeSheetName: true,
+                    customSheetName: studentRow.sheetName,
+                    rowOffset: subjectIndex,
+                    colOffset: i,
+                    height: 1,
+                    width: 1,
+                    lockRows: true,
+                });
+                studentData.push({ userEnteredValue: { formulaValue: createSetupGradeValidationFormula(a1Cell) } });
+            }
+        });
+
+        data.push(studentData);
+    }
+
+    const dataTransferResult = buildTransferRequests({
+        destination: statusPeriodRange,
+        data,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        rowOffset,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
+        colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+    });
+
+    const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (let i = 0; i < persistentData.subjects.length; i++) {
+        const borderRange = offsetGridRange({
+            origin: statusPeriodRange.namedRange.range,
+            colOffset: 4 + 3 * i,
+            width: 3,
+        });
+        const mergeRange = offsetGridRange({
+            origin: borderRange,
+            height: 1,
+        });
+        formatRequests.push(buildMergeCellsRequest(mergeRange));
+        formatRequests.push(buildRightBorderRequest(borderRange, CssColorMap.lightgray));
+    }
+
+    return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
+}
+
+/**
+ * Fill the Status period 3 formulas
+ */
+function fillPeriod3(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    rowOffset: number,
+): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const statusPeriodRange = getMappedRange(ReportSheetSchema.sheets.status.ranges.trim3);
+    const studentPeriodRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim3);
+
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    // Header
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "3er Periodo" } }, {}, {}, {}];
+    for (const subject of persistentData.subjects) {
+        header.push({ userEnteredValue: { stringValue: subject.subject } }, {}, {});
+    }
+    data.push(header);
+
+    for (const [studentIndex, studentRow] of persistentData.students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
+        const studentData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusPeriodRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+        ];
+
+        persistentData.subjects.forEach((_, subjectIndex) => {
+            for (let i = 0; i < 3; i++) {
+                const a1Cell = getA1Notation({
+                    mappedRange: studentPeriodRange,
+                    includeSheetName: true,
+                    customSheetName: studentRow.sheetName,
+                    rowOffset: subjectIndex,
+                    colOffset: i,
+                    height: 1,
+                    width: 1,
+                    lockRows: true,
+                });
+                studentData.push({ userEnteredValue: { formulaValue: createSetupGradeValidationFormula(a1Cell) } });
+            }
+        });
+
+        data.push(studentData);
+    }
+
+    const dataTransferResult = buildTransferRequests({
+        destination: statusPeriodRange,
+        data,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+        rowOffset,
+        rowBehavior: RangeBehavior.INSERT_DELETE,
+        colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
+    });
+
+    const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    for (let i = 0; i < persistentData.subjects.length; i++) {
+        const borderRange = offsetGridRange({
+            origin: statusPeriodRange.namedRange.range,
+            colOffset: 4 + 3 * i,
+            width: 3,
         });
         const mergeRange = offsetGridRange({
             origin: borderRange,
