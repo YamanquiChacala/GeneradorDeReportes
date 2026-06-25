@@ -38,16 +38,16 @@ export function prepareStatusSheet(
     const { propertiesRequest, unmergeRequest } = prepareSheet(parsedReport, persistentData);
 
     // Fill in the data
-    const { requests: generalInfoRequests, newRowOffset: generalInfoRowOffset } = fillGeneralInfo(parsedReport, persistentData, rowOffset);
-    rowOffset = generalInfoRowOffset;
+    const generalInfoResult = fillGeneralInfo(parsedReport, persistentData, rowOffset);
+    rowOffset = generalInfoResult.newRowOffset;
 
     // Fill in abilities
-    const { requests: habilitiesRequests, newRowOffset: habilitiesRowOffset } = fillAbilities(parsedReport, persistentData, rowOffset);
-    rowOffset = habilitiesRowOffset;
+    const abilitiesResult = fillAbilities(parsedReport, persistentData, rowOffset);
+    rowOffset = abilitiesResult.newRowOffset;
 
     // Fill in comments
-    const { requests: commnentsRequests, newRowOffset: commentsRowOffset } = fillComments(parsedReport, persistentData, rowOffset);
-    rowOffset = commentsRowOffset;
+    const commentsResult = fillComments(parsedReport, persistentData, rowOffset);
+    rowOffset = commentsResult.newRowOffset;
 
     // Fill in Period1
     const { requests: period1Requests, newRowOffset: period1RowOffset } = fillPeriod1(parsedReport, persistentData, rowOffset);
@@ -65,9 +65,9 @@ export function prepareStatusSheet(
     return [
         propertiesRequest,
         unmergeRequest,
-        ...generalInfoRequests,
-        ...habilitiesRequests,
-        ...commnentsRequests,
+        ...generalInfoResult.requests,
+        ...abilitiesResult.requests,
+        ...commentsResult.requests,
         ...period1Requests,
         ...period2Requests,
         ...period3Requests,
