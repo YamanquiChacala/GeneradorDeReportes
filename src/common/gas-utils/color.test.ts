@@ -1,5 +1,5 @@
 import { hslToRgb } from "../utils";
-import { colorToHex, createBanding } from "./color";
+import { colorToHex, createBanding, hexToColor } from "./color";
 import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from "./constants";
 
 describe("GAS Utils, Colors", () => {
@@ -10,12 +10,14 @@ describe("GAS Utils, Colors", () => {
             const result = createBanding(hue);
 
             expect(result).toEqual({
-                firstBandColor: LIGHT_GREY_COLOR,
-                secondBandColor: {
-                    red: expectedSecondBandRgb.r,
-                    green: expectedSecondBandRgb.g,
-                    blue: expectedSecondBandRgb.b,
-                    alpha: 1,
+                firstBandColorStyle: { rgbColor: LIGHT_GREY_COLOR },
+                secondBandColorStyle: {
+                    rgbColor: {
+                        red: expectedSecondBandRgb.r,
+                        green: expectedSecondBandRgb.g,
+                        blue: expectedSecondBandRgb.b,
+                        alpha: 1,
+                    },
                 },
             });
 
@@ -78,22 +80,26 @@ describe("GAS Utils, Colors", () => {
             const resultLow = createBanding(0);
             const expectedLowSecondBand = hslToRgb({ h: 0, s: 1, l: BAND_LIGHT });
 
-            expect(resultLow.secondBandColor).toEqual({
-                red: expectedLowSecondBand.r,
-                green: expectedLowSecondBand.g,
-                blue: expectedLowSecondBand.b,
-                alpha: 1,
+            expect(resultLow.secondBandColorStyle).toEqual({
+                rgbColor: {
+                    red: expectedLowSecondBand.r,
+                    green: expectedLowSecondBand.g,
+                    blue: expectedLowSecondBand.b,
+                    alpha: 1,
+                },
             });
 
             // Testing hue = 1 (Red boundary, full rotation)
             const resultHigh = createBanding(1);
             const expectedHighSecondBand = hslToRgb({ h: 1, s: 1, l: BAND_LIGHT });
 
-            expect(resultHigh.secondBandColor).toEqual({
-                red: expectedHighSecondBand.r,
-                green: expectedHighSecondBand.g,
-                blue: expectedHighSecondBand.b,
-                alpha: 1,
+            expect(resultHigh.secondBandColorStyle).toEqual({
+                rgbColor: {
+                    red: expectedHighSecondBand.r,
+                    green: expectedHighSecondBand.g,
+                    blue: expectedHighSecondBand.b,
+                    alpha: 1,
+                },
             });
         });
     });
@@ -138,6 +144,19 @@ describe("GAS Utils, Colors", () => {
 
         it("should fallback to pure white if color is undefined and no fallback is provided", () => {
             expect(colorToHex(undefined)).toBe("#FFFFFF");
+        });
+    });
+
+    describe("hexToColor", () => {
+        it("should convert a valid hex to a color", () => {
+            expect(hexToColor("#000000")).toEqual({ red: 0, green: 0, blue: 0, alpha: 1 });
+            expect(hexToColor("#ff0000")).toEqual({ red: 1, green: 0, blue: 0, alpha: 1 });
+            expect(hexToColor("#00FF00")).toEqual({ red: 0, green: 1, blue: 0, alpha: 1 });
+            expect(hexToColor("#ffffff")).toEqual({ red: 1, green: 1, blue: 1, alpha: 1 });
+        });
+
+        it("should return null on invalid input", () => {
+            expect(hexToColor("bad")).toBeNull();
         });
     });
 });

@@ -1,4 +1,4 @@
-import { MergeType, PasteOrientation, PasteType } from "./api-types";
+import { MergeType, PasteOrientation, PasteType, Style } from "./api-types";
 import {
     addNewNamedRange,
     addNewSheet,
@@ -7,6 +7,7 @@ import {
     buildMergeCellsRequest,
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
+    buildRightBorderRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
@@ -15,9 +16,13 @@ import {
 import { type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
 
 // Mock the random ID generator for consistent test assertions
-jest.mock("../utils", () => ({
-    getRandomId: jest.fn(() => 9999),
-}));
+jest.mock("../utils", () => {
+    const originalModule = jest.requireActual("../utils");
+    return {
+        ...originalModule,
+        getRandomId: jest.fn(() => 9999),
+    };
+});
 
 describe("GAS Util, Requests", () => {
     // --- State Mutation Tests Setup ---
@@ -63,7 +68,16 @@ describe("GAS Util, Requests", () => {
     describe("buildMergeCellsRequest", () => {
         it("should build a valid mergeCells request", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildMergeCellsRequest(range, MergeType.MERGE_ALL);
+            const request = buildMergeCellsRequest(range, MergeType.MERGE_ROWS);
+
+            expect(request.mergeCells).toBeDefined();
+            expect(request.mergeCells?.range).toBe(range);
+            expect(request.mergeCells?.mergeType).toBe(MergeType.MERGE_ROWS);
+        });
+
+        it("should default to MERGE_ALL", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const request = buildMergeCellsRequest(range);
 
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
@@ -78,6 +92,38 @@ describe("GAS Util, Requests", () => {
 
             expect(request.unmergeCells).toBeDefined();
             expect(request.unmergeCells?.range).toBe(range);
+        });
+    });
+
+    describe("buildRightBorderRequest", () => {
+        it("should build a valid border request", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const request = buildRightBorderRequest(range, "#FFFFFF");
+
+            expect(request).toEqual({
+                updateBorders: {
+                    range,
+                    right: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: { red: 1, green: 1, blue: 1, alpha: 1 } },
+                    },
+                },
+            });
+        });
+
+        it("should default to black on an invalid color", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const request = buildRightBorderRequest(range, "bad");
+
+            expect(request).toEqual({
+                updateBorders: {
+                    range,
+                    right: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: { red: 0, green: 0, blue: 0, alpha: 1 } },
+                    },
+                },
+            });
         });
     });
 

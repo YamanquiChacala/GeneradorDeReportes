@@ -1,4 +1,5 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import { DEFAULT_COMMENT } from "./constants";
 import {
     createAllSubjectsAverageFormula,
     createAttendaceFormulas,
@@ -6,7 +7,11 @@ import {
     createFieldFormula,
     createFinalSubjectAverageFormula,
     createIndividualSubjectAverageFormula,
+    createSetupAbilityValidationFormula,
+    createSetupCommentValidationFormula,
+    createSetupGradeValidationFormula,
     createSetupRowValidFormula,
+    createSetupTextValidationFormula,
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
     getShortCommentFormula,
@@ -296,6 +301,39 @@ describe("Report Utils. Formula Generators", () => {
             });
 
             expect(formula).toBe('=IF(COUNTIF(E2:2, "✔️") + COUNTIF(E2:2, "❌") = 0, "", IF(COUNTIF(E2:2, "❌") > 0, "❌", "✔️"))');
+        });
+    });
+
+    describe("createSetupTextValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupTextValidationFormula("B3");
+
+            expect(formula).toBe('=IF(REGEXMATCH(TO_TEXT(B3), "^\\s*$"), "❌", "✔️")');
+        });
+    });
+
+    describe("createSetupAbilityValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupAbilityValidationFormula("B3");
+
+            expect(formula).toBe('=IF(ISNUMBER(MATCH(TRUE, ARRAYFORMULA(EXACT(B3, {"E", "B", "S", "R"})), 0)), "✔️", "❌")');
+        });
+    });
+
+    describe("createSetupCommentValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupCommentValidationFormula("B3");
+            const comment_start = DEFAULT_COMMENT.slice(0, 20);
+
+            expect(formula).toBe(`=IF(REGEXMATCH(TO_TEXT(B3), "^[\\d\\W]*$|^${comment_start}"), "❌", "✔️")`);
+        });
+    });
+
+    describe("createSetupGradeValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupGradeValidationFormula("B3");
+
+            expect(formula).toBe('=IF(AND(ISNUMBER(B3), ISBETWEEN(B3, 0, 10)), "✔️", "❌")');
         });
     });
 });

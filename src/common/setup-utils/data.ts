@@ -1,4 +1,5 @@
-import { createAttendaceFormulas, type StudentRow, StudentRowType, type TrimesterRanges } from "../report-utils";
+import { type A1NotationParams, getA1Notation, type MappedNamedRange } from "../gas-utils";
+import { createAttendaceFormulas, createSetupRowValidFormula, type StudentRow, StudentRowType, type TrimesterRanges } from "../report-utils";
 import { TemplateSize } from "./types";
 
 interface MonthGroupMeta {
@@ -117,4 +118,87 @@ export function generateStudentGrid(students: StudentRow[], initialRow: number, 
     }
 
     return result;
+}
+
+export interface StatusSectionDataParams {
+    readonly statusRange: MappedNamedRange;
+    readonly studentRange: MappedNamedRange;
+    readonly title: string;
+    readonly headers: string[];
+    readonly students: StudentRow[];
+    readonly colsPerItem: number;
+    readonly rowOffset: number;
+    readonly mergeOnlyheader: boolean;
+    readonly formulaFunction: (a1Cell: string) => string;
+}
+
+/**
+ * Builds the data for the sections of the Status sheet
+ */
+export function buildStatusSectionData({
+    statusRange,
+    studentRange,
+    title,
+    headers,
+    students,
+    colsPerItem,
+    rowOffset,
+    mergeOnlyheader,
+    formulaFunction,
+}: StatusSectionDataParams): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    // Header
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: title } }, {}, {}, {}];
+    for (const label of headers) {
+        header.push({ userEnteredValue: { stringValue: label } });
+        for (let i = 1; i < colsPerItem; i++) {
+            header.push({});
+        }
+    }
+    data.push(header);
+
+    // Student rows
+    for (const [studentIndex, studentRow] of students.entries()) {
+        if (studentRow.type === StudentRowType.SEPARATOR) {
+            data.push([]);
+            continue;
+        }
+
+        const studentDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { numberValue: studentRow.id } },
+            { userEnteredValue: { stringValue: studentRow.firstName } },
+            { userEnteredValue: { stringValue: studentRow.lastName } },
+        ];
+
+        headers.forEach((_, headerIndex) => {
+            const a1Params: A1NotationParams = {
+                mappedRange: studentRange,
+                includeSheetName: true,
+                customSheetName: studentRow.sheetName,
+                rowOffset: headerIndex,
+                height: 1,
+                width: 1,
+                lockColumns: true,
+                lockRows: true,
+            };
+            if (mergeOnlyheader) {
+                for (let i = 0; i < colsPerItem; i++) {
+                    a1Params.colOffset = i;
+                    const a1Cell = getA1Notation(a1Params);
+                    studentDataRow.push({ userEnteredValue: { formulaValue: formulaFunction(a1Cell) } });
+                }
+            } else {
+                const a1Cell = getA1Notation(a1Params);
+                studentDataRow.push({ userEnteredValue: { formulaValue: formulaFunction(a1Cell) } });
+                for (let i = 1; i < colsPerItem; i++) {
+                    studentDataRow.push({});
+                }
+            }
+        });
+
+        data.push(studentDataRow);
+    }
+    return data;
 }

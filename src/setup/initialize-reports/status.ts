@@ -1,6 +1,5 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import {
-    type A1NotationParams,
     buildFieldsMask,
     buildMergeCellsRequest,
     buildRightBorderRequest,
@@ -9,7 +8,6 @@ import {
     buildUpdateSheetPropertiesRequest,
     createRange,
     createRequiredGetter,
-    getA1Notation,
     type MappedNamedRange,
     MergeType,
     offsetGridRange,
@@ -20,12 +18,10 @@ import {
     createSetupAbilityValidationFormula,
     createSetupCommentValidationFormula,
     createSetupGradeValidationFormula,
-    createSetupRowValidFormula,
     createSetupTextValidationFormula,
     type ReportPersistentData,
-    type StudentRow,
-    StudentRowType,
 } from "../../common/report-utils";
+import { buildStatusSectionData, type StatusSectionDataParams } from "../../common/setup-utils";
 import { CssColorMap } from "../../common/utils";
 
 /**
@@ -108,17 +104,17 @@ function fillGeneralInfo(
 
     const headers = ["CURP", "Grado", "Nivel"];
 
-    return fillStatusSection(
-        statusInfoRange,
-        studentInfoRange,
-        "Datos Generales",
+    return fillStatusSection({
+        statusRange: statusInfoRange,
+        studentRange: studentInfoRange,
+        title: "Datos Generales",
         headers,
-        persistentData.students,
-        3,
+        students: persistentData.students,
+        colsPerItem: 3,
         rowOffset,
-        false,
-        createSetupTextValidationFormula,
-    );
+        mergeOnlyheader: false,
+        formulaFunction: createSetupTextValidationFormula,
+    });
 }
 
 /**
@@ -135,17 +131,17 @@ function fillAbilities(
 
     const subjects = persistentData.subjects.map((weightedSubject) => weightedSubject.subject);
 
-    return fillStatusSection(
-        statusAbilitiesRange,
-        studentAbilitiesRange,
-        "Habilidades de aprendizaje",
-        subjects,
-        persistentData.students,
-        4,
+    return fillStatusSection({
+        statusRange: statusAbilitiesRange,
+        studentRange: studentAbilitiesRange,
+        title: "Habilidades de aprendizaje",
+        headers: subjects,
+        students: persistentData.students,
+        colsPerItem: 4,
         rowOffset,
-        true,
-        createSetupAbilityValidationFormula,
-    );
+        mergeOnlyheader: true,
+        formulaFunction: createSetupAbilityValidationFormula,
+    });
 }
 
 /**
@@ -162,17 +158,17 @@ function fillComments(
 
     const subjects = persistentData.subjects.map((weightedSubject) => weightedSubject.subject);
 
-    return fillStatusSection(
-        statusCommentsRange,
-        studentCommentsRange,
-        "Observaciones",
-        subjects,
-        persistentData.students,
-        3,
+    return fillStatusSection({
+        statusRange: statusCommentsRange,
+        studentRange: studentCommentsRange,
+        title: "Observaciones",
+        headers: subjects,
+        students: persistentData.students,
+        colsPerItem: 3,
         rowOffset,
-        false,
-        createSetupCommentValidationFormula,
-    );
+        mergeOnlyheader: false,
+        formulaFunction: createSetupCommentValidationFormula,
+    });
 }
 
 /**
@@ -209,17 +205,17 @@ function fillPeriods(
     let newRowOffset = rowOffset;
 
     for (const { title, statusRange, studentRange } of periodOp) {
-        const periodResult = fillStatusSection(
+        const periodResult = fillStatusSection({
             statusRange,
             studentRange,
             title,
-            subjects,
-            persistentData.students,
-            3,
-            newRowOffset,
-            true,
-            createSetupGradeValidationFormula,
-        );
+            headers: subjects,
+            students: persistentData.students,
+            colsPerItem: 3,
+            rowOffset: newRowOffset,
+            mergeOnlyheader: true,
+            formulaFunction: createSetupGradeValidationFormula,
+        });
         requests.push(...periodResult.requests);
         newRowOffset = periodResult.newRowOffset;
     }
@@ -228,109 +224,32 @@ function fillPeriods(
 }
 
 /**
- * Builds the data for the sections of the Status sheet
- */
-function buildStatusSectionData(
-    statusRange: MappedNamedRange,
-    studentRange: MappedNamedRange,
-    title: string,
-    headers: string[],
-    students: StudentRow[],
-    colsPerItem: number,
-    rowOffset: number,
-    mergeOnlyheader: boolean,
-    formulaFunction: (a1Cell: string) => string,
-): GoogleAppsScript.Sheets.Schema.CellData[][] {
-    
-}
-
-/**
  * Helper to generate requests for each status sheet section
  */
-function fillStatusSection(
-    statusRange: MappedNamedRange,
-    studentRange: MappedNamedRange,
-    title: string,
-    headers: string[],
-    students: StudentRow[],
-    colsPerItem: number,
-    rowOffset: number,
-    mergeOnlyheader: boolean,
-    formulaFunction: (a1Cell: string) => string,
-): { requests: GoogleAppsScript.Sheets.Schema.Request[]; newRowOffset: number } {
-    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-
-    // Header
-    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: title } }, {}, {}, {}];
-    for (const label of headers) {
-        header.push({ userEnteredValue: { stringValue: label } });
-        for (let i = 1; i < colsPerItem; i++) {
-            header.push({});
-        }
-    }
-    data.push(header);
-
-    // Student rows
-    for (const [studentIndex, studentRow] of students.entries()) {
-        if (studentRow.type === StudentRowType.SEPARATOR) {
-            data.push([]);
-            continue;
-        }
-
-        const studentDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
-            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusRange, 1 + rowOffset + studentIndex, 4) } },
-            { userEnteredValue: { numberValue: studentRow.id } },
-            { userEnteredValue: { stringValue: studentRow.firstName } },
-            { userEnteredValue: { stringValue: studentRow.lastName } },
-        ];
-
-        headers.forEach((_, headerIndex) => {
-            const a1Params: A1NotationParams = {
-                mappedRange: studentRange,
-                includeSheetName: true,
-                customSheetName: studentRow.sheetName,
-                rowOffset: headerIndex,
-                height: 1,
-                width: 1,
-                lockColumns: true,
-                lockRows: true,
-            };
-            if (mergeOnlyheader) {
-                for (let i = 0; i < colsPerItem; i++) {
-                    a1Params.colOffset = i;
-                    const a1Cell = getA1Notation(a1Params);
-                    studentDataRow.push({ userEnteredValue: { formulaValue: formulaFunction(a1Cell) } });
-                }
-            } else {
-                const a1Cell = getA1Notation(a1Params);
-                studentDataRow.push({ userEnteredValue: { formulaValue: formulaFunction(a1Cell) } });
-                for (let i = 1; i < colsPerItem; i++) {
-                    studentDataRow.push({});
-                }
-            }
-        });
-
-        data.push(studentDataRow);
-    }
+function fillStatusSection(sectionParams: StatusSectionDataParams): {
+    requests: GoogleAppsScript.Sheets.Schema.Request[];
+    newRowOffset: number;
+} {
+    const data = buildStatusSectionData(sectionParams);
 
     // Data transfer
     const dataTransferResult = buildTransferRequests({
-        destination: statusRange,
+        destination: sectionParams.statusRange,
         data,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        rowOffset,
+        rowOffset: sectionParams.rowOffset,
         rowBehavior: RangeBehavior.INSERT_DELETE,
         colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
     });
 
     const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    headers.forEach((_, headerIndex) => {
+    sectionParams.headers.forEach((_, headerIndex) => {
         const range = offsetGridRange({
-            origin: statusRange.namedRange.range,
-            colOffset: 4 + colsPerItem * headerIndex,
-            width: colsPerItem,
+            origin: sectionParams.statusRange.namedRange.range,
+            colOffset: 4 + sectionParams.colsPerItem * headerIndex,
+            width: sectionParams.colsPerItem,
         });
-        if (mergeOnlyheader) {
+        if (sectionParams.mergeOnlyheader) {
             const mergeRange = offsetGridRange({ origin: range, height: 1 });
             formatRequests.push(buildMergeCellsRequest(mergeRange));
         } else {
