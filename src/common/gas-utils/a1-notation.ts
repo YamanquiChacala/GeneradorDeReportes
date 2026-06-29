@@ -15,16 +15,16 @@ export function getColumnLetter(column: number): string {
     return letter;
 }
 
-interface A1NotationParams {
-    readonly mappedRange: MappedNamedRange;
-    readonly includeSheetName?: boolean;
-    readonly customSheetName?: string;
-    readonly lockRows?: boolean;
-    readonly lockColumns?: boolean;
-    readonly rowOffset?: number;
-    readonly colOffset?: number;
-    readonly height?: number;
-    readonly width?: number;
+export interface A1NotationParams {
+    mappedRange: MappedNamedRange;
+    includeSheetName?: boolean;
+    customSheetName?: string;
+    lockRows?: boolean;
+    lockColumns?: boolean;
+    rowOffset?: number;
+    colOffset?: number;
+    height?: number;
+    width?: number;
 }
 
 /**
