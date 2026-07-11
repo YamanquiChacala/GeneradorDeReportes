@@ -82,3 +82,48 @@
 🔀 (twisted)
 📋 (clipboard)
 📊 (bar-chart)
+
+
+
+=LET(
+  strenght_range, E24,
+  weakness_range, F24,
+  suggestion_range, G24,
+
+  clean_text, LAMBDA(text,
+    LET(
+      accent_map, {"Á","A"; "É","E"; "Í","I"; "Ó","O"; "Ú","U"; "Ñ","N"; "Ü","U"},
+
+      no_placeholder, REGEXREPLACE(text, "^\[.*", ""),
+      upper_text, UPPER(no_placeholder),
+
+      substitutions, REDUCE(upper_text, SEQUENCE(ROWS(accent_map)), LAMBDA(acc, i, SUBSTITUTE(acc, INDEX(accent_map, i, 1), INDEX(accent_map, i, 2)))),
+
+      ascii_clean, REGEXREPLACE(substitutions, "[^\x00-\x7F]+", ""),
+      clean_spaces, TRIM(ascii_clean),
+      REGEXREPLACE(clean_spaces, "[,:;\.?!-]+$", "")
+    )
+  ),
+
+  process_column, LAMBDA(range, prefix,
+    LET(
+      clean_texts, MAP(range, clean_text), 
+      filtered, FILTER(clean_texts, clean_texts <> ""),
+      count, IF(ISERROR(filtered), 0, ROWS(filtered)),
+      
+      IF(count = 0, "", 
+        prefix & 
+        IF(count = 1, 
+          INDEX(filtered, 1), 
+          TEXTJOIN("; ", TRUE, CHOOSEROWS(filtered, SEQUENCE(count - 1))) & "; Y " & CHOOSEROWS(filtered, -1)
+        ) & "."
+      )
+    )
+  ),
+
+  strenghts, process_column(strenght_range, "DOMINA "),
+  weaknesses, process_column(weakness_range, "DEBE FORTALECER "),
+  suggestions, process_column(suggestion_range, "SE RECOMIENDA "),
+
+  TEXTJOIN(" ", TRUE, strenghts, weaknesses, suggestions)
+)

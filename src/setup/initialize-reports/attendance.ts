@@ -176,7 +176,7 @@ function addDateHeaders(
 
     // Format row 2
     const row2FormatSource = offsetGridRange({
-        origin: namedRanges[rangeNames.dayNames]?.namedRange.range ?? {},
+        origin: getMappedRange(rangeNames.dayNames).namedRange.range,
         height: 1,
         width: 1,
     });
