@@ -1,28 +1,15 @@
-import { getA1Notation, type MappedNamedRange } from "../gas-utils";
-import { createAttendaceFormulas, createSetupRowValidFormula, type StudentRow, StudentRowType, type TrimesterRanges } from "../report-utils";
-import { buildStatusSectionData, calculateCalendarHeaders, generateStudentGrid, type StatusSectionDataParams } from "./data";
+import type { MappedNamedRange } from "../gas-utils";
+import {
+    DEFAULT_COMMENT,
+    DEFAULT_SEP_STRENGHT,
+    DEFAULT_SEP_SUGGESTION,
+    DEFAULT_SEP_WEAKNESS,
+    type StudentRow,
+    StudentRowType,
+    type TrimesterRanges,
+} from "../report-utils";
+import { buildDefaultCommentForStudentTemplateData, buildStatusSectionData, calculateCalendarHeaders, generateStudentGrid } from "./data";
 import { TemplateSize } from "./types";
-
-// 1. Setup Typed Mocks
-jest.mock("../report-utils", () => {
-    const originalModule = jest.requireActual("../report-utils");
-    return {
-        ...originalModule,
-        createAttendaceFormulas: jest.fn(),
-        createSetupRowValidFormula: jest.fn(),
-    };
-});
-jest.mock("../gas-utils", () => {
-    const originalModule = jest.requireActual("../gas-utils");
-    return {
-        ...originalModule,
-        getA1Notation: jest.fn(),
-    };
-});
-
-const mockCreateAttendaceFormulas = createAttendaceFormulas as jest.MockedFunction<typeof createAttendaceFormulas>;
-const mockCreateSetupRowValidFormula = createSetupRowValidFormula as jest.MockedFunction<typeof createSetupRowValidFormula>;
-const mockGetA1Notation = getA1Notation as jest.MockedFunction<typeof getA1Notation>;
 
 describe("Setup Utils. Data", () => {
     describe("calculateCalendarHeaders", () => {
@@ -134,93 +121,28 @@ describe("Setup Utils. Data", () => {
                 row3Values: [1, 2, 3, 4, 5],
             });
         });
+
+        it("should handle cross-year transitions seamlessly", () => {
+            // Dec 31, 2023 (Sun) and Jan 1, 2024 (Mon)
+            const days = [Date.UTC(2023, 11, 31), Date.UTC(2024, 0, 1)];
+
+            // Passing empty arrays to trigger the `?? ""` fallback for missing names
+            const result = calculateCalendarHeaders(days, 0, [], [], [], ["Sun", "Mon"]);
+
+            expect(result).toEqual({
+                monthGroups: [
+                    { year: 2023, month: 11, startCol: 0, count: 1, template: TemplateSize.SMALL },
+                    { year: 2024, month: 0, startCol: 1, count: 1, template: TemplateSize.SMALL },
+                ],
+                row1Values: ["\n23", "\n24"],
+                row2Values: ["Sun", "Mon"],
+                row3Values: [31, 1],
+            });
+        });
     });
 
     describe("generateStudentGrid", () => {
-        beforeEach(() => {
-            jest.clearAllMocks();
-        });
-
-        const mockTrimesters: TrimesterRanges = {
-            trim1: { start: 1, end: 5 },
-            trim2: { start: 6, end: 10 },
-            trim3: { start: 11, end: 15 },
-        };
-
-        it("should return an empty array if no students are provided", () => {
-            const result = generateStudentGrid([], 5, mockTrimesters);
-            expect(result).toEqual([]);
-            expect(mockCreateAttendaceFormulas).not.toHaveBeenCalled();
-        });
-
-        it("should push empty arrays for non-student rows", () => {
-            // Natively satisfies the StudentSpace interface
-            const students: StudentRow[] = [{ type: StudentRowType.SEPARATOR }];
-
-            const result = generateStudentGrid(students, 5, mockTrimesters);
-
-            expect(result).toEqual([[]]);
-            expect(mockCreateAttendaceFormulas).not.toHaveBeenCalled();
-        });
-
-        it("should generate cell data correctly for student rows", () => {
-            // Natively satisfies the Student interface
-            const students: StudentRow[] = [
-                {
-                    type: StudentRowType.STUDENT,
-                    id: 99,
-                    firstName: "Jane",
-                    lastName: "Doe",
-                    sheetName: "Sheet1",
-                    sex: "F",
-                    level: "Elementary",
-                    grade: "1st",
-                    curp: "ABCD123456",
-                },
-            ];
-
-            const initialRow = 2;
-
-            // Mock the formulas returning specific strings so we can verify they map correctly
-            mockCreateAttendaceFormulas
-                .mockReturnValueOnce({ percent: "=P1", count: "=C1" }) // trim 1
-                .mockReturnValueOnce({ percent: "=P2", count: "=C2" }) // trim 2
-                .mockReturnValueOnce({ percent: "=P3", count: "=C3" }); // trim 3
-
-            const result = generateStudentGrid(students, initialRow, mockTrimesters);
-
-            // 1. Verify the dependency was called with the correct rows and column bounds
-            expect(mockCreateAttendaceFormulas).toHaveBeenCalledTimes(3);
-            expect(mockCreateAttendaceFormulas).toHaveBeenNthCalledWith(1, 2, 1, 5);
-            expect(mockCreateAttendaceFormulas).toHaveBeenNthCalledWith(2, 2, 6, 10);
-            expect(mockCreateAttendaceFormulas).toHaveBeenNthCalledWith(3, 2, 11, 15);
-
-            // 2. Verify the mapping structure output
-            expect(result).toEqual([
-                [
-                    { userEnteredValue: { numberValue: 99 } },
-                    { userEnteredValue: { stringValue: "Jane" } },
-                    { userEnteredValue: { stringValue: "Doe" } },
-                    { userEnteredValue: { formulaValue: "=P1" } },
-                    { userEnteredValue: { formulaValue: "=C1" } },
-                    { userEnteredValue: { formulaValue: "=P2" } },
-                    { userEnteredValue: { formulaValue: "=C2" } },
-                    { userEnteredValue: { formulaValue: "=P3" } },
-                    { userEnteredValue: { formulaValue: "=C3" } },
-                ],
-            ]);
-        });
-    });
-
-    describe("buildStatusSectionData", () => {
-        // Setup dummy data
-        const mockStatusRange = {} as MappedNamedRange;
-        const mockStudentRange = {} as MappedNamedRange;
-        const title = "Status Title";
-        const headers = ["HW 1", "HW 2"];
-        const formulaFunction = (a1Cell: string) => `=CUSTOM_FORMULA(${a1Cell})`;
-
-        const mockStudent: StudentRow = {
+        const mockStudent1: StudentRow = {
             type: StudentRowType.STUDENT,
             id: 101,
             firstName: "John",
@@ -231,125 +153,582 @@ describe("Setup Utils. Data", () => {
             grade: "A",
             curp: "123",
         };
+        const mockStudent2: StudentRow = {
+            type: StudentRowType.STUDENT,
+            id: 102,
+            firstName: "Jane",
+            lastName: "Deer",
+            sheetName: "JaneSheet",
+            sex: "F",
+            level: "2",
+            grade: "B",
+            curp: "456",
+        };
+        const mockSeparator: StudentRow = { type: StudentRowType.SEPARATOR };
+
+        const mockTrimesters: TrimesterRanges = {
+            trim1: { start: 1, end: 5 }, // B-F
+            trim2: { start: 6, end: 10 }, // G-K
+            trim3: { start: 11, end: 15 }, // L-P
+        };
+
+        it("should generate cell data correctly", () => {
+            const resutl = generateStudentGrid([mockStudent1, mockSeparator, mockStudent2], 2 /* row 3 */, mockTrimesters);
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { numberValue: 101 } },
+                    { userEnteredValue: { stringValue: "John" } },
+                    { userEnteredValue: { stringValue: "Doe" } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$B3:$F3") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$B3:$F3") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$G3:$K3") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$G3:$K3") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$L3:$P3") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$L3:$P3") } },
+                ],
+                [],
+                [
+                    { userEnteredValue: { numberValue: 102 } },
+                    { userEnteredValue: { stringValue: "Jane" } },
+                    { userEnteredValue: { stringValue: "Deer" } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$B5:$F5") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$B5:$F5") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$G5:$K5") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$G5:$K5") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$L5:$P5") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$L5:$P5") } },
+                ],
+            ];
+
+            expect(resutl).toEqual(expectedResult);
+        });
+
+        it("should return an empty array when no students are provided", () => {
+            const mockTrimesters: TrimesterRanges = {
+                trim1: { start: 1, end: 5 },
+                trim2: { start: 6, end: 10 },
+                trim3: { start: 11, end: 15 },
+            };
+
+            const result = generateStudentGrid([], 2, mockTrimesters);
+
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe("buildDefaultCommentForStudentTemplateData", () => {
+        const mockCommentsMappedRange: MappedNamedRange = {
+            namedRange: {
+                namedRangeId: "comments01",
+                name: "Mock Comments Range",
+                range: { sheetId: 5, startRowIndex: 25, startColumnIndex: 0, endRowIndex: 6, endColumnIndex: 11 },
+            },
+            sheet: {},
+        };
+
+        it("should generate correct date with no fields", () => {
+            const fieldSubjectCounts = [3, 1, 2];
+            const subjectNames = ["sub1", "sub2", "sub3", "sub4", "sub5", "sub6", "sub7"];
+
+            const result = buildDefaultCommentForStudentTemplateData({
+                commentsRange: mockCommentsMappedRange,
+                fieldSubjectCounts,
+                subjectNames,
+                averagePerField: false,
+            });
+
+            const expecteMergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: "sub1" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I26") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E26:$G26") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub2" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I27") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E27:$G27") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub3" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I28") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E28:$G28") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub4" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I29") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E29:$G29") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub5" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I30") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E30:$G30") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub6" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I31") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E31:$G31") } },
+                ],
+            ];
+
+            expect(result.mergeRanges).toEqual(expecteMergeRanges);
+            expect(result.data).toEqual(expectedData);
+        });
+
+        it("should generate correct date with fields", () => {
+            const fieldSubjectCounts = [3, 1, 2];
+            const subjectNames = ["sub1", "sub2", "sub3", "sub4", "sub5"];
+
+            const result = buildDefaultCommentForStudentTemplateData({
+                commentsRange: mockCommentsMappedRange,
+                fieldSubjectCounts,
+                subjectNames,
+                averagePerField: true,
+            });
+
+            const expecteMergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 5, startRowIndex: 25, startColumnIndex: 7, endRowIndex: 28, endColumnIndex: 8 },
+                { sheetId: 5, startRowIndex: 25, startColumnIndex: 8, endRowIndex: 28, endColumnIndex: 10 },
+                { sheetId: 5, startRowIndex: 28, startColumnIndex: 7, endRowIndex: 29, endColumnIndex: 8 },
+                { sheetId: 5, startRowIndex: 28, startColumnIndex: 8, endRowIndex: 29, endColumnIndex: 10 },
+                { sheetId: 5, startRowIndex: 29, startColumnIndex: 7, endRowIndex: 31, endColumnIndex: 8 },
+                { sheetId: 5, startRowIndex: 29, startColumnIndex: 8, endRowIndex: 31, endColumnIndex: 10 },
+            ];
+
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: "sub1" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[2] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[2] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[2] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I26") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E26:$G28") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub2" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[2] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[2] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[2] } },
+                    { userEnteredValue: { formulaValue: expect.any(String) } },
+                    { userEnteredValue: { formulaValue: expect.any(String) } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub3" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[2] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[2] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[2] } },
+                    { userEnteredValue: { formulaValue: expect.any(String) } },
+                    { userEnteredValue: { formulaValue: expect.any(String) } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub4" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[0] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[0] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I29") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E29:$G29") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "sub5" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[1] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[1] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[1] } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$I30") } },
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E30:$G31") } },
+                ],
+                [
+                    { userEnteredValue: { stringValue: "" } },
+                    { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[1] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[1] } },
+                    { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[1] } },
+                    { userEnteredValue: { formulaValue: expect.any(String) } },
+                    { userEnteredValue: { formulaValue: expect.any(String) } },
+                ],
+            ];
+
+            expect(result.mergeRanges).toEqual(expecteMergeRanges);
+            expect(result.data).toEqual(expectedData);
+        });
+    });
+
+    describe("buildStatusSectionData", () => {
+        // Setup dummy data
+        const mockStatusRange: MappedNamedRange = {
+            namedRange: {
+                namedRangeId: "asdf",
+                name: "Mock Status Range",
+                range: { sheetId: 100, startRowIndex: 0, startColumnIndex: 0, endRowIndex: 3, endColumnIndex: 6 },
+            },
+            sheet: {},
+        };
+        const mockStudentRange: MappedNamedRange = {
+            namedRange: {
+                namedRangeId: "fdsa",
+                name: "Mock Student Range",
+                range: { sheetId: 1, startRowIndex: 25, startColumnIndex: 1, endRowIndex: 27, endColumnIndex: 4 },
+            },
+            sheet: {},
+        };
+
+        const mockStudent1: StudentRow = {
+            type: StudentRowType.STUDENT,
+            id: 101,
+            firstName: "John",
+            lastName: "Doe",
+            sheetName: "JohnSheet",
+            sex: "M",
+            level: "1",
+            grade: "A",
+            curp: "123",
+        };
+        const mockStudent2: StudentRow = {
+            type: StudentRowType.STUDENT,
+            id: 102,
+            firstName: "Jane",
+            lastName: "Deer",
+            sheetName: "JaneSheet",
+            sex: "F",
+            level: "2",
+            grade: "B",
+            curp: "456",
+        };
         const mockSeparator: StudentRow = { type: StudentRowType.SEPARATOR };
 
         beforeEach(() => {
             jest.clearAllMocks();
         });
 
-        it("should correctly format the header row with colsPerItem padding", () => {
-            const params: StatusSectionDataParams = {
+        it("shold correctly generate data with a single formula", () => {
+            const title = "Status Title";
+
+            const result = buildStatusSectionData({
                 statusRange: mockStatusRange,
                 studentRange: mockStudentRange,
+                markColOffsets: [0],
                 title,
-                headers,
-                students: [],
-                colsPerItem: 3,
-                rowOffset: 0,
-                mergeOnlyheader: false,
-                formulaFunction,
-            };
+                headers: ["Subject1", "Subject2"],
+                studentRows: [mockStudent1, mockStudent2],
+                statusRowOffset: 5,
+                formulaFunction: (a1Cell: string) => `=CUSTOM_FORMULA(${a1Cell})`,
+            });
 
-            const data = buildStatusSectionData(params);
+            expect(result.data).toHaveLength(3); // Header + 2 students
+            expect(result.data[0]).toHaveLength(10); // 4 frozen columns + 2 subjects * 3 columns
 
-            expect(data).toHaveLength(1); // Only header
-            const headerRow = data[0];
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: title } },
+                    {},
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject1" } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject2" } },
+                    {},
+                    {},
+                ],
+                [
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E7:7") } },
+                    { userEnteredValue: { numberValue: 101 } },
+                    { userEnteredValue: { stringValue: "John" } },
+                    { userEnteredValue: { stringValue: "Doe" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$26)" } },
+                    {},
+                    {},
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$27)" } },
+                    {},
+                    {},
+                ],
+                [
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E8:8") } },
+                    { userEnteredValue: { numberValue: 102 } },
+                    { userEnteredValue: { stringValue: "Jane" } },
+                    { userEnteredValue: { stringValue: "Deer" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JaneSheet'!$B$26)" } },
+                    {},
+                    {},
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JaneSheet'!$B$27)" } },
+                    {},
+                    {},
+                ],
+            ];
 
-            // 4 fixed cells + 3*2 headers = 10 cells
-            expect(headerRow).toHaveLength(10);
+            const expectedMergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 4, endRowIndex: 8, endColumnIndex: 7 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 7, endRowIndex: 8, endColumnIndex: 10 },
+            ];
 
-            // Title + 3 padding cells = 4 fixed cells
-            expect(headerRow?.[0]?.userEnteredValue?.stringValue).toBe(title);
+            const expectedBorderRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 4, endRowIndex: 8, endColumnIndex: 7 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 7, endRowIndex: 8, endColumnIndex: 10 },
+            ];
 
-            // First header starts at index 4
-            expect(headerRow?.[4]?.userEnteredValue?.stringValue).toBe("HW 1");
-            expect(headerRow?.[5]).toEqual({}); // padding 1
-            expect(headerRow?.[6]).toEqual({}); // padding 2
-
-            // Second header starts at index 7
-            expect(headerRow?.[7]?.userEnteredValue?.stringValue).toBe("HW 2");
+            expect(result.data).toEqual(expectedData);
+            expect(result.mergeRanges).toEqual(expectedMergeRanges);
+            expect(result.borderRanges).toEqual(expectedBorderRanges);
         });
 
-        it("should output an empty array for SEPARATOR row types", () => {
-            const params: StatusSectionDataParams = {
+        it("shold correctly generate data with multiple formulas", () => {
+            const title = "Status Title";
+
+            const result = buildStatusSectionData({
                 statusRange: mockStatusRange,
                 studentRange: mockStudentRange,
+                markColOffsets: [0, 3],
                 title,
-                headers,
-                students: [mockSeparator],
-                colsPerItem: 2,
-                rowOffset: 0,
-                mergeOnlyheader: false,
-                formulaFunction,
-            };
+                headers: ["Subject1", "Subject2"],
+                studentRows: [mockSeparator, mockStudent1],
+                statusRowOffset: 5,
+                formulaFunction: [(a1Cell: string) => `=FORMULA1(${a1Cell})`, (a1Cell: string) => `=FORMULA2(${a1Cell})`],
+            });
 
-            const data = buildStatusSectionData(params);
+            expect(result.data).toHaveLength(3); // Header + 2 students
+            expect(result.data[0]).toHaveLength(12); // 4 frozen columns + 2 subjects * 4 columns
 
-            expect(data).toHaveLength(2); // Header + Separator
-            expect(data[0]).toHaveLength(8); // 4 fixed + 2*2 sections
-            expect(data[1]).toEqual([]); // Separator row
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: title } },
+                    {},
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject1" } },
+                    {},
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject2" } },
+                    {},
+                    {},
+                    {},
+                ],
+                [],
+                [
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E8:8") } },
+                    { userEnteredValue: { numberValue: 101 } },
+                    { userEnteredValue: { stringValue: "John" } },
+                    { userEnteredValue: { stringValue: "Doe" } },
+                    { userEnteredValue: { formulaValue: "=FORMULA1('JohnSheet'!$B$26)" } },
+                    {},
+                    { userEnteredValue: { formulaValue: "=FORMULA2('JohnSheet'!$E$26)" } },
+                    {},
+                    { userEnteredValue: { formulaValue: "=FORMULA1('JohnSheet'!$B$27)" } },
+                    {},
+                    { userEnteredValue: { formulaValue: "=FORMULA2('JohnSheet'!$E$27)" } },
+                    {},
+                ],
+            ];
+
+            const expectedMergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 4, endRowIndex: 6, endColumnIndex: 8 },
+                { sheetId: 100, startRowIndex: 6, startColumnIndex: 4, endRowIndex: 8, endColumnIndex: 6 },
+                { sheetId: 100, startRowIndex: 6, startColumnIndex: 6, endRowIndex: 8, endColumnIndex: 8 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 8, endRowIndex: 6, endColumnIndex: 12 },
+                { sheetId: 100, startRowIndex: 6, startColumnIndex: 8, endRowIndex: 8, endColumnIndex: 10 },
+                { sheetId: 100, startRowIndex: 6, startColumnIndex: 10, endRowIndex: 8, endColumnIndex: 12 },
+            ];
+
+            const expectedBorderRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 4, endRowIndex: 8, endColumnIndex: 8 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 8, endRowIndex: 8, endColumnIndex: 12 },
+            ];
+
+            expect(result.data).toEqual(expectedData);
+            expect(result.mergeRanges).toEqual(expectedMergeRanges);
+            expect(result.borderRanges).toEqual(expectedBorderRanges);
         });
 
-        it("should generate student formulas correctly when mergeOnlyheader is FALSE", () => {
-            mockCreateSetupRowValidFormula.mockReturnValue("=SETUP_MOCK()");
-            mockGetA1Notation.mockReturnValue("Sheet1!$A$1");
+        it("should throw error if not enough formulas", () => {
+            const title = "Status Title";
 
-            const params: StatusSectionDataParams = {
-                statusRange: mockStatusRange,
-                studentRange: mockStudentRange,
-                title,
-                headers,
-                students: [mockStudent],
-                colsPerItem: 2,
-                rowOffset: 0,
-                mergeOnlyheader: false,
-                formulaFunction,
-            };
-
-            const data = buildStatusSectionData(params);
-
-            const studentRow = data[1];
-
-            // Fixed columns
-            expect(studentRow?.[0]?.userEnteredValue?.formulaValue).toBe("=SETUP_MOCK()");
-            expect(studentRow?.[1]?.userEnteredValue?.numberValue).toBe(101);
-            expect(studentRow?.[2]?.userEnteredValue?.stringValue).toBe("John");
-            expect(studentRow?.[3]?.userEnteredValue?.stringValue).toBe("Doe");
-
-            // Header 1 data (formula + empty padding)
-            expect(studentRow?.[4]?.userEnteredValue?.formulaValue).toBe("=CUSTOM_FORMULA(Sheet1!$A$1)");
-            expect(studentRow?.[5]).toEqual({});
-
-            // Header 2 data (formula + empty padding)
-            expect(studentRow?.[6]?.userEnteredValue?.formulaValue).toBe("=CUSTOM_FORMULA(Sheet1!$A$1)");
-            expect(studentRow?.[7]).toEqual({});
+            expect(() =>
+                buildStatusSectionData({
+                    statusRange: mockStatusRange,
+                    studentRange: mockStudentRange,
+                    markColOffsets: [0, 3],
+                    title,
+                    headers: ["Subject1", "Subject2"],
+                    studentRows: [mockSeparator, mockStudent1],
+                    statusRowOffset: 5,
+                    formulaFunction: [(a1Cell: string) => `=FORMULA1(${a1Cell})`],
+                }),
+            ).toThrow();
         });
 
-        it("should populate all columns with formulas when mergeOnlyheader is TRUE", () => {
-            mockCreateSetupRowValidFormula.mockReturnValue("=SETUP_MOCK()");
-            mockGetA1Notation.mockReturnValue("Sheet1!$A$1");
+        it("should handle educational fields", () => {
+            const title = "Status Title";
 
-            const params: StatusSectionDataParams = {
+            const result = buildStatusSectionData({
                 statusRange: mockStatusRange,
                 studentRange: mockStudentRange,
+                markColOffsets: [0, 1, 2],
+                markUsesFieldValue: [true, false, true],
                 title,
-                headers,
-                students: [mockStudent],
-                colsPerItem: 2,
-                rowOffset: 0,
-                mergeOnlyheader: true,
-                formulaFunction,
-            };
+                headers: ["Subject1", "Subject2", "Subject3"],
+                studentRows: [mockStudent1],
+                averagePerField: true,
+                fieldSubjects: [0, 0],
+                statusRowOffset: 5,
+                formulaFunction: (a1Cell: string) => `=CUSTOM_FORMULA(${a1Cell})`,
+            });
 
-            const data = buildStatusSectionData(params);
+            expect(result.data).toHaveLength(2); // Header + 1 students
+            expect(result.data[0]).toHaveLength(13); // 4 frozen columns + 3 subjects * 3 columns
 
-            const studentRow = data[1];
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: title } },
+                    {},
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject1" } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject2" } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject3" } },
+                    {},
+                    {},
+                ],
+                [
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E7:7") } },
+                    { userEnteredValue: { numberValue: 101 } },
+                    { userEnteredValue: { stringValue: "John" } },
+                    { userEnteredValue: { stringValue: "Doe" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$26)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$C$26)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$D$26)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$26)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$C$27)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$D$26)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$28)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$C$28)" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$D$28)" } },
+                ],
+            ];
 
-            // Both cells under the header should have formulas, no empty objects
-            expect(studentRow?.[4]?.userEnteredValue?.formulaValue).toBe("=CUSTOM_FORMULA(Sheet1!$A$1)");
-            expect(studentRow?.[5]?.userEnteredValue?.formulaValue).toBe("=CUSTOM_FORMULA(Sheet1!$A$1)");
-            expect(studentRow?.[6]?.userEnteredValue?.formulaValue).toBe("=CUSTOM_FORMULA(Sheet1!$A$1)");
-            expect(studentRow?.[7]?.userEnteredValue?.formulaValue).toBe("=CUSTOM_FORMULA(Sheet1!$A$1)");
+            const expectedMergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 4, endRowIndex: 6, endColumnIndex: 7 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 7, endRowIndex: 6, endColumnIndex: 10 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 10, endRowIndex: 6, endColumnIndex: 13 },
+            ];
+
+            const expectedBorderRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 4, endRowIndex: 7, endColumnIndex: 7 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 7, endRowIndex: 7, endColumnIndex: 10 },
+                { sheetId: 100, startRowIndex: 5, startColumnIndex: 10, endRowIndex: 7, endColumnIndex: 13 },
+            ];
+
+            expect(result.data).toEqual(expectedData);
+            expect(result.mergeRanges).toEqual(expectedMergeRanges);
+            expect(result.borderRanges).toEqual(expectedBorderRanges);
+        });
+
+        it("should handle averagePerField without fieldSubjects provided gracefully", () => {
+            const title = "Status Title";
+
+            const result = buildStatusSectionData({
+                statusRange: mockStatusRange,
+                studentRange: mockStudentRange,
+                markColOffsets: [0],
+                markUsesFieldValue: [true],
+                title,
+                headers: ["Subject1", "Subject2"],
+                studentRows: [mockStudent1],
+                averagePerField: true,
+                fieldSubjects: undefined, // Explicitly omitted to test fallback logic
+                statusRowOffset: 5,
+                formulaFunction: (a1Cell: string) => `=CUSTOM_FORMULA(${a1Cell})`,
+            });
+
+            expect(result.data).toHaveLength(2); // Header + 1 student
+
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: title } },
+                    {},
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject1" } },
+                    {},
+                    {},
+                    { userEnteredValue: { stringValue: "Subject2" } },
+                    {},
+                    {},
+                ],
+                [
+                    { userEnteredValue: { formulaValue: expect.stringContaining("$E7:7") } },
+                    { userEnteredValue: { numberValue: 101 } },
+                    { userEnteredValue: { stringValue: "John" } },
+                    { userEnteredValue: { stringValue: "Doe" } },
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$26)" } },
+                    {},
+                    {},
+                    // Because fieldSubjects is missing and we have fewer students (1) than headers (2),
+                    // this tests the fallback logic to ensure rowOffset resolves properly
+                    { userEnteredValue: { formulaValue: "=CUSTOM_FORMULA('JohnSheet'!$B$27)" } },
+                    {},
+                    {},
+                ],
+            ];
+
+            expect(result.data).toEqual(expectedData);
         });
     });
 });

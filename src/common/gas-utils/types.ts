@@ -104,3 +104,12 @@ export enum ParamType {
     NUMBER = "number",
     BOOLEAN = "boolean",
 }
+
+export enum BorderSide {
+    BOTTOM = "bottom",
+    INNER_HORIZONTAL = "innerHorizontal",
+    INNER_VERTICAL = "innerVertical",
+    LEFT = "left",
+    RIGHT = "right",
+    TOP = "top",
+}

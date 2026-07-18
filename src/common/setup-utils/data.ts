@@ -1,5 +1,17 @@
-import { type A1NotationParams, getA1Notation, type MappedNamedRange } from "../gas-utils";
-import { createAttendaceFormulas, createSetupRowValidFormula, type StudentRow, StudentRowType, type TrimesterRanges } from "../report-utils";
+import { getA1Notation, type MappedNamedRange, offsetGridRange } from "../gas-utils";
+import {
+    createAttendaceFormulas,
+    createSetupRowValidFormula,
+    DEFAULT_COMMENT,
+    DEFAULT_SEP_STRENGHT,
+    DEFAULT_SEP_SUGGESTION,
+    DEFAULT_SEP_WEAKNESS,
+    getCharacterCountFormula,
+    getSepCommentFormula,
+    type StudentRow,
+    StudentRowType,
+    type TrimesterRanges,
+} from "../report-utils";
 import { TemplateSize } from "./types";
 
 interface MonthGroupMeta {
@@ -120,16 +132,106 @@ export function generateStudentGrid(students: StudentRow[], initialRow: number, 
     return result;
 }
 
-export interface StatusSectionDataParams {
+interface BuildDefaultCommentForStudentTemplateDataParams {
+    commentsRange: MappedNamedRange;
+    fieldSubjectCounts: number[];
+    subjectNames: string[];
+    averagePerField: boolean;
+}
+
+/**
+ * Build the default comment data for the student template
+ */
+export function buildDefaultCommentForStudentTemplateData({
+    commentsRange,
+    fieldSubjectCounts,
+    subjectNames,
+    averagePerField,
+}: BuildDefaultCommentForStudentTemplateDataParams): { data: GoogleAppsScript.Sheets.Schema.CellData[][]; mergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] } {
+    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    const mergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+
+    let subjectIndex = 0;
+
+    for (const subjectCount of fieldSubjectCounts) {
+        const rowsToConsider = averagePerField ? subjectCount : 1;
+
+        if (averagePerField) {
+            mergeRanges.push(
+                offsetGridRange({
+                    origin: commentsRange.namedRange.range,
+                    colOffset: 7,
+                    width: 1,
+                    rowOffset: subjectIndex,
+                    height: rowsToConsider,
+                }),
+            );
+            mergeRanges.push(
+                offsetGridRange({
+                    origin: commentsRange.namedRange.range,
+                    colOffset: 8,
+                    width: 2,
+                    rowOffset: subjectIndex,
+                    height: rowsToConsider,
+                }),
+            );
+        }
+
+        const commentLenght = averagePerField ? Math.min(2, rowsToConsider - 1) : 0;
+
+        for (let i = 0; i < subjectCount; i++) {
+            const subjectName = subjectNames[subjectIndex] ?? "";
+
+            const sepCommentPartsA1 = getA1Notation({
+                mappedRange: commentsRange,
+                rowOffset: subjectIndex,
+                colOffset: 4,
+                height: rowsToConsider,
+                width: 3,
+                lockColumns: true,
+            });
+
+            const sepCommentA1 = getA1Notation({
+                mappedRange: commentsRange,
+                rowOffset: subjectIndex,
+                colOffset: 8,
+                height: 1,
+                width: 1,
+                lockColumns: true,
+            });
+
+            subjectIndex++;
+            data.push([
+                { userEnteredValue: { stringValue: subjectName } },
+                { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
+                {},
+                {},
+                { userEnteredValue: { stringValue: DEFAULT_SEP_STRENGHT[commentLenght] } },
+                { userEnteredValue: { stringValue: DEFAULT_SEP_WEAKNESS[commentLenght] } },
+                { userEnteredValue: { stringValue: DEFAULT_SEP_SUGGESTION[commentLenght] } },
+                { userEnteredValue: { formulaValue: getCharacterCountFormula(sepCommentA1) } },
+                { userEnteredValue: { formulaValue: getSepCommentFormula(sepCommentPartsA1) } },
+            ]);
+        }
+    }
+
+    return { data, mergeRanges };
+}
+
+export type CellFormulaClosure = (a1Cell: string) => string;
+
+interface StatusSectionDataParams {
     readonly statusRange: MappedNamedRange;
     readonly studentRange: MappedNamedRange;
+    readonly markColOffsets: number[];
+    readonly markUsesFieldValue?: boolean[];
     readonly title: string;
     readonly headers: string[];
-    readonly students: StudentRow[];
-    readonly colsPerItem: number;
-    readonly rowOffset: number;
-    readonly mergeOnlyheader: boolean;
-    readonly formulaFunction: (a1Cell: string) => string;
+    readonly studentRows: StudentRow[];
+    readonly averagePerField?: boolean;
+    readonly fieldSubjects?: number[];
+    readonly statusRowOffset: number;
+    readonly formulaFunction: CellFormulaClosure | CellFormulaClosure[];
 }
 
 /**
@@ -138,17 +240,37 @@ export interface StatusSectionDataParams {
 export function buildStatusSectionData({
     statusRange,
     studentRange,
+    markColOffsets,
+    markUsesFieldValue = [],
     title,
     headers,
-    students,
-    colsPerItem,
-    rowOffset,
-    mergeOnlyheader,
+    studentRows,
+    averagePerField = false,
+    fieldSubjects,
+    statusRowOffset,
     formulaFunction,
-}: StatusSectionDataParams): GoogleAppsScript.Sheets.Schema.CellData[][] {
+}: StatusSectionDataParams): {
+    data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    mergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[];
+    borderRanges: GoogleAppsScript.Sheets.Schema.GridRange[];
+} {
     const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+    const mergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+    const borderRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
 
-    // Header
+    const marksPerItem = markColOffsets.length;
+    const colsPerMark = Math.ceil(3 / marksPerItem);
+    const colsPerItem = colsPerMark * marksPerItem;
+
+    if (!Array.isArray(formulaFunction)) {
+        formulaFunction = Array(marksPerItem).fill(formulaFunction);
+    } else if (formulaFunction.length < marksPerItem) {
+        throw new Error("Not enough formulas for Status row.");
+    }
+
+    const fieldIndices = averagePerField && fieldSubjects != null ? fieldSubjects : Array.from({ length: studentRows.length }, (_, index) => index);
+
+    // Headers
     const header: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: title } }, {}, {}, {}];
     for (const label of headers) {
         header.push({ userEnteredValue: { stringValue: label } });
@@ -159,40 +281,40 @@ export function buildStatusSectionData({
     data.push(header);
 
     // Student rows
-    for (const [studentIndex, studentRow] of students.entries()) {
+    for (const [studentIndex, studentRow] of studentRows.entries()) {
         if (studentRow.type === StudentRowType.SEPARATOR) {
             data.push([]);
             continue;
         }
 
         const studentDataRow: GoogleAppsScript.Sheets.Schema.CellData[] = [
-            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusRange, 1 + rowOffset + studentIndex, 4) } },
+            { userEnteredValue: { formulaValue: createSetupRowValidFormula(statusRange, 1 + statusRowOffset + studentIndex, 4) } },
             { userEnteredValue: { numberValue: studentRow.id } },
             { userEnteredValue: { stringValue: studentRow.firstName } },
             { userEnteredValue: { stringValue: studentRow.lastName } },
         ];
 
-        headers.forEach((_, headerIndex) => {
-            const a1Params: A1NotationParams = {
-                mappedRange: studentRange,
-                includeSheetName: true,
-                customSheetName: studentRow.sheetName,
-                rowOffset: headerIndex,
-                height: 1,
-                width: 1,
-                lockColumns: true,
-                lockRows: true,
-            };
-            if (mergeOnlyheader) {
-                for (let i = 0; i < colsPerItem; i++) {
-                    a1Params.colOffset = i;
-                    const a1Cell = getA1Notation(a1Params);
-                    studentDataRow.push({ userEnteredValue: { formulaValue: formulaFunction(a1Cell) } });
-                }
-            } else {
-                const a1Cell = getA1Notation(a1Params);
-                studentDataRow.push({ userEnteredValue: { formulaValue: formulaFunction(a1Cell) } });
-                for (let i = 1; i < colsPerItem; i++) {
+        headers.forEach((_, subjectIndex) => {
+            for (const [markIndex, colOffset] of markColOffsets.entries()) {
+                let rowOffset = subjectIndex;
+                if (averagePerField && markUsesFieldValue[markIndex]) rowOffset = fieldIndices[subjectIndex] ?? subjectIndex;
+
+                const a1Cell = getA1Notation({
+                    mappedRange: studentRange,
+                    includeSheetName: true,
+                    customSheetName: studentRow.sheetName,
+                    rowOffset,
+                    colOffset,
+                    height: 1,
+                    width: 1,
+                    lockColumns: true,
+                    lockRows: true,
+                });
+
+                // biome-ignore lint/style/noNonNullAssertion: At the start we checked it will the right lenght.
+                const formula = formulaFunction[markIndex]!;
+                studentDataRow.push({ userEnteredValue: { formulaValue: formula(a1Cell) } });
+                for (let i = 1; i < colsPerMark; i++) {
                     studentDataRow.push({});
                 }
             }
@@ -200,5 +322,45 @@ export function buildStatusSectionData({
 
         data.push(studentDataRow);
     }
-    return data;
+
+    // Merges and ranges
+    headers.forEach((_, subjectIndex) => {
+        const subjectRange = offsetGridRange({
+            origin: statusRange.namedRange.range,
+            colOffset: 4 + colsPerItem * subjectIndex,
+            width: colsPerItem,
+            rowOffset: statusRowOffset,
+            height: studentRows.length + 1,
+        });
+        borderRanges.push(subjectRange);
+
+        if (colsPerMark === colsPerItem) {
+            mergeRanges.push(subjectRange);
+        } else {
+            mergeRanges.push(
+                offsetGridRange({
+                    origin: statusRange.namedRange.range,
+                    colOffset: 4 + colsPerItem * subjectIndex,
+                    width: colsPerItem,
+                    rowOffset: statusRowOffset,
+                    height: 1,
+                }),
+            );
+            if (colsPerMark > 1) {
+                for (let i = 0; i < marksPerItem; i++) {
+                    mergeRanges.push(
+                        offsetGridRange({
+                            origin: statusRange.namedRange.range,
+                            colOffset: 4 + colsPerItem * subjectIndex + i * colsPerMark,
+                            rowOffset: statusRowOffset + 1,
+                            width: colsPerMark,
+                            height: studentRows.length,
+                        }),
+                    );
+                }
+            }
+        }
+    });
+
+    return { data, mergeRanges, borderRanges };
 }

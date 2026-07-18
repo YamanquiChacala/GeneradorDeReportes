@@ -15,7 +15,7 @@ export function getColumnLetter(column: number): string {
     return letter;
 }
 
-export interface A1NotationParams {
+interface A1NotationParams {
     mappedRange: MappedNamedRange;
     includeSheetName?: boolean;
     customSheetName?: string;

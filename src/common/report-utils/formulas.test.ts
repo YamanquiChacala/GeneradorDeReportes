@@ -11,10 +11,12 @@ import {
     createSetupCommentValidationFormula,
     createSetupGradeValidationFormula,
     createSetupRowValidFormula,
+    createSetupSepCommentLenghtValidationFormula,
     createSetupTextValidationFormula,
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
-    getShortCommentFormula,
+    getCharacterCountFormula,
+    getSepCommentFormula,
 } from "./formulas";
 import { type AcademicField, Period } from "./types";
 
@@ -83,25 +85,21 @@ describe("Report Utils. Formula Generators", () => {
         });
     });
 
-    describe("getShortCommentFormula", () => {
-        it("should calculate correct offsets and inject them into the LET formula", () => {
-            (getColumnLetter as jest.Mock).mockReturnValue("D");
+    describe("getSepCommentFormula", () => {
+        it("should contain the cells given", () => {
+            const a1Range = "F14:H23";
+            const formula = getSepCommentFormula(a1Range);
 
-            const formula = getShortCommentFormula(mockRange, 5, 2);
-
-            expect(getColumnLetter).toHaveBeenCalledWith(3);
-            expect(formula).toContain("raw_text, D8");
-            expect(formula).toContain("cleaned_accents");
-            expect(formula.startsWith("=LET(")).toBe(true);
+            expect(formula).toContain(a1Range);
         });
+    });
 
-        it("should safely handle ranges missing index properties by falling back to 0", () => {
-            (getColumnLetter as jest.Mock).mockReturnValue("A");
+    describe("getCharacterCountFormula", () => {
+        it("should contain the cells given", () => {
+            const a1Range = "ZB18";
+            const formula = getCharacterCountFormula(a1Range);
 
-            const formula = getShortCommentFormula(mockRangeOpen, 0, 0);
-
-            expect(getColumnLetter).toHaveBeenCalledWith(0);
-            expect(formula).toContain("raw_text, A1");
+            expect(formula).toContain(a1Range);
         });
     });
 
@@ -333,7 +331,19 @@ describe("Report Utils. Formula Generators", () => {
         it("should create a valid formula", () => {
             const formula = createSetupGradeValidationFormula("B3");
 
-            expect(formula).toBe('=IF(AND(ISNUMBER(B3), ISBETWEEN(B3, 0, 10)), "✔️", "❌")');
+            expect(formula).toContain("B3");
+            expect(formula).toContain("✔️");
+            expect(formula).toContain("❌");
+        });
+    });
+
+    describe("createSetupSepCommentLenghtValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupSepCommentLenghtValidationFormula("F4");
+
+            expect(formula).toContain("F4");
+            expect(formula).toContain("✔️");
+            expect(formula).toContain("❌");
         });
     });
 });

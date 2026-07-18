@@ -1,8 +1,9 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import {
+    BorderSide,
+    buildBorderRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
-    buildRightBorderRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateSheetPropertiesRequest,
@@ -10,7 +11,6 @@ import {
     createRequiredGetter,
     type MappedNamedRange,
     MergeType,
-    offsetGridRange,
     type ParsedSpreadsheet,
     RangeBehavior,
 } from "../../common/gas-utils";
@@ -18,10 +18,11 @@ import {
     createSetupAbilityValidationFormula,
     createSetupCommentValidationFormula,
     createSetupGradeValidationFormula,
+    createSetupSepCommentLenghtValidationFormula,
     createSetupTextValidationFormula,
     type ReportPersistentData,
 } from "../../common/report-utils";
-import { buildStatusSectionData, type StatusSectionDataParams } from "../../common/setup-utils";
+import { buildStatusSectionData, type CellFormulaClosure } from "../../common/setup-utils";
 import { CssColorMap } from "../../common/utils";
 
 /**
@@ -107,12 +108,11 @@ function fillGeneralInfo(
     return fillStatusSection({
         statusRange: statusInfoRange,
         studentRange: studentInfoRange,
+        markColOffsets: [0],
         title: "Datos Generales",
         headers,
-        students: persistentData.students,
-        colsPerItem: 3,
-        rowOffset,
-        mergeOnlyheader: false,
+        persistentData,
+        currentRowOffset: rowOffset,
         formulaFunction: createSetupTextValidationFormula,
     });
 }
@@ -134,12 +134,11 @@ function fillAbilities(
     return fillStatusSection({
         statusRange: statusAbilitiesRange,
         studentRange: studentAbilitiesRange,
+        markColOffsets: [0, 1, 2, 3],
         title: "Habilidades de aprendizaje",
         headers: subjects,
-        students: persistentData.students,
-        colsPerItem: 4,
-        rowOffset,
-        mergeOnlyheader: true,
+        persistentData,
+        currentRowOffset: rowOffset,
         formulaFunction: createSetupAbilityValidationFormula,
     });
 }
@@ -161,13 +160,13 @@ function fillComments(
     return fillStatusSection({
         statusRange: statusCommentsRange,
         studentRange: studentCommentsRange,
+        markColOffsets: [0, 6],
+        markUsesFieldValue: [false, true],
         title: "Observaciones",
         headers: subjects,
-        students: persistentData.students,
-        colsPerItem: 3,
-        rowOffset,
-        mergeOnlyheader: false,
-        formulaFunction: createSetupCommentValidationFormula,
+        persistentData,
+        currentRowOffset: rowOffset,
+        formulaFunction: [createSetupCommentValidationFormula, createSetupSepCommentLenghtValidationFormula],
     });
 }
 
@@ -208,12 +207,11 @@ function fillPeriods(
         const periodResult = fillStatusSection({
             statusRange,
             studentRange,
+            markColOffsets: [0, 1, 2],
             title,
             headers: subjects,
-            students: persistentData.students,
-            colsPerItem: 3,
-            rowOffset: newRowOffset,
-            mergeOnlyheader: true,
+            persistentData,
+            currentRowOffset: newRowOffset,
             formulaFunction: createSetupGradeValidationFormula,
         });
         requests.push(...periodResult.requests);
@@ -223,40 +221,78 @@ function fillPeriods(
     return { requests, newRowOffset };
 }
 
+interface FillStatusSectionParams {
+    statusRange: MappedNamedRange;
+    studentRange: MappedNamedRange;
+    markColOffsets: number[];
+    markUsesFieldValue?: boolean[];
+    title: string;
+    headers: string[];
+    persistentData: ReportPersistentData;
+    currentRowOffset: number;
+    formulaFunction: CellFormulaClosure | CellFormulaClosure[];
+}
+
 /**
  * Helper to generate requests for each status sheet section
  */
-function fillStatusSection(sectionParams: StatusSectionDataParams): {
+function fillStatusSection({
+    statusRange,
+    studentRange,
+    markColOffsets,
+    markUsesFieldValue,
+    title,
+    headers,
+    persistentData,
+    currentRowOffset,
+    formulaFunction,
+}: FillStatusSectionParams): {
     requests: GoogleAppsScript.Sheets.Schema.Request[];
     newRowOffset: number;
 } {
-    const data = buildStatusSectionData(sectionParams);
+    const fieldSubjects = persistentData.academicFields.reduce((acc: number[], field) => {
+        const startIndex = acc.length;
+        const newElements = Array(field.subjects).fill(startIndex);
+        return acc.concat(newElements);
+    }, []);
+
+    // const fieldSubjects = persistentData.academicFields.flatMap((field, index) => Array.from({ length: field.subjects }, () => index));
+
+    const { data, mergeRanges, borderRanges } = buildStatusSectionData({
+        statusRange,
+        studentRange,
+        markColOffsets,
+        markUsesFieldValue,
+        title,
+        headers,
+        studentRows: persistentData.students,
+        averagePerField: persistentData.configData.averagePerField,
+        fieldSubjects,
+        statusRowOffset: currentRowOffset,
+        formulaFunction,
+    });
 
     // Data transfer
     const dataTransferResult = buildTransferRequests({
-        destination: sectionParams.statusRange,
+        destination: statusRange,
         data,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        rowOffset: sectionParams.rowOffset,
+        rowOffset: currentRowOffset,
         rowBehavior: RangeBehavior.INSERT_DELETE,
         colBehavior: RangeBehavior.INSERT_DELETE_CELLS,
     });
 
     const formatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-    sectionParams.headers.forEach((_, headerIndex) => {
-        const range = offsetGridRange({
-            origin: sectionParams.statusRange.namedRange.range,
-            colOffset: 4 + sectionParams.colsPerItem * headerIndex,
-            width: sectionParams.colsPerItem,
-        });
-        if (sectionParams.mergeOnlyheader) {
-            const mergeRange = offsetGridRange({ origin: range, height: 1 });
-            formatRequests.push(buildMergeCellsRequest(mergeRange));
-        } else {
-            formatRequests.push(buildMergeCellsRequest(range, MergeType.MERGE_ROWS));
-        }
-        formatRequests.push(buildRightBorderRequest(range, CssColorMap.lightgray));
-    });
+
+    // Merge cells
+    for (const mergeRange of mergeRanges) {
+        formatRequests.push(buildMergeCellsRequest(mergeRange, MergeType.MERGE_ROWS));
+    }
+
+    // Borders
+    for (const borderRange of borderRanges) {
+        formatRequests.push(buildBorderRequest(borderRange, CssColorMap.lightgrey, BorderSide.RIGHT));
+    }
 
     return { requests: [...dataTransferResult.requests, ...formatRequests], newRowOffset: dataTransferResult.rowOffset };
 }

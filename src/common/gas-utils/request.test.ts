@@ -3,17 +3,18 @@ import {
     addNewNamedRange,
     addNewSheet,
     buildAddBandingRequest,
+    buildBorderRequest,
     buildCopyPasteRequest,
     buildMergeCellsRequest,
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
-    buildRightBorderRequest,
+    buildSetBackgroundRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
     buildUpdateSheetPropertiesRequest,
 } from "./request";
-import { type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
+import { BorderSide, type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
 
 // Mock the random ID generator for consistent test assertions
 jest.mock("../utils", () => {
@@ -65,6 +66,27 @@ describe("GAS Util, Requests", () => {
         });
     });
 
+    describe("buildSetBackgroundRequest", () => {
+        it("should build a valid request", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const validColor = "#ffffff";
+            const request = buildSetBackgroundRequest(range, validColor);
+
+            expect(request.repeatCell?.range).toBe(range);
+            expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle?.rgbColor).toEqual({ red: 1, green: 1, blue: 1, alpha: 1 });
+        });
+
+        it("should not define color if color is not valid", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const invalidColor = "not valid";
+            const request = buildSetBackgroundRequest(range, invalidColor);
+
+            expect(request.repeatCell?.range).toBe(range);
+            expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle).toBeDefined();
+            expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle?.rgbColor).toBeUndefined();
+        });
+    });
+
     describe("buildMergeCellsRequest", () => {
         it("should build a valid mergeCells request", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
@@ -95,32 +117,96 @@ describe("GAS Util, Requests", () => {
         });
     });
 
-    describe("buildRightBorderRequest", () => {
-        it("should build a valid border request", () => {
-            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildRightBorderRequest(range, "#FFFFFF");
+    describe("buildBorderRequest", () => {
+        const mockRange: Readonly<GoogleAppsScript.Sheets.Schema.GridRange> = {
+            sheetId: 12345,
+            startRowIndex: 0,
+            endRowIndex: 10,
+            startColumnIndex: 0,
+            endColumnIndex: 5,
+        };
 
-            expect(request).toEqual({
+        const blackColor: GoogleAppsScript.Sheets.Schema.Color = {
+            red: 0,
+            green: 0,
+            blue: 0,
+            alpha: 1,
+        };
+
+        it("should build a request for a single BorderSide with a valid color", () => {
+            const hex = "#ffffff";
+            const expectedColor: GoogleAppsScript.Sheets.Schema.Color = { red: 1, green: 1, blue: 1, alpha: 1 };
+
+            const result = buildBorderRequest(mockRange, hex, BorderSide.RIGHT);
+
+            expect(result).toStrictEqual({
                 updateBorders: {
-                    range,
+                    range: mockRange,
                     right: {
                         style: Style.SOLID,
-                        colorStyle: { rgbColor: { red: 1, green: 1, blue: 1, alpha: 1 } },
+                        colorStyle: { rgbColor: expectedColor },
                     },
                 },
             });
         });
 
-        it("should default to black on an invalid color", () => {
-            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildRightBorderRequest(range, "bad");
+        it("should build a request for an array of BorderSides with a valid color", () => {
+            const hex = "#ff0000";
+            const expectedColor: GoogleAppsScript.Sheets.Schema.Color = { red: 1, green: 0, blue: 0, alpha: 1 };
 
-            expect(request).toEqual({
+            const result = buildBorderRequest(mockRange, hex, [BorderSide.TOP, BorderSide.BOTTOM]);
+
+            expect(result).toStrictEqual({
                 updateBorders: {
-                    range,
-                    right: {
+                    range: mockRange,
+                    top: {
                         style: Style.SOLID,
-                        colorStyle: { rgbColor: { red: 0, green: 0, blue: 0, alpha: 1 } },
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                    bottom: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                },
+            });
+        });
+
+        it("should build a request for all BorderSides at once", () => {
+            const hex = "#00ff00";
+            const expectedColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 1, blue: 0, alpha: 1 };
+            const allSides = Object.values(BorderSide);
+
+            const result = buildBorderRequest(mockRange, hex, allSides);
+
+            const expectedBorders = Object.fromEntries(
+                allSides.map((side) => [
+                    side,
+                    {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                ]),
+            );
+
+            expect(result).toStrictEqual({
+                updateBorders: {
+                    range: mockRange,
+                    ...expectedBorders,
+                },
+            });
+        });
+
+        it("should fallback to black if hexToColor returns null/undefined", () => {
+            const invalidHex = "not-a-color";
+
+            const result = buildBorderRequest(mockRange, invalidHex, BorderSide.LEFT);
+
+            expect(result).toStrictEqual({
+                updateBorders: {
+                    range: mockRange,
+                    left: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: blackColor },
                     },
                 },
             });

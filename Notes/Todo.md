@@ -25,7 +25,11 @@
 
 ## Student template
 * [ ] Double check the first row is frozen (the student name)
+* [ ] Check editable ranges for comments
+
 ## Student Sheets
+
+## Status
 
 
 
@@ -86,9 +90,7 @@
 
 
 =LET(
-  strenght_range, E24,
-  weakness_range, F24,
-  suggestion_range, G24,
+  range, E24:G24,
 
   clean_text, LAMBDA(text,
     LET(
@@ -121,9 +123,9 @@
     )
   ),
 
-  strenghts, process_column(strenght_range, "DOMINA "),
-  weaknesses, process_column(weakness_range, "DEBE FORTALECER "),
-  suggestions, process_column(suggestion_range, "SE RECOMIENDA "),
+  strenghts, process_column(CHOOSECOLS(range, 1), "DOMINA "),
+  weaknesses, process_column(CHOOSECOLS(range, 2), "DEBE FORTALECER "),
+  suggestions, process_column(CHOOSECOLS(range, 3), "SE RECOMIENDA "),
 
   TEXTJOIN(" ", TRUE, strenghts, weaknesses, suggestions)
 )

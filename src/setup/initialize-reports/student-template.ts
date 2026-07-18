@@ -2,8 +2,11 @@ import { ReportSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
     addNewNamedRange,
+    BorderSide,
+    buildBorderRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
+    buildSetBackgroundRequest,
     buildTransferRequests,
     buildUpdateSheetPropertiesRequest,
     createRequiredGetter,
@@ -25,13 +28,13 @@ import {
     createIndividualSubjectAverageFormula,
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
-    DEFAULT_COMMENT,
     generatePeriodString,
-    getShortCommentFormula,
     Period,
     type ReportPersistentData,
     TRIMESTER_NAMES,
 } from "../../common/report-utils";
+import { buildDefaultCommentForStudentTemplateData } from "../../common/setup-utils";
+import { CssColorMap } from "../../common/utils";
 
 type RangeName = ExtractRangeNames<typeof ReportSheetSchema>;
 
@@ -173,17 +176,18 @@ function adaptSizeAndRanges(parsedReport: ParsedSpreadsheet<typeof ReportSheetSc
         rowOffset = newRowOffset;
     }
 
-    // Fix merged cells
-    const userCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).namedRange.range, colOffset: 1, width: 3 });
-    const simpleCommentRange = offsetGridRange({ origin: getMappedRange(rangeNames.comments).namedRange.range, colOffset: 4, width: 3 });
+    // Fix comments merged cells
+    const commentsOriginalRange = getMappedRange(rangeNames.comments).namedRange.range;
+    const userCommentRange = offsetGridRange({ origin: commentsOriginalRange, colOffset: 1, width: 3 });
+    const sepCommentRange = offsetGridRange({ origin: commentsOriginalRange, colOffset: 8, width: 2 });
 
     requests.push(buildMergeCellsRequest(userCommentRange, MergeType.MERGE_ROWS));
-    requests.push(buildMergeCellsRequest(simpleCommentRange, MergeType.MERGE_ROWS));
+    requests.push(buildMergeCellsRequest(sepCommentRange, MergeType.MERGE_ROWS));
 
     // Add ranges for unprotected parts of the sheet
     const unprotectedRangeOperations: Array<{ origin: RangeName; width: number; name: RangeName }> = [
         { origin: rangeNames.abilities, width: 4, name: rangeNames.unprotectedAbilities },
-        { origin: rangeNames.comments, width: 3, name: rangeNames.unprotectedComments },
+        { origin: rangeNames.comments, width: 6, name: rangeNames.unprotectedComments },
         { origin: rangeNames.trim1Subjects, width: 2, name: rangeNames.unprotectedTrim1 },
         { origin: rangeNames.trim2Subjects, width: 2, name: rangeNames.unprotectedTrim2 },
         { origin: rangeNames.trim3Subjects, width: 2, name: rangeNames.unprotectedTrim3 },
@@ -292,31 +296,40 @@ function prepareAbilities(mappedRanges: Partial<Record<RangeName, MappedNamedRan
 /**
  * Prepares the comments, adding subjects and the formulas.
  */
-function prepareComments(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistenData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+function prepareComments(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
     const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
     const getMappedRange = createRequiredGetter(mappedRanges, "rango de formato de estudiante");
 
-    const commentData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
-
     const commentsRange = getMappedRange(rangeNames.comments);
+    const fieldSubjectCounts = persistentData.academicFields.map((field) => field.subjects);
+    const subjectNames = persistentData.subjects.map((subject) => subject.subject);
 
-    for (const [index, weightedSubject] of persistenData.subjects.entries()) {
-        commentData.push([
-            { userEnteredValue: { stringValue: weightedSubject.subject } },
-            { userEnteredValue: { stringValue: DEFAULT_COMMENT } },
-            {},
-            {},
-            { userEnteredValue: { formulaValue: getShortCommentFormula(commentsRange, index, 1) } },
-        ]);
+    const { data, mergeRanges } = buildDefaultCommentForStudentTemplateData({
+        commentsRange,
+        fieldSubjectCounts,
+        subjectNames,
+        averagePerField: persistentData.configData.averagePerField,
+    });
+
+    const mergeRequests: GoogleAppsScript.Sheets.Schema.Request[] = mergeRanges.map((range) => buildMergeCellsRequest(range));
+
+    if (persistentData.configData.averagePerField) {
+        const mergedRange = offsetGridRange({
+            origin: commentsRange.namedRange.range,
+            colOffset: 7,
+            width: 3,
+        });
+        mergeRequests.push(buildBorderRequest(mergedRange, CssColorMap.rebeccapurple, BorderSide.INNER_HORIZONTAL));
+        mergeRequests.push(buildSetBackgroundRequest(mergedRange, CssColorMap.aliceblue));
     }
 
     const { requests } = buildTransferRequests({
         destination: commentsRange,
-        data: commentData,
+        data,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.stringValue", "userEnteredValue.formulaValue"),
     });
 
-    return requests;
+    return [...requests, ...mergeRequests];
 }
 
 /**

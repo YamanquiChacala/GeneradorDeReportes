@@ -5,6 +5,7 @@ import { buildFieldsMask, createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
 import {
+    type BorderSide,
     type ExtractDynamicRangeNames,
     type ExtractRangeNames,
     type ExtractSheetNames,
@@ -30,6 +31,22 @@ export function buildCopyPasteRequest(
             destination,
             pasteType,
             pasteOrientation: PasteOrientation.NORMAL,
+        },
+    };
+}
+
+/**
+ * Generates batch update `repeatCell` to set the background color.
+ */
+export function buildSetBackgroundRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, hexColor: string): GoogleAppsScript.Sheets.Schema.Request {
+    const rgbColor = hexToColor(hexColor) ?? undefined;
+    return {
+        repeatCell: {
+            range,
+            cell: {
+                userEnteredFormat: { backgroundColorStyle: { rgbColor } },
+            },
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.backgroundColorStyle.rgbColor"),
         },
     };
 }
@@ -61,19 +78,38 @@ export function buildUnmergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets
 }
 
 /**
- * Generates batch update `updateBorders` request to add a border to the right of the range.
+ * Generates batch update `updateBorders` request.
  */
-export function buildRightBorderRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, hexColor: string): GoogleAppsScript.Sheets.Schema.Request {
+export function buildBorderRequest(
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    hexColor: string,
+    sides: BorderSide | BorderSide[],
+): GoogleAppsScript.Sheets.Schema.Request {
     const black: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 0, blue: 0, alpha: 1 };
     const rgbColor = hexToColor(hexColor) ?? black;
+
+    // Define the border style once
+    const borderStyle: GoogleAppsScript.Sheets.Schema.Border = {
+        style: Style.SOLID,
+        colorStyle: { rgbColor },
+    };
+
+    // Normalize the input to always be an array
+    const sidesArray = Array.isArray(sides) ? sides : [sides];
+
+    // Dynamically build the sides configuration
+    const borderConfig = sidesArray.reduce(
+        (acc, side) => {
+            acc[side] = borderStyle;
+            return acc;
+        },
+        {} as Partial<GoogleAppsScript.Sheets.Schema.UpdateBordersRequest>,
+    );
 
     return {
         updateBorders: {
             range,
-            right: {
-                style: Style.SOLID,
-                colorStyle: { rgbColor },
-            },
+            ...borderConfig,
         },
     };
 }
