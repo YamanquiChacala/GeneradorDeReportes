@@ -48,6 +48,10 @@
 * [ ] Normalize weights (for grades and subjects) 
 * [ ] Change weights
 
+## Deploy
+* [ ] Update Template
+* [ ] Create script / github action to auto-deploy
+
 
 # Function Flow
 
