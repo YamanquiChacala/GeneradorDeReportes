@@ -1,5 +1,5 @@
 import { getRandomId } from "../utils";
-import { MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
+import { Dimension, MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
 import { hexToColor } from "./color";
 import { buildFieldsMask, createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
@@ -204,6 +204,79 @@ function buildSingleSheetProtectRequest(
     sheet.protectedRanges = [newProtectedRange];
 
     return request;
+}
+
+/**
+ * Generates batch update for UpdateDimensionProperties to modify the width of the columns of a sheet.
+ */
+export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number, colWidths: number[]): GoogleAppsScript.Sheets.Schema.Request[] {
+    interface WidthRange {
+        width: number;
+        start: number;
+        end: number;
+    }
+
+    const widthRanges: WidthRange[] = [];
+
+    for (let i = 0; i < colWidths.length; i++) {
+        const width = colWidths[i];
+        if (width == null) break;
+
+        const last = widthRanges[widthRanges.length - 1];
+        if (last && last.width === width) {
+            last.end = i + 1;
+        } else {
+            widthRanges.push({ width, start: i, end: i + 1 });
+        }
+    }
+
+    const result: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    for (const widthRange of widthRanges) {
+        result.push({
+            updateDimensionProperties: {
+                properties: { pixelSize: widthRange.width },
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DimensionProperties>("pixelSize"),
+                range: {
+                    sheetId,
+                    dimension: Dimension.COLUMNS,
+                    startIndex: startCol + widthRange.start,
+                    endIndex: startCol + widthRange.end,
+                },
+            },
+        });
+    }
+
+    return result;
+}
+
+interface ContiguousWidth {
+    width: number;
+    count: number;
+}
+
+export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
+    const result: ContiguousWidth[] = [];
+
+    let workingWidth: ContiguousWidth | null = null;
+
+    for (const width of widths) {
+        if (workingWidth == null) {
+            workingWidth = { width, count: 1 };
+        }
+        if (workingWidth.width !== width) {
+            result.push(workingWidth);
+            workingWidth = { width, count: 1 };
+        } else {
+            workingWidth.count++;
+        }
+    }
+
+    if (workingWidth != null) {
+        result.push(workingWidth);
+    }
+
+    return result;
 }
 
 interface BuildUpdateSheetPropertiesParams {
