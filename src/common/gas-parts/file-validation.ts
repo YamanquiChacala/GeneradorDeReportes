@@ -9,6 +9,11 @@ export function setFileType(fileId: string, fileType: FileType) {
             },
         },
         fileId,
+        // biome-ignore lint/suspicious/noExplicitAny: Lack in @types/google-apps-script
+        null as any,
+        {
+            supportsAllDrives: true,
+        },
     );
 }
 
@@ -17,7 +22,7 @@ export function setFileType(fileId: string, fileType: FileType) {
  */
 export function getFileType(fileId: string): FileType | undefined {
     if (!fileId) return undefined;
-    const fileData = Drive?.Files.get(fileId, { fields: buildFieldsMask<GoogleAppsScript.Drive_v3.Drive.V3.Schema.File>("appProperties") });
+    const fileData = Drive?.Files.get(fileId, { fields: buildFieldsMask<GoogleAppsScript.Drive_v3.Drive.V3.Schema.File>("appProperties"), supportsAllDrives: true });
 
     return fileData?.appProperties?.[FILE_VALIDATION_KEY];
 }
@@ -42,5 +47,10 @@ export function removeFileType(fileId: string) {
             },
         },
         fileId,
+        // biome-ignore lint/suspicious/noExplicitAny: Lack in @types/google-apps-script
+        null as any,
+        {
+            supportsAllDrives: true,
+        },
     );
 }

@@ -24,7 +24,7 @@
 * [ ] Add vertical borders between the final periods.
 
 ## Student template
-* [ ] Double check the first row is frozen (the student name)
+* [ ] Double check the first row is frozen (the student name) 
 * [ ] Check editable ranges for comments
 
 ## Student Sheets
@@ -51,6 +51,7 @@
 ## Deploy
 * [ ] Update Template
 * [ ] Create script / github action to auto-deploy
+* [ ] Copy ~/.clasprc as a secret
 
 
 # Function Flow

@@ -16,6 +16,8 @@ import { prepareStatusSheet } from "./status";
 import { createStudentSheets } from "./student-sheets";
 import { prepareStudentTemplate } from "./student-template";
 
+// import { prepareSummarySheet } from "./summary";
+
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
 
 /**
@@ -66,7 +68,8 @@ export function initializeReport(setupFileId: string, parentId: string) {
     // Prepare Status sheet
     const statusSheetSetupRequests = prepareStatusSheet(parsedReportSheet, persistentData);
 
-    // TODO: Prepare Summary sheet
+    // Prepare Summary sheet
+    // const summarySheetSetupRequests = prepareSummarySheet(parsedReportSheet, persistentData);
 
     // ============ Batch Changes ==============
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
@@ -75,6 +78,7 @@ export function initializeReport(setupFileId: string, parentId: string) {
         ...studentTemplateSetupRequests,
         ...studentSheetsCreationRequests,
         ...statusSheetSetupRequests,
+        // ...summarySheetSetupRequests,
     ];
 
     // ============ Execute Batch update ===========

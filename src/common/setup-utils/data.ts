@@ -1,4 +1,4 @@
-import { getA1Notation, type MappedNamedRange, offsetGridRange } from "../gas-utils";
+import { getA1Notation, type MappedNamedRange, offsetGridRange, Style } from "../gas-utils";
 import {
     createAttendaceFormulas,
     createSetupRowValidFormula,
@@ -363,4 +363,70 @@ export function buildStatusSectionData({
     });
 
     return { data, mergeRanges, borderRanges };
+}
+
+/**
+ * Build the headers for the summary sheet
+ */
+export function buildSummaryHeadersData(
+    attendancePerClass: boolean,
+    averagePerField: boolean,
+    subjectsNames: string[],
+    fieldNames: string[],
+): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    const borderColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 };
+
+    const rightBorderFormat: GoogleAppsScript.Sheets.Schema.CellFormat = { borders: { right: { style: Style.SOLID, colorStyle: { rgbColor: borderColor } } } };
+
+    const attendanceData: GoogleAppsScript.Sheets.Schema.CellData[] = attendancePerClass
+        ? []
+        : [{ userEnteredValue: { stringValue: "Faltas" }, userEnteredFormat: rightBorderFormat }];
+    const averageData: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Promedio" } };
+
+    const emptyRightBorder: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredFormat: rightBorderFormat };
+
+    const attendanceBorder: GoogleAppsScript.Sheets.Schema.CellData[] = attendancePerClass ? [] : [{ userEnteredFormat: rightBorderFormat }];
+
+    const subHeader2Data: GoogleAppsScript.Sheets.Schema.CellData[] = [
+        { userEnteredValue: { stringValue: "Cal" } },
+        { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat },
+    ];
+    const subHeader3Data: GoogleAppsScript.Sheets.Schema.CellData[] = [
+        { userEnteredValue: { stringValue: "Fal" } },
+        { userEnteredValue: { stringValue: "Cal" } },
+        { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat },
+    ];
+
+    const subjectsHeaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    const subjectsSubheaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    const subjectSubHeader: GoogleAppsScript.Sheets.Schema.CellData[] = attendancePerClass ? subHeader3Data : subHeader2Data;
+
+    for (const subjectName of subjectsNames) {
+        subjectsHeaderData.push({ userEnteredValue: { stringValue: subjectName } });
+        if (attendancePerClass) {
+            subjectsHeaderData.push({});
+        }
+        subjectsHeaderData.push({ userEnteredFormat: rightBorderFormat });
+        subjectsSubheaderData.push(...subjectSubHeader);
+    }
+
+    const header: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    const subheader: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+
+    if (averagePerField) {
+        const fieldsHeaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+        const fieldsSubheaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+        for (const fieldName of fieldNames) {
+            fieldsHeaderData.push({ userEnteredValue: { stringValue: fieldName } }, { userEnteredFormat: rightBorderFormat });
+            fieldsSubheaderData.push(...subHeader2Data);
+        }
+
+        header.push(...subjectsHeaderData, emptyRightBorder, ...attendanceData, ...fieldsHeaderData, averageData);
+        subheader.push(...subjectsSubheaderData, emptyRightBorder, ...attendanceBorder, ...fieldsSubheaderData, {});
+    } else {
+        header.push(...attendanceData, ...subjectsHeaderData, averageData);
+        subheader.push(...attendanceBorder, ...subjectsSubheaderData, {});
+    }
+
+    return [header, subheader];
 }
