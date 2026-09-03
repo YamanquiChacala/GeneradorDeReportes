@@ -48,12 +48,21 @@ export const ReportSheetSchema = {
                 unprotectTrim3: "asist_edita_Periodo3",
             },
         },
+        summary: {
+            sheetName: "Concentrado",
+            ranges: {
+                labels: "concentrado_Etiquetas",
+                trim1: "concentrado_Periodo1",
+                trim2: "concentrado_Periodo2",
+                trim3: "concentrado_Periodo3",
+            },
+        },
         status: {
             sheetName: "Estado",
             ranges: {
                 info: "estado_Datos",
-                abilities: "estado_habilidades",
-                comments: "estado_observaciones",
+                abilities: "estado_Habilidades",
+                comments: "estado_Observaciones",
                 trim1: "estado_Periodo1",
                 trim2: "estado_Periodo2",
                 trim3: "estado_Periodo3",

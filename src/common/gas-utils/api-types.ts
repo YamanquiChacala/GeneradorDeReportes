@@ -66,3 +66,14 @@ export enum ValueInputOption {
     RAW = "RAW",
     USER_ENTERED = "USER_ENTERED",
 }
+
+export enum Style {
+    STYLE_UNSPECIFIED = "STYLE_UNSPECIFIED",
+    DOTTED = "DOTTED",
+    DASHED = "DASHED",
+    SOLID = "SOLID",
+    SOLID_MEDIUM = "SOLID_MEDIUM",
+    SOLID_THICK = "SOLID_THICK",
+    NONE = "NONE",
+    DOUBLE = "DOUBLE",
+}

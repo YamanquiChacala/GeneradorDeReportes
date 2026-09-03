@@ -1,4 +1,5 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import { DEFAULT_COMMENT } from "./constants";
 import {
     createAllSubjectsAverageFormula,
     createAttendaceFormulas,
@@ -6,9 +7,16 @@ import {
     createFieldFormula,
     createFinalSubjectAverageFormula,
     createIndividualSubjectAverageFormula,
+    createSetupAbilityValidationFormula,
+    createSetupCommentValidationFormula,
+    createSetupGradeValidationFormula,
+    createSetupRowValidFormula,
+    createSetupSepCommentLenghtValidationFormula,
+    createSetupTextValidationFormula,
     createStudentGeneralAttendanceFormula,
     createStudentPerSubjectAttendanceFormula,
-    getShortCommentFormula,
+    getCharacterCountFormula,
+    getSepCommentFormula,
 } from "./formulas";
 import { type AcademicField, Period } from "./types";
 
@@ -77,25 +85,21 @@ describe("Report Utils. Formula Generators", () => {
         });
     });
 
-    describe("getShortCommentFormula", () => {
-        it("should calculate correct offsets and inject them into the LET formula", () => {
-            (getColumnLetter as jest.Mock).mockReturnValue("D");
+    describe("getSepCommentFormula", () => {
+        it("should contain the cells given", () => {
+            const a1Range = "F14:H23";
+            const formula = getSepCommentFormula(a1Range);
 
-            const formula = getShortCommentFormula(mockRange, 5, 2);
-
-            expect(getColumnLetter).toHaveBeenCalledWith(3);
-            expect(formula).toContain("raw_text, D8");
-            expect(formula).toContain("cleaned_accents");
-            expect(formula.startsWith("=LET(")).toBe(true);
+            expect(formula).toContain(a1Range);
         });
+    });
 
-        it("should safely handle ranges missing index properties by falling back to 0", () => {
-            (getColumnLetter as jest.Mock).mockReturnValue("A");
+    describe("getCharacterCountFormula", () => {
+        it("should contain the cells given", () => {
+            const a1Range = "ZB18";
+            const formula = getCharacterCountFormula(a1Range);
 
-            const formula = getShortCommentFormula(mockRangeOpen, 0, 0);
-
-            expect(getColumnLetter).toHaveBeenCalledWith(0);
-            expect(formula).toContain("raw_text, A1");
+            expect(formula).toContain(a1Range);
         });
     });
 
@@ -276,6 +280,70 @@ describe("Report Utils. Formula Generators", () => {
             });
 
             expect(formula).toBe("=IFERROR(ROUND(AVERAGE.WEIGHTED(E$2:E$10, 'Weights'!F$2:F$10), 1))");
+        });
+    });
+
+    describe("createSetupRowValidFormula", () => {
+        it("should use the given values in the formula", () => {
+            (getA1Notation as jest.Mock).mockReturnValueOnce("E2:2");
+
+            const formula = createSetupRowValidFormula(mockRange, 1, 4);
+
+            expect(getA1Notation).toHaveBeenCalledWith({
+                mappedRange: mockRange,
+                rowOffset: 1,
+                colOffset: 4,
+                height: 1,
+                width: -1,
+                lockColumns: true,
+            });
+
+            expect(formula).toBe('=IF(COUNTIF(E2:2, "✔️") + COUNTIF(E2:2, "❌") = 0, "", IF(COUNTIF(E2:2, "❌") > 0, "❌", "✔️"))');
+        });
+    });
+
+    describe("createSetupTextValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupTextValidationFormula("B3");
+
+            expect(formula).toBe('=IF(REGEXMATCH(TO_TEXT(B3), "^\\s*$"), "❌", "✔️")');
+        });
+    });
+
+    describe("createSetupAbilityValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupAbilityValidationFormula("B3");
+
+            expect(formula).toBe('=IF(ISNUMBER(MATCH(TRUE, ARRAYFORMULA(EXACT(B3, {"E", "B", "S", "R"})), 0)), "✔️", "❌")');
+        });
+    });
+
+    describe("createSetupCommentValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupCommentValidationFormula("B3");
+            const comment_start = DEFAULT_COMMENT.slice(0, 20);
+
+            expect(formula).toBe(`=IF(REGEXMATCH(TO_TEXT(B3), "^[\\d\\W]*$|^${comment_start}"), "❌", "✔️")`);
+        });
+    });
+
+    describe("createSetupGradeValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupGradeValidationFormula("B3");
+
+            expect(formula).toContain("B3");
+            expect(formula).toContain("✔️");
+            expect(formula).toContain("❌");
+        });
+    });
+
+    describe("createSetupSepCommentLenghtValidationFormula", () => {
+        it("should create a valid formula", () => {
+            const formula = createSetupSepCommentLenghtValidationFormula("F4");
+
+            expect(formula).toContain("F4");
+            expect(formula).toContain("✔️");
+            expect(formula).toContain("❌");
         });
     });
 });

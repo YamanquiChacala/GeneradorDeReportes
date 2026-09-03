@@ -1,8 +1,9 @@
 import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import { DEFAULT_COMMENT } from "./constants";
 import type { AcademicField, Period } from "./types";
 
 /**
- * Define the formala for calculating the attendance percent.
+ * Define the formala for calculating the attendance percent in the Attendance Sheet.
  */
 export function createAttendaceFormulas(row: number, startCol: number, endCol: number): { percent: string; count: string } {
     if (startCol === -1 || startCol > endCol) return { percent: '=""', count: '=""' };
@@ -19,25 +20,60 @@ export function createAttendaceFormulas(row: number, startCol: number, endCol: n
 }
 
 /**
- * Helper function to build the formula for shorter comments (for the SEP).
+ * Build the formula to piece together the SEP comment in the Student Template Sheet.
  */
-export function getShortCommentFormula(source: MappedNamedRange, rowOffset: number, colOffset: number): string {
-    const sourceLetter = getColumnLetter((source.namedRange.range.startColumnIndex ?? 0) + colOffset);
-    const sourceNumber = (source.namedRange.range.startRowIndex ?? 0) + rowOffset + 1;
+export function getSepCommentFormula(a1Range: string) {
     return `=LET(
-    raw_text, ${sourceLetter}${sourceNumber},
-    lower_text, LOWER(raw_text),
-    accent_map, {"á","a"; "é","e"; "í","i"; "ó","o"; "ú","u"; "ñ","n"; "ü","u"},
-    cleaned_accents, REDUCE(lower_text, SEQUENCE(ROWS(accent_map)), LAMBDA(acc, i, SUBSTITUTE(acc, INDEX(accent_map, i, 1), INDEX(accent_map, i, 2)))),
-    truncated, LEFT(cleaned_accents, MIN(250, IFERROR(FIND(CHAR(10), cleaned_accents) - 1, 250))),
-    upper_text, UPPER(truncated),
-    final_ascii, REGEXREPLACE(upper_text, "[^ -~]", ""),
-    final_ascii
+  range, ${a1Range},
+
+  clean_text, LAMBDA(text,
+    LET(
+      accent_map, {"Á","A"; "É","E"; "Í","I"; "Ó","O"; "Ú","U"; "Ñ","N"; "Ü","U"},
+
+      no_placeholder, REGEXREPLACE(text, "^\\[.*", ""),
+      upper_text, UPPER(no_placeholder),
+
+      substitutions, REDUCE(upper_text, SEQUENCE(ROWS(accent_map)), LAMBDA(acc, i, SUBSTITUTE(acc, INDEX(accent_map, i, 1), INDEX(accent_map, i, 2)))),
+
+      ascii_clean, REGEXREPLACE(substitutions, "[^\\x00-\\x7F]+", ""),
+      clean_spaces, TRIM(ascii_clean),
+      REGEXREPLACE(clean_spaces, "[,:;\\.?!-]+$", "")
+    )
+  ),
+
+  process_column, LAMBDA(range, prefix,
+    LET(
+      clean_texts, MAP(range, clean_text), 
+      filtered, FILTER(clean_texts, clean_texts <> ""),
+      count, IF(ISERROR(filtered), 0, ROWS(filtered)),
+      
+      IF(count = 0, "", 
+        prefix & 
+        IF(count = 1, 
+          INDEX(filtered, 1), 
+          TEXTJOIN("; ", TRUE, CHOOSEROWS(filtered, SEQUENCE(count - 1))) & "; Y " & CHOOSEROWS(filtered, -1)
+        ) & "."
+      )
+    )
+  ),
+
+  strenghts, process_column(CHOOSECOLS(range, 1), "DOMINA "),
+  weaknesses, process_column(CHOOSECOLS(range, 2), "DEBE FORTALECER "),
+  suggestions, process_column(CHOOSECOLS(range, 3), "SE RECOMIENDA "),
+
+  TEXTJOIN(" ", TRUE, strenghts, weaknesses, suggestions)
 )`;
 }
 
 /**
- * Generate a formula for the general absences.
+ * Build a simple formula to display the number of characters in a cell
+ */
+export function getCharacterCountFormula(a1cell: string) {
+    return `=LEN(${a1cell})`;
+}
+
+/**
+ * Generate a formula for the general absences in the Student Template Sheet.
  */
 export function createStudentGeneralAttendanceFormula(
     period: Period,
@@ -59,7 +95,7 @@ export function createStudentGeneralAttendanceFormula(
 }
 
 /**
- * Generate the student forumala to grab the absences per subject.
+ * Generate the student forumala to grab the absences per subject in the Student Template Sheet.
  */
 export function createStudentPerSubjectAttendanceFormula(
     period: Period,
@@ -98,7 +134,7 @@ export function createStudentPerSubjectAttendanceFormula(
 }
 
 /**
- * Formula to claculate each subject's average.
+ * Formula to claculate each subject's average in the Student Template Sheet.
  */
 export function createIndividualSubjectAverageFormula(valuesRange: MappedNamedRange, rowOffset: number, weightsRange: MappedNamedRange): string {
     const valuesA1 = getA1Notation({ mappedRange: valuesRange, rowOffset, colOffset: 1, height: 1, width: 3, lockColumns: true });
@@ -115,7 +151,7 @@ export function createIndividualSubjectAverageFormula(valuesRange: MappedNamedRa
 }
 
 /**
- * Formula to calculate the final subject's average.
+ * Formula to calculate the final subject's average in the Student Template Sheet.
  */
 export function createFinalSubjectAverageFormula(trim1: MappedNamedRange, trim2: MappedNamedRange, trim3: MappedNamedRange, rowOffset: number): string {
     const colOffset = (trim3.namedRange.range.endColumnIndex ?? 0) - 2;
@@ -132,7 +168,7 @@ export function createFinalSubjectAverageFormula(trim1: MappedNamedRange, trim2:
 }
 
 /**
- * Helper function to calculate the field value from the subjects.
+ * Helper function to calculate the field value from the subjects in the Student Template Sheet.
  */
 export function createFieldFormula(
     field: AcademicField,
@@ -166,7 +202,7 @@ export function createFieldFormula(
 }
 
 /**
- * Helper to calculate the average of the academic fields
+ * Helper to calculate the average of the academic fields in the Student Template Sheet.
  */
 export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOffset: number, decimals: number): string {
     const valuesA1 = getA1Notation({ mappedRange: mappedFields, colOffset, width: 1, lockRows: true });
@@ -174,10 +210,61 @@ export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOff
 }
 
 /**
- * Helper to crete the average of all the subjects
+ * Helper to crete the average of all the subjects in the Student Template Sheet.
  */
 export function createAllSubjectsAverageFormula(mappedSubjects: MappedNamedRange, mappedWeights: MappedNamedRange, colOffset: number, decimals: number): string {
     const valuesA1 = getA1Notation({ mappedRange: mappedSubjects, colOffset, width: 1, lockRows: true });
     const weightsA1 = getA1Notation({ mappedRange: mappedWeights, colOffset: 1, width: 1, includeSheetName: true, lockRows: true, lockColumns: true });
     return `=IFERROR(ROUND(AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1}), ${decimals}))`;
+}
+
+/**
+ * Helper to create Status formula to validate a whole row in the Status Sheet
+ */
+export function createSetupRowValidFormula(mappedRange: MappedNamedRange, rowOffset: number, colOffset: number): string {
+    const checkRangeA1 = getA1Notation({ mappedRange, rowOffset, colOffset, height: 1, width: -1, lockColumns: true });
+    return `=IF(COUNTIF(${checkRangeA1}, "✔️") + COUNTIF(${checkRangeA1}, "❌") = 0, "", IF(COUNTIF(${checkRangeA1}, "❌") > 0, "❌", "✔️"))`;
+}
+
+/**
+ * Helper to create Status formula checking simple text in the Status Sheet.
+ */
+export function createSetupTextValidationFormula(a1Cell: string) {
+    return `=IF(REGEXMATCH(TO_TEXT(${a1Cell}), "^\\s*$"), "❌", "✔️")`;
+}
+
+/**
+ * Helper to create Status formula checking habilities in the Status Sheet.
+ */
+export function createSetupAbilityValidationFormula(a1Cell: string) {
+    return `=IF(ISNUMBER(MATCH(TRUE, ARRAYFORMULA(EXACT(${a1Cell}, {"E", "B", "S", "R"})), 0)), "✔️", "❌")`;
+}
+
+/**
+ * Helper to create Status formula checking comments in the Status Sheet.
+ */
+export function createSetupCommentValidationFormula(a1Cell: string) {
+    const comment_start = DEFAULT_COMMENT.slice(0, 20);
+    return `=IF(REGEXMATCH(TO_TEXT(${a1Cell}), "^[\\d\\W]*$|^${comment_start}"), "❌", "✔️")`;
+}
+
+/**
+ * Base formula to check if a cells is numeric and between two values
+ */
+function createNumberValidationFormula(a1Cell: string, low: number, high: number) {
+    return `=IF(AND(ISNUMBER(${a1Cell}), ISBETWEEN(${a1Cell}, ${low}, ${high})), "✔️", "❌")`;
+}
+
+/**
+ * Helper to create Status formula checking grade in the Status Sheet.
+ */
+export function createSetupGradeValidationFormula(a1Cell: string) {
+    return createNumberValidationFormula(a1Cell, 0, 10);
+}
+
+/**
+ * Helper to create Status formula checking the length of SEP comments.
+ */
+export function createSetupSepCommentLenghtValidationFormula(a1Cell: string) {
+    return createNumberValidationFormula(a1Cell, 20, 250);
 }

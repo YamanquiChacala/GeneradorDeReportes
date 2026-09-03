@@ -4,6 +4,7 @@ import {
     buildFieldsMask,
     buildProtectExtraSheetRequests,
     buildUpdateCellsRequest,
+    buildUpdateSheetPropertiesRequest,
     createRequiredGetter,
     type ExtractRangeNames,
     offsetGridRange,
@@ -23,9 +24,12 @@ export function createStudentSheets(
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const rangeNames = ReportSheetSchema.sheets.studentTemplate.ranges;
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
 
+    // Get the list of students to get each one their sheet.
     const realStudents = persistentData.students.filter((studentRow) => studentRow.type === StudentRowType.STUDENT);
 
+    // Create a sheet for each student.
     const { requests: createSheetsRequests, newSheetIds } = addNewSheet({
         parsedData: parsedReport,
         sourceSheetTitle: ReportSheetSchema.sheets.studentTemplate.sheetName,
@@ -33,11 +37,13 @@ export function createStudentSheets(
         multipleSheetNames: realStudents.map((student) => student.sheetName),
     });
 
+    // Input the student's data in their sheet.
     const fillInDataRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
     for (const [sheetId, student] of zip(newSheetIds, realStudents)) {
         fillInDataRequests.push(...fillStudentData(parsedReport, sheetId, student));
     }
 
+    // Protect each student's sheet.
     const baseUnprotectedRanges = [
         getMappedRange(rangeNames.unprotectedAbilities).namedRange.range,
         getMappedRange(rangeNames.unprotectedComments).namedRange.range,
@@ -46,7 +52,11 @@ export function createStudentSheets(
 
     const protectSheetsRequests = buildProtectExtraSheetRequests(parsedReport, baseUnprotectedRanges);
 
-    return [...createSheetsRequests, ...fillInDataRequests, ...protectSheetsRequests];
+    // Hide the student template sheet.
+    const studentTemplateId = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName).properties?.sheetId ?? 0;
+    const hideTemplateRequest = buildUpdateSheetPropertiesRequest({ sheetId: studentTemplateId, hidden: true });
+
+    return [...createSheetsRequests, ...fillInDataRequests, ...protectSheetsRequests, hideTemplateRequest];
 }
 
 /**

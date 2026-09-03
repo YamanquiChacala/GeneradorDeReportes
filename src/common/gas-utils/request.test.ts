@@ -1,23 +1,29 @@
-import { MergeType, PasteOrientation, PasteType } from "./api-types";
+import { MergeType, PasteOrientation, PasteType, Style } from "./api-types";
 import {
     addNewNamedRange,
     addNewSheet,
     buildAddBandingRequest,
+    buildBorderRequest,
     buildCopyPasteRequest,
     buildMergeCellsRequest,
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
+    buildSetBackgroundRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
     buildUpdateSheetPropertiesRequest,
 } from "./request";
-import { type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
+import { BorderSide, type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
 
 // Mock the random ID generator for consistent test assertions
-jest.mock("../utils", () => ({
-    getRandomId: jest.fn(() => 9999),
-}));
+jest.mock("../utils", () => {
+    const originalModule = jest.requireActual("../utils");
+    return {
+        ...originalModule,
+        getRandomId: jest.fn(() => 9999),
+    };
+});
 
 describe("GAS Util, Requests", () => {
     // --- State Mutation Tests Setup ---
@@ -60,10 +66,40 @@ describe("GAS Util, Requests", () => {
         });
     });
 
+    describe("buildSetBackgroundRequest", () => {
+        it("should build a valid request", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const validColor = "#ffffff";
+            const request = buildSetBackgroundRequest(range, validColor);
+
+            expect(request.repeatCell?.range).toBe(range);
+            expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle?.rgbColor).toEqual({ red: 1, green: 1, blue: 1, alpha: 1 });
+        });
+
+        it("should not define color if color is not valid", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const invalidColor = "not valid";
+            const request = buildSetBackgroundRequest(range, invalidColor);
+
+            expect(request.repeatCell?.range).toBe(range);
+            expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle).toBeDefined();
+            expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle?.rgbColor).toBeUndefined();
+        });
+    });
+
     describe("buildMergeCellsRequest", () => {
         it("should build a valid mergeCells request", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildMergeCellsRequest(range, MergeType.MERGE_ALL);
+            const request = buildMergeCellsRequest(range, MergeType.MERGE_ROWS);
+
+            expect(request.mergeCells).toBeDefined();
+            expect(request.mergeCells?.range).toBe(range);
+            expect(request.mergeCells?.mergeType).toBe(MergeType.MERGE_ROWS);
+        });
+
+        it("should default to MERGE_ALL", () => {
+            const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
+            const request = buildMergeCellsRequest(range);
 
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
@@ -78,6 +114,102 @@ describe("GAS Util, Requests", () => {
 
             expect(request.unmergeCells).toBeDefined();
             expect(request.unmergeCells?.range).toBe(range);
+        });
+    });
+
+    describe("buildBorderRequest", () => {
+        const mockRange: Readonly<GoogleAppsScript.Sheets.Schema.GridRange> = {
+            sheetId: 12345,
+            startRowIndex: 0,
+            endRowIndex: 10,
+            startColumnIndex: 0,
+            endColumnIndex: 5,
+        };
+
+        const blackColor: GoogleAppsScript.Sheets.Schema.Color = {
+            red: 0,
+            green: 0,
+            blue: 0,
+            alpha: 1,
+        };
+
+        it("should build a request for a single BorderSide with a valid color", () => {
+            const hex = "#ffffff";
+            const expectedColor: GoogleAppsScript.Sheets.Schema.Color = { red: 1, green: 1, blue: 1, alpha: 1 };
+
+            const result = buildBorderRequest(mockRange, hex, BorderSide.RIGHT);
+
+            expect(result).toStrictEqual({
+                updateBorders: {
+                    range: mockRange,
+                    right: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                },
+            });
+        });
+
+        it("should build a request for an array of BorderSides with a valid color", () => {
+            const hex = "#ff0000";
+            const expectedColor: GoogleAppsScript.Sheets.Schema.Color = { red: 1, green: 0, blue: 0, alpha: 1 };
+
+            const result = buildBorderRequest(mockRange, hex, [BorderSide.TOP, BorderSide.BOTTOM]);
+
+            expect(result).toStrictEqual({
+                updateBorders: {
+                    range: mockRange,
+                    top: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                    bottom: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                },
+            });
+        });
+
+        it("should build a request for all BorderSides at once", () => {
+            const hex = "#00ff00";
+            const expectedColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 1, blue: 0, alpha: 1 };
+            const allSides = Object.values(BorderSide);
+
+            const result = buildBorderRequest(mockRange, hex, allSides);
+
+            const expectedBorders = Object.fromEntries(
+                allSides.map((side) => [
+                    side,
+                    {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: expectedColor },
+                    },
+                ]),
+            );
+
+            expect(result).toStrictEqual({
+                updateBorders: {
+                    range: mockRange,
+                    ...expectedBorders,
+                },
+            });
+        });
+
+        it("should fallback to black if hexToColor returns null/undefined", () => {
+            const invalidHex = "not-a-color";
+
+            const result = buildBorderRequest(mockRange, invalidHex, BorderSide.LEFT);
+
+            expect(result).toStrictEqual({
+                updateBorders: {
+                    range: mockRange,
+                    left: {
+                        style: Style.SOLID,
+                        colorStyle: { rgbColor: blackColor },
+                    },
+                },
+            });
         });
     });
 
@@ -260,6 +392,7 @@ describe("GAS Util, Requests", () => {
                         description: "Template",
                         warningOnly: false,
                     },
+                    fields: "range,description,warningOnly,unprotectedRanges",
                 },
             });
         });
@@ -335,6 +468,7 @@ describe("GAS Util, Requests", () => {
                         description: "Extra2",
                         warningOnly: false,
                     },
+                    fields: "range,description,warningOnly,unprotectedRanges",
                 },
             });
 

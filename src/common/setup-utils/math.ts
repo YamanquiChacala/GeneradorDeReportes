@@ -1,4 +1,4 @@
-import type { AcademicField, FrozenArea, WeightedSubject } from "../report-utils";
+import type { AcademicField, FrozenArea, Range, WeightedSubject } from "../report-utils";
 import type { SubjectBlockLayout } from "./types";
 
 /**
@@ -120,4 +120,48 @@ export function normalizeSubjectWeights(subjects: readonly WeightedSubject[], ac
     }
 
     return normalizedSubjects;
+}
+
+/**
+ * Calculates the widths of the columns needed for the summary sheet.
+ */
+export function getSummaryColumnWidths(
+    attendancePerClass: boolean,
+    averagePerField: boolean,
+    subjects: number,
+    fields: number,
+): { columWidths: number[]; mergeRanges: Range[] } {
+    const columWidths: number[] = [];
+    const mergeRanges: Range[] = [];
+
+    const subjectColumns: number[] = [];
+    const widths = attendancePerClass ? [40, 40, 40] : [60, 60];
+
+    const generalAttendance = attendancePerClass ? [] : [60];
+    const average = 80;
+
+    const subjectOffset = averagePerField ? 0 : generalAttendance.length;
+
+    for (let i = 0; i < subjects; i++) {
+        subjectColumns.push(...widths);
+        mergeRanges.push({ start: subjectOffset + i * widths.length, end: subjectOffset + (i + 1) * widths.length });
+    }
+
+    if (averagePerField) {
+        const spacer = [40];
+
+        const fieldOffset = subjects * widths.length + 1 + generalAttendance.length;
+
+        const fieldColumns: number[] = [];
+        for (let i = 0; i < fields; i++) {
+            fieldColumns.push(60, 60);
+            mergeRanges.push({ start: fieldOffset + i * 2, end: fieldOffset + (i + 1) * 2 });
+        }
+
+        columWidths.push(...subjectColumns, ...spacer, ...generalAttendance, ...fieldColumns, average);
+    } else {
+        columWidths.push(...generalAttendance, ...subjectColumns, average);
+    }
+
+    return { columWidths, mergeRanges };
 }

@@ -12,8 +12,11 @@ import {
 import { sanitizeFileName } from "../../common/utils";
 import { createAttendanceSheet } from "./attendance";
 import { fillPersistentData } from "./persistent-data";
+import { prepareStatusSheet } from "./status";
 import { createStudentSheets } from "./student-sheets";
 import { prepareStudentTemplate } from "./student-template";
+
+// import { prepareSummarySheet } from "./summary";
 
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
 
@@ -57,16 +60,26 @@ export function initializeReport(setupFileId: string, parentId: string) {
     const attendanceRequests = createAttendanceSheet(parsedReportSheet, persistentData);
 
     // Prepare Student template sheet
-    const studentTemplateSetup = prepareStudentTemplate(parsedReportSheet, persistentData);
+    const studentTemplateSetupRequests = prepareStudentTemplate(parsedReportSheet, persistentData);
 
     // Create each Student sheet
-    const studentSheetsCreation = createStudentSheets(parsedReportSheet, persistentData);
+    const studentSheetsCreationRequests = createStudentSheets(parsedReportSheet, persistentData);
 
-    // TODO: Prepare Summary sheet
-    // TODO: Prepare Status sheet
+    // Prepare Status sheet
+    const statusSheetSetupRequests = prepareStatusSheet(parsedReportSheet, persistentData);
+
+    // Prepare Summary sheet
+    // const summarySheetSetupRequests = prepareSummarySheet(parsedReportSheet, persistentData);
 
     // ============ Batch Changes ==============
-    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...persistentDataRequests, ...attendanceRequests, ...studentTemplateSetup, ...studentSheetsCreation];
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
+        ...persistentDataRequests,
+        ...attendanceRequests,
+        ...studentTemplateSetupRequests,
+        ...studentSheetsCreationRequests,
+        ...statusSheetSetupRequests,
+        // ...summarySheetSetupRequests,
+    ];
 
     // ============ Execute Batch update ===========
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);

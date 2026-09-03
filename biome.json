@@ -21,6 +21,9 @@
       "preset": "recommended",
       "complexity": {
         "useLiteralKeys": "off"
+      },
+      "suspicious": {
+        "noForIn": "error"
       }
     }
   },

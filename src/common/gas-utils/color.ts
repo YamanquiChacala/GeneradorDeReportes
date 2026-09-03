@@ -1,4 +1,4 @@
-import { type HSLColor, hslToRgb, type RGBColor, rgbToHex } from "../utils";
+import { type HSLColor, hexToRgb, hslToRgb, type RGBColor, rgbToHex } from "../utils";
 import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GREY_COLOR } from "./constants";
 
 /**
@@ -6,12 +6,11 @@ import { BAND_LIGHT, FOOTER_LIGH, FOOTER_SAT, HEADER_LIGH, HEADER_SAT, LIGHT_GRE
  */
 export function createBanding(hue: number, header = false, footer = false): GoogleAppsScript.Sheets.Schema.BandingProperties {
     const banding: GoogleAppsScript.Sheets.Schema.BandingProperties = {
-        firstBandColor: LIGHT_GREY_COLOR,
-        secondBandColor: hslToColor({ h: hue, s: 1, l: BAND_LIGHT }),
+        firstBandColorStyle: { rgbColor: LIGHT_GREY_COLOR },
+        secondBandColorStyle: { rgbColor: hslToColor({ h: hue, s: 1, l: BAND_LIGHT }) },
     };
-    // TODO: Update to ColorStyle
     if (header) banding.headerColorStyle = { rgbColor: hslToColor({ h: hue, s: HEADER_SAT, l: HEADER_LIGH }) };
-    if (footer) banding.footerColor = hslToColor({ h: hue, s: FOOTER_SAT, l: FOOTER_LIGH });
+    if (footer) banding.footerColorStyle = { rgbColor: hslToColor({ h: hue, s: FOOTER_SAT, l: FOOTER_LIGH }) };
 
     return banding;
 }
@@ -37,5 +36,19 @@ function hslToColor(color: HSLColor): GoogleAppsScript.Sheets.Schema.Color {
         red: rgbColor.r,
         green: rgbColor.g,
         blue: rgbColor.b,
+        alpha: 1,
+    };
+}
+
+export function hexToColor(hex: string): GoogleAppsScript.Sheets.Schema.Color | null {
+    const rgb = hexToRgb(hex);
+    if (rgb == null) {
+        return null;
+    }
+    return {
+        red: rgb.r,
+        green: rgb.g,
+        blue: rgb.b,
+        alpha: 1,
     };
 }

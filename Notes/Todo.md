@@ -24,8 +24,12 @@
 * [ ] Add vertical borders between the final periods.
 
 ## Student template
-* [ ] Double check the first row is frozen (the student name)
+* [ ] Double check the first row is frozen (the student name) 
+* [ ] Check editable ranges for comments
+
 ## Student Sheets
+
+## Status
 
 
 
@@ -43,6 +47,11 @@
 ## Persistant Data
 * [ ] Normalize weights (for grades and subjects) 
 * [ ] Change weights
+
+## Deploy
+* [ ] Update Template
+* [ ] Create script / github action to auto-deploy
+* [ ] Copy ~/.clasprc as a secret
 
 
 # Function Flow
@@ -69,7 +78,8 @@
                 - 🛠️ [`fillPersistentData`](../src/setup/initialize-reports/persistent-data.ts) - Copy the Setup 📋 data over.
                 - 🛠️ [`createAttendanceSheet`](../src/setup/initialize-reports/attendance.ts) - Create attendance sheet.
                 - 🛠️ [`prepareStudentTemplate`](../src/setup/initialize-reports/student-template.ts) - Adapt the student template for the data of this group.
-                - 🛠️ [`createStudentSheets`] (../src/setup/initialize-reports/student-sheets.ts) - Create copies of the student template for each student.
+                - 🛠️ [`createStudentSheets`](../src/setup/initialize-reports/student-sheets.ts) - Create copies of the student template for each student.
+                - 🛠️ [`prepareStatusSheet`](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
 
     - 📄 TODO Report file editing (this is the biggest UI entry point)
 
@@ -81,3 +91,4 @@
 🔀 (twisted)
 📋 (clipboard)
 📊 (bar-chart)
+

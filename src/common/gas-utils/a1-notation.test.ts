@@ -92,19 +92,19 @@ describe("Gas Utils, A1 Notation", () => {
         });
 
         describe("Partially Unbounded (The 'To Edge' Cases)", () => {
-            it("should format an open-ended range falling back to sheet dimensions (C4:Z1000)", () => {
+            it("should format a fully open-ended range falling back to sheet dimensions (C4:Z1000)", () => {
                 const params = createParams({ startRowIndex: 3, startColumnIndex: 2 });
                 expect(getA1Notation(params)).toBe("C4:Z1000");
             });
 
-            it("should format an open-ended column bounded by rows (C4:Z10)", () => {
+            it("should format an open-ended range spanning to the last column, bounded by rows (C4:10)", () => {
                 const params = createParams({ startRowIndex: 3, endRowIndex: 10, startColumnIndex: 2 });
-                expect(getA1Notation(params)).toBe("C4:Z10");
+                expect(getA1Notation(params)).toBe("C4:10");
             });
 
-            it("should format an open-ended row bounded by columns (C4:E1000)", () => {
+            it("should format an open-ended range spanning to the last row, bounded by columns (C4:E)", () => {
                 const params = createParams({ startRowIndex: 3, startColumnIndex: 2, endColumnIndex: 5 });
-                expect(getA1Notation(params)).toBe("C4:E1000");
+                expect(getA1Notation(params)).toBe("C4:E");
             });
         });
 
@@ -168,6 +168,26 @@ describe("Gas Utils, A1 Notation", () => {
                 // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
                 params.mappedRange.sheet.properties!.title = "John's Data";
                 expect(getA1Notation(params)).toBe("'John''s Data'!A1");
+            });
+
+            it("should use custom sheet name when specified", () => {
+                const params = createParams(
+                    { startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 },
+                    { includeSheetName: true, customSheetName: "mySheet" },
+                );
+                // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
+                params.mappedRange.sheet.properties!.title = "UnusedName";
+                expect(getA1Notation(params)).toBe("'mySheet'!A1");
+            });
+
+            it("should fallback to sheet name if custom name is empty string", () => {
+                const params = createParams(
+                    { startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 },
+                    { includeSheetName: true, customSheetName: "" },
+                );
+                // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
+                params.mappedRange.sheet.properties!.title = "usedName";
+                expect(getA1Notation(params)).toBe("'usedName'!A1");
             });
 
             it("should handle empty string sheet names gracefully", () => {

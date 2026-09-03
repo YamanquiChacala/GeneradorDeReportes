@@ -1,9 +1,11 @@
 import { getRandomId } from "../utils";
-import { type MergeType, PasteOrientation, type PasteType } from "./api-types";
-import { createRequiredGetter } from "./helpers";
+import { Dimension, MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
+import { hexToColor } from "./color";
+import { buildFieldsMask, createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
 import {
+    type BorderSide,
     type ExtractDynamicRangeNames,
     type ExtractRangeNames,
     type ExtractSheetNames,
@@ -34,9 +36,28 @@ export function buildCopyPasteRequest(
 }
 
 /**
+ * Generates batch update `repeatCell` to set the background color.
+ */
+export function buildSetBackgroundRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, hexColor: string): GoogleAppsScript.Sheets.Schema.Request {
+    const rgbColor = hexToColor(hexColor) ?? undefined;
+    return {
+        repeatCell: {
+            range,
+            cell: {
+                userEnteredFormat: { backgroundColorStyle: { rgbColor } },
+            },
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.backgroundColorStyle.rgbColor"),
+        },
+    };
+}
+
+/**
  * Generates batch upate `mergeCells` request.
  */
-export function buildMergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, mergeType: MergeType): GoogleAppsScript.Sheets.Schema.Request {
+export function buildMergeCellsRequest(
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    mergeType: MergeType = MergeType.MERGE_ALL,
+): GoogleAppsScript.Sheets.Schema.Request {
     return {
         mergeCells: {
             range,
@@ -52,6 +73,43 @@ export function buildUnmergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets
     return {
         unmergeCells: {
             range,
+        },
+    };
+}
+
+/**
+ * Generates batch update `updateBorders` request.
+ */
+export function buildBorderRequest(
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    hexColor: string,
+    sides: BorderSide | BorderSide[],
+): GoogleAppsScript.Sheets.Schema.Request {
+    const black: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 0, blue: 0, alpha: 1 };
+    const rgbColor = hexToColor(hexColor) ?? black;
+
+    // Define the border style once
+    const borderStyle: GoogleAppsScript.Sheets.Schema.Border = {
+        style: Style.SOLID,
+        colorStyle: { rgbColor },
+    };
+
+    // Normalize the input to always be an array
+    const sidesArray = Array.isArray(sides) ? sides : [sides];
+
+    // Dynamically build the sides configuration
+    const borderConfig = sidesArray.reduce(
+        (acc, side) => {
+            acc[side] = borderStyle;
+            return acc;
+        },
+        {} as Partial<GoogleAppsScript.Sheets.Schema.UpdateBordersRequest>,
+    );
+
+    return {
+        updateBorders: {
+            range,
+            ...borderConfig,
         },
     };
 }
@@ -134,13 +192,91 @@ function buildSingleSheetProtectRequest(
         throw new Error("Demasiados rangos protegidos en la hoja.");
     } else {
         newProtectedRange.protectedRangeId = protectedRanges[0]?.protectedRangeId;
-        request = { updateProtectedRange: { protectedRange: newProtectedRange } };
+        request = {
+            updateProtectedRange: {
+                protectedRange: newProtectedRange,
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.ProtectedRange>("range", "description", "warningOnly", "unprotectedRanges"),
+            },
+        };
     }
 
     // Update the sheet object
     sheet.protectedRanges = [newProtectedRange];
 
     return request;
+}
+
+/**
+ * Generates batch update for UpdateDimensionProperties to modify the width of the columns of a sheet.
+ */
+export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number, colWidths: number[]): GoogleAppsScript.Sheets.Schema.Request[] {
+    interface WidthRange {
+        width: number;
+        start: number;
+        end: number;
+    }
+
+    const widthRanges: WidthRange[] = [];
+
+    for (let i = 0; i < colWidths.length; i++) {
+        const width = colWidths[i];
+        if (width == null) break;
+
+        const last = widthRanges[widthRanges.length - 1];
+        if (last && last.width === width) {
+            last.end = i + 1;
+        } else {
+            widthRanges.push({ width, start: i, end: i + 1 });
+        }
+    }
+
+    const result: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    for (const widthRange of widthRanges) {
+        result.push({
+            updateDimensionProperties: {
+                properties: { pixelSize: widthRange.width },
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DimensionProperties>("pixelSize"),
+                range: {
+                    sheetId,
+                    dimension: Dimension.COLUMNS,
+                    startIndex: startCol + widthRange.start,
+                    endIndex: startCol + widthRange.end,
+                },
+            },
+        });
+    }
+
+    return result;
+}
+
+interface ContiguousWidth {
+    width: number;
+    count: number;
+}
+
+export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
+    const result: ContiguousWidth[] = [];
+
+    let workingWidth: ContiguousWidth | null = null;
+
+    for (const width of widths) {
+        if (workingWidth == null) {
+            workingWidth = { width, count: 1 };
+        }
+        if (workingWidth.width !== width) {
+            result.push(workingWidth);
+            workingWidth = { width, count: 1 };
+        } else {
+            workingWidth.count++;
+        }
+    }
+
+    if (workingWidth != null) {
+        result.push(workingWidth);
+    }
+
+    return result;
 }
 
 interface BuildUpdateSheetPropertiesParams {
