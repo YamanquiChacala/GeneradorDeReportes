@@ -5,7 +5,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.10",
     "@gas-plugin/unplugin": "^0.2.2",
-    "@google/clasp": "^3.3.0",
+    "@google/clasp": "^3.4.1",
     "@swc/core": "^1.16.1",
     "@swc/jest": "^0.2.39",
     "@types/google-apps-script": "^2.0.12",
