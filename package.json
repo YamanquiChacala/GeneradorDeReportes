@@ -3,7 +3,7 @@
   "description": "A simple GAS tool to help my school create student reports.",
   "version": "0.1.0",
   "devDependencies": {
-    "@biomejs/biome": "^2.5.10",
+    "@biomejs/biome": "^2.5.11",
     "@gas-plugin/unplugin": "^0.2.2",
     "@google/clasp": "^3.3.0",
     "@swc/core": "^1.16.1",
