@@ -27,6 +27,8 @@
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true,
-    "esbuild@0.28.1": true
+    "esbuild@0.28.2": true,
+    "@swc/core@1.16.1": true,
+    "@parcel/watcher@2.6.0": true
   }
 }
