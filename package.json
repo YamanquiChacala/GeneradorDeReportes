@@ -10,7 +10,7 @@
     "@swc/jest": "^0.2.39",
     "@types/google-apps-script": "^2.0.12",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.4.1",
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.2",
     "jest": "^30.5.0",
