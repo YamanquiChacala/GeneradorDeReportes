@@ -100,7 +100,7 @@ export function calculateCalendarHeaders(
 }
 
 /**
- * Builds the data for the student list in Attendance
+ * Builds the student list data for the Attendance
  */
 export function generateStudentGrid(students: StudentRow[], initialRow: number, trimesters: TrimesterRanges): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const result: GoogleAppsScript.Sheets.Schema.CellData[][] = [];

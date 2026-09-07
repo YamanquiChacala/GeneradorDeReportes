@@ -259,6 +259,8 @@ function addStudentLists(
 
     const buildGrid = (initialRow: number) => generateStudentGrid(data.students, initialRow, trimesters);
 
+    const classMoodFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.classMoodRow).namedRange.range;
+
     if (data.configData.attendancePerClass) {
         const subjectTitleFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.spaceSubjectRows).namedRange.range;
         const studentRowFormatOrigin = getMappedRange(ReportSheetSchema.sheets.attendanceTemplate.ranges.attendanceStudentRow).namedRange.range;
@@ -273,6 +275,7 @@ function addStudentLists(
 
             // Build data
             subjectStudentListData.push([], [{ userEnteredValue: { stringValue: weightedSubject?.subject } }]); // Space and subject name
+            // TODO: Add class mood row
             subjectStudentListData.push(...buildGrid(layout.studentStartRow));
 
             // Format Title
