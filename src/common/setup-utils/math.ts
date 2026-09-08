@@ -27,16 +27,16 @@ export function calculateAttendanceGridSize(
  * Calculates the sizes for each class block for attendance.
  */
 export function calculatePerClassLayout(subjectCount: number, studentCount: number, frozenRows: number): SubjectBlockLayout[] {
-    const space = studentCount + 2;
+    const space = studentCount + 3;
     const layouts: SubjectBlockLayout[] = [];
 
     for (let index = 0; index < subjectCount; index++) {
         layouts.push({
             subjectIndex: index,
             titleFormatStartRow: frozenRows + index * space,
-            studentStartRow: frozenRows + 2 + index * space,
+            studentStartRow: frozenRows + 3 + index * space,
             bandingStartRow: frozenRows + 1 + index * space,
-            bandingNumRows: studentCount + 1,
+            bandingNumRows: studentCount + 2,
         });
     }
 

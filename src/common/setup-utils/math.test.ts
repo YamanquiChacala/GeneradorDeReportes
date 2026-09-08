@@ -44,16 +44,16 @@ describe("Setup Utils. Math", () => {
             // space = 10 + 2 = 12
             // index 0:
             // titleFormatStartRow = 2 + 0 = 2
-            // studentStartRow = 2 + 2 + 0 = 4
+            // studentStartRow = 2 + 3 + 0 = 5
             // bandingStartRow = 2 + 1 + 0 = 3
-            // bandingNumRows = 10 + 1 = 11
+            // bandingNumRows = 10 + 2 = 12
             expect(result).toEqual([
                 {
                     subjectIndex: 0,
                     titleFormatStartRow: 2,
-                    studentStartRow: 4,
+                    studentStartRow: 5,
                     bandingStartRow: 3,
-                    bandingNumRows: 11,
+                    bandingNumRows: 12,
                 },
             ]);
         });
@@ -61,23 +61,23 @@ describe("Setup Utils. Math", () => {
         it("calculates correct consecutive blocks for multiple subjects", () => {
             const result = calculatePerClassLayout(2, 5, 3);
 
-            // space = 5 + 2 = 7
+            // space = 5 + 3 = 8
             // index 0 offsets: 0
-            // index 1 offsets: 7
+            // index 1 offsets: 8
             expect(result).toEqual([
                 {
                     subjectIndex: 0,
                     titleFormatStartRow: 3, // 3 + 0
-                    studentStartRow: 5, // 3 + 2 + 0
+                    studentStartRow: 6, // 3 + 3 + 0
                     bandingStartRow: 4, // 3 + 1 + 0
-                    bandingNumRows: 6, // 5 + 1
+                    bandingNumRows: 7, // 5 + 2
                 },
                 {
                     subjectIndex: 1,
-                    titleFormatStartRow: 10, // 3 + 7
-                    studentStartRow: 12, // 3 + 2 + 7
-                    bandingStartRow: 11, // 3 + 1 + 7
-                    bandingNumRows: 6, // 5 + 1
+                    titleFormatStartRow: 11, // 3 + 8
+                    studentStartRow: 14, // 3 + 3 + 8
+                    bandingStartRow: 12, // 3 + 1 + 8
+                    bandingNumRows: 7, // 5 + 2
                 },
             ]);
         });

@@ -291,28 +291,32 @@ function addStudentLists(
             const studentListBandingDestination = createRange(sheetId, layout.bandingStartRow, 0, layout.bandingNumRows, -1);
             studentListFormatRequests.push(buildAddBandingRequest(studentListBandingDestination, createBanding(hue, true)));
 
-            // Named ranges
+            // Copy class mood indicators
+            // TODO: copy indicators
+
+            // Define named ranges for protection, and for formatting.
             const strIndex = String(layout.subjectIndex).padStart(2, "0");
             if (trimesters.trim1.start !== -1) {
                 const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1}_Mat${strIndex}`;
-                const gridRange = createRange(
+                const studentListRange = createRange(
                     sheetId,
                     layout.studentStartRow,
                     trimesters.trim1.start,
                     data.students.length,
                     trimesters.trim1.end - trimesters.trim1.start + 1,
                 );
+                const writableRange = offsetGridRange({ origin: studentListRange, rowOffset: -1, height: data.students.length + 1 });
                 namedRangesRequests.push(
                     addNewNamedRange({
                         parsedData: parsedReport,
                         sheetTitle: ReportSheetSchema.sheets.attendance.sheetName,
-                        gridRange,
+                        gridRange: writableRange,
                         rangeName,
                         dynamicRangeKey: ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1,
                     }),
                 );
-                formatRanges.trim1.push(gridRange);
-                writableRanges.push(gridRange);
+                formatRanges.trim1.push(studentListRange);
+                writableRanges.push(studentListRange);
             }
             if (trimesters.trim2.start !== -1) {
                 const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2}_Mat${strIndex}`;
@@ -323,6 +327,7 @@ function addStudentLists(
                     data.students.length,
                     trimesters.trim2.end - trimesters.trim2.start + 1,
                 );
+                // TODO
                 namedRangesRequests.push(
                     addNewNamedRange({
                         parsedData: parsedReport,
@@ -343,6 +348,7 @@ function addStudentLists(
                     data.students.length,
                     trimesters.trim3.end - trimesters.trim3.start + 1,
                 );
+                // TODO
                 namedRangesRequests.push(
                     addNewNamedRange({
                         parsedData: parsedReport,
