@@ -12,7 +12,7 @@ describe("Setup Utils. Math", () => {
             const result = calculateAttendanceGridSize(frozenArea, calendarLength, studentsCount, subjectsCount, false);
 
             expect(result).toEqual({
-                finalRowCount: 2 + 1 + 25, // 28
+                finalRowCount: 2 + 2 + 25, // 29
                 finalColumnCount: 3 + 30, // 33
             });
         });

@@ -15,9 +15,9 @@ export function calculateAttendanceGridSize(
     let finalRowCount = frozenArea.rows;
 
     if (attendancePerClass) {
-        finalRowCount += (2 + studentsCount) * subjectsCount;
+        finalRowCount += (3 + studentsCount) * subjectsCount; // Space + subject title + class mood
     } else {
-        finalRowCount += 1 + studentsCount;
+        finalRowCount += 2 + studentsCount; // Space + class mood
     }
 
     return { finalRowCount, finalColumnCount };

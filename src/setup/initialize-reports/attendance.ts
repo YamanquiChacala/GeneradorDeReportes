@@ -274,8 +274,7 @@ function addStudentLists(
             const weightedSubject = data.subjects[layout.subjectIndex];
 
             // Build data
-            subjectStudentListData.push([], [{ userEnteredValue: { stringValue: weightedSubject?.subject } }]); // Space and subject name
-            // TODO: Add class mood row
+            subjectStudentListData.push([], [{ userEnteredValue: { stringValue: weightedSubject?.subject } }], []); // Space, subject name and class mood
             subjectStudentListData.push(...buildGrid(layout.studentStartRow));
 
             // Format Title
@@ -316,54 +315,54 @@ function addStudentLists(
                     }),
                 );
                 formatRanges.trim1.push(studentListRange);
-                writableRanges.push(studentListRange);
+                writableRanges.push(writableRange);
             }
             if (trimesters.trim2.start !== -1) {
                 const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2}_Mat${strIndex}`;
-                const gridRange = createRange(
+                const studentListRange = createRange(
                     sheetId,
                     layout.studentStartRow,
                     trimesters.trim2.start,
                     data.students.length,
                     trimesters.trim2.end - trimesters.trim2.start + 1,
                 );
-                // TODO
+                const writableRange = offsetGridRange({ origin: studentListRange, rowOffset: -1, height: data.students.length + 1 });
                 namedRangesRequests.push(
                     addNewNamedRange({
                         parsedData: parsedReport,
                         sheetTitle: ReportSheetSchema.sheets.attendance.sheetName,
-                        gridRange,
+                        gridRange: writableRange,
                         rangeName,
                         dynamicRangeKey: ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2,
                     }),
                 );
-                formatRanges.trim2.push(gridRange);
+                formatRanges.trim2.push(studentListRange);
             }
             if (trimesters.trim3.start !== -1) {
                 const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3}_Mat${strIndex}`;
-                const gridRange = createRange(
+                const studentListRange = createRange(
                     sheetId,
                     layout.studentStartRow,
                     trimesters.trim3.start,
                     data.students.length,
                     trimesters.trim3.end - trimesters.trim3.start + 1,
                 );
-                // TODO
+                const writableRange = offsetGridRange({ origin: studentListRange, rowOffset: -1, height: data.students.length + 1 });
                 namedRangesRequests.push(
                     addNewNamedRange({
                         parsedData: parsedReport,
                         sheetTitle: ReportSheetSchema.sheets.attendance.sheetName,
-                        gridRange,
+                        gridRange: writableRange,
                         rangeName,
                         dynamicRangeKey: ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3,
                     }),
                 );
-                formatRanges.trim3.push(gridRange);
+                formatRanges.trim3.push(studentListRange);
             }
         }
 
         // Data transfer
-        const space = data.students.length + 2;
+        const space = data.students.length + 3; // space + title + class mood + student list
         const subjectStudentListDataRange = createRange(sheetId, frozenArea.rows, 0, space * data.subjects.length, frozenArea.cols);
 
         const subjectStudentListDataTransferRequest = buildUpdateCellsRequest({
