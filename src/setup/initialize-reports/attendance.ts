@@ -377,47 +377,86 @@ function addStudentLists(
         // Simple attendance
         // Named Ranges
         if (trimesters.trim1.start !== -1) {
-            const gridRange = createRange(sheetId, frozenArea.rows + 1, trimesters.trim1.start, data.students.length, trimesters.trim1.end - trimesters.trim1.start + 1);
+            const editableRange = createRange(
+                sheetId,
+                frozenArea.rows + 1,
+                trimesters.trim1.start,
+                data.students.length + 1,
+                trimesters.trim1.end - trimesters.trim1.start + 1,
+            );
+            const formatRange = createRange(
+                sheetId,
+                frozenArea.rows + 2,
+                trimesters.trim1.start,
+                data.students.length,
+                trimesters.trim1.end - trimesters.trim1.start + 1,
+            );
             const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1}_General`;
             namedRangesRequests.push(
                 addNewNamedRange({
                     parsedData: parsedReport,
                     sheetTitle: ReportSheetSchema.sheets.attendance.sheetName,
-                    gridRange,
+                    gridRange: editableRange,
                     rangeName,
                     dynamicRangeKey: ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1,
                 }),
             );
-            formatRanges.trim1.push(gridRange);
-            writableRanges.push(gridRange);
+            formatRanges.trim1.push(formatRange);
+            writableRanges.push(editableRange);
         }
         if (trimesters.trim2.start !== -1) {
-            const gridRange = createRange(sheetId, frozenArea.rows + 1, trimesters.trim2.start, data.students.length, trimesters.trim2.end - trimesters.trim2.start + 1);
+            const editableRange = createRange(
+                sheetId,
+                frozenArea.rows + 1,
+                trimesters.trim2.start,
+                data.students.length + 1,
+                trimesters.trim2.end - trimesters.trim2.start + 1,
+            );
+            const formatRange = createRange(
+                sheetId,
+                frozenArea.rows + 2,
+                trimesters.trim2.start,
+                data.students.length,
+                trimesters.trim2.end - trimesters.trim2.start + 1,
+            );
             const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2}_General`;
             namedRangesRequests.push(
                 addNewNamedRange({
                     parsedData: parsedReport,
                     sheetTitle: ReportSheetSchema.sheets.attendance.sheetName,
-                    gridRange,
+                    gridRange: editableRange,
                     rangeName,
                     dynamicRangeKey: ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2,
                 }),
             );
-            formatRanges.trim2.push(gridRange);
+            formatRanges.trim2.push(formatRange);
         }
         if (trimesters.trim3.start !== -1) {
-            const gridRange = createRange(sheetId, frozenArea.rows + 1, trimesters.trim3.start, data.students.length, trimesters.trim3.end - trimesters.trim3.start + 1);
+            const editableRange = createRange(
+                sheetId,
+                frozenArea.rows + 1,
+                trimesters.trim3.start,
+                data.students.length + 1,
+                trimesters.trim3.end - trimesters.trim3.start + 1,
+            );
+            const formatRange = createRange(
+                sheetId,
+                frozenArea.rows + 2,
+                trimesters.trim3.start,
+                data.students.length,
+                trimesters.trim3.end - trimesters.trim3.start + 1,
+            );
             const rangeName = `${ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3}_General`;
             namedRangesRequests.push(
                 addNewNamedRange({
                     parsedData: parsedReport,
                     sheetTitle: ReportSheetSchema.sheets.attendance.sheetName,
-                    gridRange,
+                    gridRange: editableRange,
                     rangeName,
                     dynamicRangeKey: ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3,
                 }),
             );
-            formatRanges.trim3.push(gridRange);
+            formatRanges.trim3.push(formatRange);
         }
 
         const studentStartRow = frozenArea.rows + 1;
