@@ -374,9 +374,7 @@ function addStudentLists(
         });
         if (subjectStudentListDataTransferRequest) studentListDataRequests.push(subjectStudentListDataTransferRequest);
     } else {
-        const studentStartRow = frozenArea.rows + 1;
-        const studentListDataRange = createRange(sheetId, studentStartRow, 0, data.students.length, frozenArea.cols);
-
+        // Simple attendance
         // Named Ranges
         if (trimesters.trim1.start !== -1) {
             const gridRange = createRange(sheetId, frozenArea.rows + 1, trimesters.trim1.start, data.students.length, trimesters.trim1.end - trimesters.trim1.start + 1);
@@ -422,6 +420,9 @@ function addStudentLists(
             formatRanges.trim3.push(gridRange);
         }
 
+        const studentStartRow = frozenArea.rows + 1;
+        const studentListDataRange = createRange(sheetId, studentStartRow, 0, data.students.length, frozenArea.cols);
+
         const subjectStudentListDataTransferRequest = buildUpdateCellsRequest({
             destination: studentListDataRange,
             data: buildGrid(studentStartRow),
@@ -434,6 +435,9 @@ function addStudentLists(
 
         // Banding
         studentListFormatRequests.push(buildAddBandingRequest(studentListDataRange, createBanding(0.4)));
+
+        // Class Mood
+        // TODO: copy class mood
     }
 
     requests.push(...studentListDataRequests, ...studentListFormatRequests, ...namedRangesRequests);
