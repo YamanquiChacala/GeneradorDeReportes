@@ -50,7 +50,8 @@ export function createStudentSheets(
         getMappedRange(rangeNames.unprotectedTrim1).namedRange.range,
     ];
 
-    const protectSheetsRequests = buildProtectExtraSheetRequests(parsedReport, baseUnprotectedRanges);
+    const userEmail = Session.getActiveUser().getEmail();
+    const protectSheetsRequests = buildProtectExtraSheetRequests(parsedReport, userEmail, baseUnprotectedRanges);
 
     // Hide the student template sheet.
     const studentTemplateId = getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName).properties?.sheetId ?? 0;

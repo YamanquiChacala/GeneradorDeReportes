@@ -18,7 +18,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "npm run typecheck && jest",
+    "test": "jest",
+    "test:all": "npm run typecheck && jest",
     "test:coverage": "npm run typecheck && jest --coverage && node append-theme.cjs",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",

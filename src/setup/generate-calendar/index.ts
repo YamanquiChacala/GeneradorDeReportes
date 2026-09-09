@@ -279,7 +279,8 @@ function buildFinalizationRequests(
     );
 
     // Protect the sheet
-    requests.push(buildProtectSheetRequest(parsedData, SetupSheetSchema.sheets.calendar.sheetName));
+    const userEmail = Session.getActiveUser().getEmail();
+    requests.push(buildProtectSheetRequest(parsedData, SetupSheetSchema.sheets.calendar.sheetName, userEmail));
 
     return requests;
 }

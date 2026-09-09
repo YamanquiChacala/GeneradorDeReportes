@@ -56,7 +56,8 @@ export function createAttendanceSheet(
     const formatRequests = formatMainArea(attendanceSheetId, formatRanges, parsedReport.mappedRanges, trimesters, frozenArea);
 
     // Protect sheet
-    const protectRequest = buildProtectSheetRequest(parsedReport, ReportSheetSchema.sheets.attendance.sheetName, writableRanges);
+    const userEmail = Session.getActiveUser().getEmail();
+    const protectRequest = buildProtectSheetRequest(parsedReport, ReportSheetSchema.sheets.attendance.sheetName, userEmail, writableRanges);
 
     // Build requests
     requests.push(...copyTemplateRequests, ...datesRequests, ...studentListRequest, ...formatRequests, protectRequest);
@@ -291,7 +292,8 @@ function addStudentLists(
             studentListFormatRequests.push(buildAddBandingRequest(studentListBandingDestination, createBanding(hue, true)));
 
             // Copy class mood indicators
-            // TODO: copy indicators
+            const classMoodDestination = createRange(sheetId, layout.studentStartRow - 1, 0, 1, frozenArea.cols);
+            studentListFormatRequests.push(buildCopyPasteRequest(classMoodFormatOrigin, classMoodDestination, PasteType.PASTE_NORMAL));
 
             // Define named ranges for protection, and for formatting.
             const strIndex = String(layout.subjectIndex).padStart(2, "0");

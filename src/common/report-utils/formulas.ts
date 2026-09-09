@@ -117,12 +117,12 @@ export function createStudentPerSubjectAttendanceFormula(
                 TRUE,
                 ARRAYFORMULA(
                     ISTEXT(
-                        INDEX(${attendanceSheetName}!A:A, start_row + 1):
+                        INDEX(${attendanceSheetName}!A:A, start_row + 2):
                         INDEX(${attendanceSheetName}!A:A, ROWS(${attendanceSheetName}!A:A))
                     )
                 ),
                 0
-            ),
+            ) + 1,
             ROWS(${attendanceSheetName}!A:A) - start_row
         ),
     first_names, OFFSET(${attendanceSheetName}!B$1, start_row, 0, height, 1),
