@@ -258,34 +258,34 @@ export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number
     return result;
 }
 
-interface ContiguousWidth {
-    width: number;
-    count: number;
-}
+// interface ContiguousWidth {
+//     width: number;
+//     count: number;
+// }
 
-export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
-    const result: ContiguousWidth[] = [];
+// export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
+//     const result: ContiguousWidth[] = [];
 
-    let workingWidth: ContiguousWidth | null = null;
+//     let workingWidth: ContiguousWidth | null = null;
 
-    for (const width of widths) {
-        if (workingWidth == null) {
-            workingWidth = { width, count: 1 };
-        }
-        if (workingWidth.width !== width) {
-            result.push(workingWidth);
-            workingWidth = { width, count: 1 };
-        } else {
-            workingWidth.count++;
-        }
-    }
+//     for (const width of widths) {
+//         if (workingWidth == null) {
+//             workingWidth = { width, count: 1 };
+//         }
+//         if (workingWidth.width !== width) {
+//             result.push(workingWidth);
+//             workingWidth = { width, count: 1 };
+//         } else {
+//             workingWidth.count++;
+//         }
+//     }
 
-    if (workingWidth != null) {
-        result.push(workingWidth);
-    }
+//     if (workingWidth != null) {
+//         result.push(workingWidth);
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
 interface BuildUpdateSheetPropertiesParams {
     readonly sheetId: number;

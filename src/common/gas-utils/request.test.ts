@@ -1,4 +1,4 @@
-import { MergeType, PasteOrientation, PasteType, Style } from "./api-types";
+import { Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
 import {
     addNewNamedRange,
     addNewSheet,
@@ -12,6 +12,7 @@ import {
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
+    buildUpdateColumnWidthRequests,
     buildUpdateSheetPropertiesRequest,
 } from "./request";
 import { BorderSide, type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
@@ -561,6 +562,160 @@ describe("GAS Util, Requests", () => {
                         users: ["yamanqui@chacala.school"],
                         groups: [],
                         domainUsersCanEdit: false,
+                    },
+                },
+            ]);
+        });
+    });
+
+    describe("buildUpdateColumnWidthRequests", () => {
+        it("should build a valid updateDimensionProperties request for a single column", () => {
+            const sheetId = 1;
+            const startCol = 0;
+            const colWidths = [100];
+
+            const result = buildUpdateColumnWidthRequests(sheetId, startCol, colWidths);
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.Request[] = [
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 100 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 0,
+                            endIndex: 1,
+                        },
+                    },
+                },
+            ];
+
+            expect(result).toStrictEqual(expectedResult);
+        });
+
+        it("should build individual requests for multiple widths", () => {
+            const sheetId = 9;
+            const startCol = 2;
+            const colWidths = [40, 90, 120];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 40 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 2,
+                            endIndex: 3,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 90 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 3,
+                            endIndex: 4,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 120 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 4,
+                            endIndex: 5,
+                        },
+                    },
+                },
+            ]);
+        });
+
+        it("should return an empty array when no widths are provided", () => {
+            expect(buildUpdateColumnWidthRequests(1, 0, [])).toStrictEqual([]);
+        });
+
+        it("should merge consecutive equal widths into a single range request", () => {
+            const sheetId = 5;
+            const startCol = 3;
+            const colWidths = [100, 100, 80, 80, 80, 120];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 100 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 3,
+                            endIndex: 5,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 80 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 5,
+                            endIndex: 8,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 120 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 8,
+                            endIndex: 9,
+                        },
+                    },
+                },
+            ]);
+        });
+
+        it("should stop processing once a nullish width is encountered", () => {
+            const sheetId = 7;
+            const startCol = 1;
+            const colWidths = [60, 75, null as unknown as number, 110];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 60 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 1,
+                            endIndex: 2,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 75 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 2,
+                            endIndex: 3,
+                        },
                     },
                 },
             ]);

@@ -8,7 +8,7 @@ import {
     StudentRowType,
     type TrimesterRanges,
 } from "../report-utils";
-import { buildDefaultCommentForStudentTemplateData, buildStatusSectionData, calculateCalendarHeaders, generateStudentGrid } from "./data";
+import { buildDefaultCommentForStudentTemplateData, buildStatusSectionData, buildSummaryHeadersData, calculateCalendarHeaders, generateStudentGrid } from "./data";
 import { TemplateSize } from "./types";
 
 describe("Setup Utils. Data", () => {
@@ -729,6 +729,46 @@ describe("Setup Utils. Data", () => {
             ];
 
             expect(result.data).toEqual(expectedData);
+        });
+    });
+
+    describe("buildSummaryHeadersData", () => {
+        it("should build summary headers for general attendance without fields", () => {
+            const attendancePerClass = false;
+            const averagePerField = false;
+            const subjectsNames = ["art", "math", "biology", "english"];
+            const fieldNames = ["language", "science", "humanities"];
+
+            const data = buildSummaryHeadersData(attendancePerClass, averagePerField, subjectsNames, fieldNames);
+
+            const expectedData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { stringValue: "Faltas" }, userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "art" } },
+                    { userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "math" } },
+                    { userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "biology" } },
+                    { userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "english" } },
+                    { userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "Promedio" } },
+                ],
+                [
+                    {},
+                    { userEnteredValue: { stringValue: "Cal" } },
+                    { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "Cal" } },
+                    { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "Cal" } },
+                    { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: expect.any(Object) },
+                    { userEnteredValue: { stringValue: "Cal" } },
+                    { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: expect.any(Object) },
+                    {},
+                ],
+            ];
+
+            expect(data).toEqual(expectedData);
         });
     });
 });
