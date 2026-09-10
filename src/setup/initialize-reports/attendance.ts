@@ -459,7 +459,7 @@ function addStudentLists(
             formatRanges.trim3.push(formatRange);
         }
 
-        const studentStartRow = frozenArea.rows + 1;
+        const studentStartRow = frozenArea.rows + 2;
         const studentListDataRange = createRange(sheetId, studentStartRow, 0, data.students.length, frozenArea.cols);
 
         const subjectStudentListDataTransferRequest = buildUpdateCellsRequest({
@@ -476,7 +476,7 @@ function addStudentLists(
         studentListFormatRequests.push(buildAddBandingRequest(studentListDataRange, createBanding(0.4)));
 
         // Class Mood
-        const classMoodDestination = createRange(sheetId, frozenArea.rows + 2, 0, 1, frozenArea.cols);
+        const classMoodDestination = createRange(sheetId, frozenArea.rows + 1, 0, 1, frozenArea.cols);
         studentListFormatRequests.push(buildCopyPasteRequest(classMoodFormatOrigin, classMoodDestination, PasteType.PASTE_NORMAL));
     }
 
