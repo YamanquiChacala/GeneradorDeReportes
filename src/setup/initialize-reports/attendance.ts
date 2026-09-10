@@ -476,7 +476,8 @@ function addStudentLists(
         studentListFormatRequests.push(buildAddBandingRequest(studentListDataRange, createBanding(0.4)));
 
         // Class Mood
-        // TODO: copy class mood
+        const classMoodDestination = createRange(sheetId, frozenArea.rows + 2, 0, 1, frozenArea.cols);
+        studentListFormatRequests.push(buildCopyPasteRequest(classMoodFormatOrigin, classMoodDestination, PasteType.PASTE_NORMAL));
     }
 
     requests.push(...studentListDataRequests, ...studentListFormatRequests, ...namedRangesRequests);
