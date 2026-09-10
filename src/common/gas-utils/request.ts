@@ -137,12 +137,13 @@ export function buildAddBandingRequest(
 export function buildProtectSheetRequest<T extends NestedSheetSchema>(
     parsedData: ParsedSpreadsheet<T>,
     sheetName: ExtractSheetNames<T>,
+    owner: string,
     unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
 ): GoogleAppsScript.Sheets.Schema.Request {
     const getSheet = createRequiredGetter(parsedData.mappedSheets, "hoja para proteger");
     const sheet = getSheet(sheetName);
 
-    return buildSingleSheetProtectRequest(sheet, parsedData.usedIds, unprotectedRanges);
+    return buildSingleSheetProtectRequest(sheet, parsedData.usedIds, owner, unprotectedRanges);
 }
 
 /**
@@ -150,6 +151,7 @@ export function buildProtectSheetRequest<T extends NestedSheetSchema>(
  */
 export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
     parsedData: ParsedSpreadsheet<T>,
+    owner: string,
     unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
@@ -157,7 +159,7 @@ export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
     for (const sheet of parsedData.extraSheets) {
         const sheetId = sheet.properties?.sheetId ?? 0;
         const sheetUnprotectedRanges = unprotectedRanges?.map((range) => offsetGridRange({ origin: range, sheetId }));
-        requests.push(buildSingleSheetProtectRequest(sheet, parsedData.usedIds, sheetUnprotectedRanges));
+        requests.push(buildSingleSheetProtectRequest(sheet, parsedData.usedIds, owner, sheetUnprotectedRanges));
     }
 
     return requests;
@@ -170,6 +172,7 @@ export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
 function buildSingleSheetProtectRequest(
     sheet: GoogleAppsScript.Sheets.Schema.Sheet,
     usedIds: Set<number>,
+    owner: string,
     unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
 ): GoogleAppsScript.Sheets.Schema.Request {
     const sheetId = sheet.properties?.sheetId;
@@ -181,6 +184,11 @@ function buildSingleSheetProtectRequest(
         description: sheetName,
         warningOnly: false,
         unprotectedRanges,
+        editors: {
+            users: [owner],
+            groups: [],
+            domainUsersCanEdit: false,
+        },
     };
 
     let request: GoogleAppsScript.Sheets.Schema.Request;

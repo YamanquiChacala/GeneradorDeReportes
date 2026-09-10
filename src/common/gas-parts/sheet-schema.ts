@@ -90,6 +90,7 @@ export const ReportSheetSchema = {
                 frozenArea: "faltas_Congelado",
                 spaceSubjectRows: "faltas_EspacioMateria",
                 attendanceStudentRow: "faltas_Estudiante",
+                classMoodRow: "faltas_Clima",
                 monthNames1: "faltas_EtiquetaMes1",
                 monthNames2: "faltas_EtiquetaMes2",
                 monthNames5: "faltas_EtiquetaMes5",

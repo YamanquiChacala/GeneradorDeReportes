@@ -337,7 +337,7 @@ describe("GAS Util, Requests", () => {
         });
 
         it("crates `addProtectedRange` to a sheet that doesn't have protection", () => {
-            const response = buildProtectSheetRequest(mockParsedData, "DataSheet");
+            const response = buildProtectSheetRequest(mockParsedData, "DataSheet", "yamanqui@chacala.school");
 
             expect(response).toEqual({
                 addProtectedRange: {
@@ -346,6 +346,11 @@ describe("GAS Util, Requests", () => {
                         range: { sheetId: undefined },
                         description: "Data",
                         warningOnly: false,
+                        editors: {
+                            users: ["yamanqui@chacala.school"],
+                            groups: [],
+                            domainUsersCanEdit: false,
+                        },
                     },
                 },
             });
@@ -357,6 +362,11 @@ describe("GAS Util, Requests", () => {
                     description: "Data",
                     warningOnly: false,
                     unprotectedRanges: undefined,
+                    editors: {
+                        users: ["yamanqui@chacala.school"],
+                        groups: [],
+                        domainUsersCanEdit: false,
+                    },
                 },
             ]);
         });
@@ -366,7 +376,7 @@ describe("GAS Util, Requests", () => {
                 { endRowIndex: 1, endColumnIndex: 1 },
                 { startRowIndex: 1, startColumnIndex: 1, endRowIndex: 2, endColumnIndex: 2 },
             ];
-            const response = buildProtectSheetRequest(mockParsedData, "DataSheet", unprotectedRanges);
+            const response = buildProtectSheetRequest(mockParsedData, "DataSheet", "yamanqui@chacala.school", unprotectedRanges);
 
             expect(response).toEqual({
                 addProtectedRange: {
@@ -376,13 +386,18 @@ describe("GAS Util, Requests", () => {
                         description: "Data",
                         warningOnly: false,
                         unprotectedRanges,
+                        editors: {
+                            users: ["yamanqui@chacala.school"],
+                            groups: [],
+                            domainUsersCanEdit: false,
+                        },
                     },
                 },
             });
         });
 
         it("crates `updateProtectedRange` to a sheet that already has protection", () => {
-            const response = buildProtectSheetRequest(mockParsedData, "TemplateSheet");
+            const response = buildProtectSheetRequest(mockParsedData, "TemplateSheet", "yamanqui@chacala.school");
 
             expect(response).toEqual({
                 updateProtectedRange: {
@@ -391,6 +406,11 @@ describe("GAS Util, Requests", () => {
                         range: { sheetId: 1 },
                         description: "Template",
                         warningOnly: false,
+                        editors: {
+                            users: ["yamanqui@chacala.school"],
+                            groups: [],
+                            domainUsersCanEdit: false,
+                        },
                     },
                     fields: "range,description,warningOnly,unprotectedRanges",
                 },
@@ -398,7 +418,7 @@ describe("GAS Util, Requests", () => {
         });
 
         it("throws if a sheet has too many protected ranges", () => {
-            expect(() => buildProtectSheetRequest(mockParsedData, "BoundSheet")).toThrow();
+            expect(() => buildProtectSheetRequest(mockParsedData, "BoundSheet", "yamanqui@chacala.school")).toThrow();
         });
     });
 
@@ -438,12 +458,12 @@ describe("GAS Util, Requests", () => {
                 extraSheets: [],
                 usedIds: new Set(),
             };
-            const response = buildProtectExtraSheetRequests(emptyMockData);
+            const response = buildProtectExtraSheetRequests(emptyMockData, "yamanqui@chacala.school");
             expect(response).toEqual([]);
         });
 
         it("generates both add and update requests for all extra sheets", () => {
-            const response = buildProtectExtraSheetRequests(mockParsedData);
+            const response = buildProtectExtraSheetRequests(mockParsedData, "yamanqui@chacala.school");
 
             expect(response).toHaveLength(3);
 
@@ -455,6 +475,11 @@ describe("GAS Util, Requests", () => {
                         range: { sheetId: 3 },
                         description: "Extra1",
                         warningOnly: false,
+                        editors: {
+                            users: ["yamanqui@chacala.school"],
+                            groups: [],
+                            domainUsersCanEdit: false,
+                        },
                     },
                 },
             });
@@ -467,6 +492,11 @@ describe("GAS Util, Requests", () => {
                         range: { sheetId: 4 },
                         description: "Extra2",
                         warningOnly: false,
+                        editors: {
+                            users: ["yamanqui@chacala.school"],
+                            groups: [],
+                            domainUsersCanEdit: false,
+                        },
                     },
                     fields: "range,description,warningOnly,unprotectedRanges",
                 },
@@ -480,6 +510,11 @@ describe("GAS Util, Requests", () => {
                         range: { sheetId: undefined },
                         description: "Extra3_NoId",
                         warningOnly: false,
+                        editors: {
+                            users: ["yamanqui@chacala.school"],
+                            groups: [],
+                            domainUsersCanEdit: false,
+                        },
                     },
                 },
             });
@@ -488,7 +523,7 @@ describe("GAS Util, Requests", () => {
         it("applies offsetGridRange to unprotectedRanges using the correct sheetId", () => {
             const unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [{ startRowIndex: 1, endRowIndex: 5 }];
 
-            const response = buildProtectExtraSheetRequests(mockParsedData, unprotectedRanges);
+            const response = buildProtectExtraSheetRequests(mockParsedData, "yamanqui@chacala.school", unprotectedRanges);
 
             expect(response[0]?.addProtectedRange?.protectedRange?.unprotectedRanges).toEqual([{ startRowIndex: 1, endRowIndex: 5, sheetId: 3 }]);
 
@@ -498,7 +533,7 @@ describe("GAS Util, Requests", () => {
         });
 
         it("mutates the extraSheets objects to include the newly generated protected ranges", () => {
-            buildProtectExtraSheetRequests(mockParsedData);
+            buildProtectExtraSheetRequests(mockParsedData, "yamanqui@chacala.school");
 
             expect(mockParsedData.extraSheets[0]?.protectedRanges).toEqual([
                 {
@@ -507,6 +542,11 @@ describe("GAS Util, Requests", () => {
                     description: "Extra1",
                     warningOnly: false,
                     unprotectedRanges: undefined,
+                    editors: {
+                        users: ["yamanqui@chacala.school"],
+                        groups: [],
+                        domainUsersCanEdit: false,
+                    },
                 },
             ]);
 
@@ -517,6 +557,11 @@ describe("GAS Util, Requests", () => {
                     description: "Extra2",
                     warningOnly: false,
                     unprotectedRanges: undefined,
+                    editors: {
+                        users: ["yamanqui@chacala.school"],
+                        groups: [],
+                        domainUsersCanEdit: false,
+                    },
                 },
             ]);
         });
