@@ -376,56 +376,110 @@ export function buildSummaryHeadersData(
 ): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const borderColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 };
 
-    const rightBorderFormat: GoogleAppsScript.Sheets.Schema.CellFormat = { borders: { right: { style: Style.SOLID, colorStyle: { rgbColor: borderColor } } } };
+    const rightBorderFormat: GoogleAppsScript.Sheets.Schema.CellFormat = {
+        borders: { right: { style: Style.SOLID, colorStyle: { rgbColor: borderColor } } },
+    };
 
-    const attendanceData: GoogleAppsScript.Sheets.Schema.CellData[] = attendancePerClass
-        ? []
-        : [{ userEnteredValue: { stringValue: "Faltas" }, userEnteredFormat: rightBorderFormat }];
-    const averageData: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Promedio" } };
+    // Determine Subject Columns based on `attendancePerClass` and `averagePerField`
+    let subjectSubHeader: GoogleAppsScript.Sheets.Schema.CellData[];
 
-    const emptyRightBorder: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredFormat: rightBorderFormat };
+    if (attendancePerClass && averagePerField) {
+        // Subjects have "Fal" | "Cal"
+        subjectSubHeader = [{ userEnteredValue: { stringValue: "Fal" } }, { userEnteredValue: { stringValue: "Cal" }, userEnteredFormat: rightBorderFormat }];
+    } else if (attendancePerClass && !averagePerField) {
+        // Subjects have "Fal" | "Cal" | "SEP"
+        subjectSubHeader = [
+            { userEnteredValue: { stringValue: "Fal" } },
+            { userEnteredValue: { stringValue: "Cal" } },
+            { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat },
+        ];
+    } else if (!attendancePerClass && averagePerField) {
+        // Subjects have only "Cal"
+        // TODO: Maybe leave this without subtitle, if it looks better.
+        subjectSubHeader = [{ userEnteredValue: { stringValue: "Cal" }, userEnteredFormat: rightBorderFormat }];
+    } else {
+        // Subjects have "Cal" | "SEP"
+        subjectSubHeader = [{ userEnteredValue: { stringValue: "Cal" } }, { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat }];
+    }
 
-    const attendanceBorder: GoogleAppsScript.Sheets.Schema.CellData[] = attendancePerClass ? [] : [{ userEnteredFormat: rightBorderFormat }];
-
-    const subHeader2Data: GoogleAppsScript.Sheets.Schema.CellData[] = [
-        { userEnteredValue: { stringValue: "Cal" } },
-        { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat },
-    ];
-    const subHeader3Data: GoogleAppsScript.Sheets.Schema.CellData[] = [
-        { userEnteredValue: { stringValue: "Fal" } },
-        { userEnteredValue: { stringValue: "Cal" } },
-        { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat },
-    ];
-
+    // Build Subjects Data
     const subjectsHeaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
     const subjectsSubheaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
-    const subjectSubHeader: GoogleAppsScript.Sheets.Schema.CellData[] = attendancePerClass ? subHeader3Data : subHeader2Data;
 
     for (const subjectName of subjectsNames) {
-        subjectsHeaderData.push({ userEnteredValue: { stringValue: subjectName } });
-        if (attendancePerClass) {
-            subjectsHeaderData.push({});
+        const nameCell: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: subjectName } };
+
+        // Ensure the main header spans the same number of columns as its subheaders
+        if (subjectSubHeader.length === 1) {
+            nameCell.userEnteredFormat = rightBorderFormat; // apply right border directly since it's 1 column
+            subjectsHeaderData.push(nameCell);
+        } else if (subjectSubHeader.length === 2) {
+            subjectsHeaderData.push(nameCell, { userEnteredFormat: rightBorderFormat });
+        } else {
+            subjectsHeaderData.push(nameCell, {}, { userEnteredFormat: rightBorderFormat });
         }
-        subjectsHeaderData.push({ userEnteredFormat: rightBorderFormat });
+
         subjectsSubheaderData.push(...subjectSubHeader);
     }
+
+    // Prepare building blocks
+    const attendanceData: GoogleAppsScript.Sheets.Schema.CellData[] = [{ userEnteredValue: { stringValue: "Faltas" }, userEnteredFormat: rightBorderFormat }];
+    const emptyRightBorder: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredFormat: rightBorderFormat };
+    const averageData: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Promedio" } };
 
     const header: GoogleAppsScript.Sheets.Schema.CellData[] = [];
     const subheader: GoogleAppsScript.Sheets.Schema.CellData[] = [];
 
+    // Assemble the full row layouts
     if (averagePerField) {
+        // Prepare Fields Data (Always "Cal" | "SEP")
         const fieldsHeaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
         const fieldsSubheaderData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+        const fieldSubHeader: GoogleAppsScript.Sheets.Schema.CellData[] = [
+            { userEnteredValue: { stringValue: "Cal" } },
+            { userEnteredValue: { stringValue: "SEP" }, userEnteredFormat: rightBorderFormat },
+        ];
+
         for (const fieldName of fieldNames) {
             fieldsHeaderData.push({ userEnteredValue: { stringValue: fieldName } }, { userEnteredFormat: rightBorderFormat });
-            fieldsSubheaderData.push(...subHeader2Data);
+            fieldsSubheaderData.push(...fieldSubHeader);
         }
 
-        header.push(...subjectsHeaderData, emptyRightBorder, ...attendanceData, ...fieldsHeaderData, averageData);
-        subheader.push(...subjectsSubheaderData, emptyRightBorder, ...attendanceBorder, ...fieldsSubheaderData, {});
+        // Start with Subjects
+        header.push(...subjectsHeaderData);
+        subheader.push(...subjectsSubheaderData);
+
+        // Empty Column
+        header.push(emptyRightBorder);
+        subheader.push(emptyRightBorder);
+
+        // General Attendance
+        if (!attendancePerClass) {
+            header.push(...attendanceData);
+            subheader.push(emptyRightBorder);
+        }
+
+        // Fields
+        header.push(...fieldsHeaderData);
+        subheader.push(...fieldsSubheaderData);
+
+        // Final Average
+        header.push(averageData);
+        subheader.push({});
     } else {
-        header.push(...attendanceData, ...subjectsHeaderData, averageData);
-        subheader.push(...attendanceBorder, ...subjectsSubheaderData, {});
+        // General Attendance
+        if (!attendancePerClass) {
+            header.push(...attendanceData);
+            subheader.push(emptyRightBorder);
+        }
+
+        // Subjects
+        header.push(...subjectsHeaderData);
+        subheader.push(...subjectsSubheaderData);
+
+        // Final Average
+        header.push(averageData);
+        subheader.push({});
     }
 
     return [header, subheader];
