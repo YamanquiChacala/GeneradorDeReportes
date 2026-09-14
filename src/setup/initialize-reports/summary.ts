@@ -21,11 +21,14 @@ export function prepareSummarySheet(
     // Prepare the sheet (resize and properties)
     const { requests: prepareSheetRequests, mergeColumns } = prepareSheet(parsedReport, persistentData);
 
-    // TODO: Fill header
+    // Fill header
     const headerRequests = addHeaders(parsedReport, persistentData, mergeColumns);
 
+    // Fill cntents
+    const contentRequests = addContent(parsedReport, persistentData);
+
     // TODO: Fill periods
-    return [...prepareSheetRequests, ...headerRequests];
+    return [...prepareSheetRequests, ...headerRequests, ...contentRequests];
 }
 
 /**
@@ -101,4 +104,11 @@ function addHeaders(
     }
 
     return [...transferResult.requests, ...mergeRequests];
+}
+
+/**
+ * Fills in the content of the sheet
+ */
+function addContent(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+    return [];
 }

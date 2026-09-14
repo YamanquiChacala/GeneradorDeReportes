@@ -484,3 +484,24 @@ export function buildSummaryHeadersData(
 
     return [header, subheader];
 }
+
+export type PeriodRanges = [GoogleAppsScript.Sheets.Schema.GridRange, GoogleAppsScript.Sheets.Schema.GridRange, GoogleAppsScript.Sheets.Schema.GridRange];
+
+/**
+ * Builds the student data for the Summary sheet
+ */
+export function buildSummaryStudentData(
+    attendancePerClass: boolean,
+    averagePerField: boolean,
+    subjects: number,
+    fields: number[],
+    sudents: StudentRow[],
+    assistanceSheetName: string,
+    commentRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    subjectRanges: PeriodRanges,
+    fieldRanges: PeriodRanges,
+    averageRanges: PeriodRanges,
+): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    const borderColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 };
+    return [];
+}

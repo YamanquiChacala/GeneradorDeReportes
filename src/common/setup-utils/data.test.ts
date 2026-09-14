@@ -8,7 +8,15 @@ import {
     StudentRowType,
     type TrimesterRanges,
 } from "../report-utils";
-import { buildDefaultCommentForStudentTemplateData, buildStatusSectionData, buildSummaryHeadersData, calculateCalendarHeaders, generateStudentGrid } from "./data";
+import {
+    buildDefaultCommentForStudentTemplateData,
+    buildStatusSectionData,
+    buildSummaryHeadersData,
+    buildSummaryStudentData,
+    calculateCalendarHeaders,
+    generateStudentGrid,
+    type PeriodRanges,
+} from "./data";
 import { TemplateSize } from "./types";
 
 describe("Setup Utils. Data", () => {
@@ -908,5 +916,76 @@ describe("Setup Utils. Data", () => {
 
             expect(data).toEqual(expectedData);
         });
+    });
+
+    describe("buildSummaryStudentData", () => {
+        const subjects = 4;
+        const fields = [3, 1];
+        const students: StudentRow[] = [
+            {
+                type: StudentRowType.STUDENT,
+                id: 1,
+                firstName: "Yama",
+                lastName: "Nanqui",
+                sheetName: "yama nanqui",
+                sex: "M",
+                level: "Preschool",
+                grade: "3rd",
+                curp: "yama1234",
+            },
+            {
+                type: StudentRowType.SEPARATOR,
+            },
+            {
+                type: StudentRowType.STUDENT,
+                id: 3,
+                firstName: "Erin",
+                lastName: "Smith",
+                sheetName: "erin smith",
+                sex: "F",
+                level: "High school",
+                grade: "9th",
+                curp: "erin5678",
+            },
+        ];
+        const assistanceSheetName = "Asistencia";
+        const commentsRange: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 123, startColumnIndex: 0, endColumnIndex: 10, startRowIndex: 20, endRowIndex: 24 };
+        const subjectRanges: PeriodRanges = [
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 30, endRowIndex: 34 },
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 40, endRowIndex: 44 },
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 50, endRowIndex: 54 },
+        ];
+        const fieldRanges: PeriodRanges = [
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 35, endRowIndex: 37 },
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 45, endRowIndex: 47 },
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 55, endRowIndex: 57 },
+        ];
+        const averageRanges: PeriodRanges = [
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 37, endRowIndex: 38 },
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 47, endRowIndex: 48 },
+            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 57, endRowIndex: 58 },
+        ];
+        it("should build summary student data for general attendance and simple average", () => {
+            // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
+            const result = buildSummaryStudentData(
+                false,
+                false,
+                subjects,
+                fields,
+                students,
+                assistanceSheetName,
+                commentsRange,
+                subjectRanges,
+                fieldRanges,
+                averageRanges,
+            );
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [{ userEnteredValue: { numberValue: 1 } }, { userEnteredValue: { stringValue: "Yama" } }, { userEnteredValue: { stringValue: "Nanqui" } }],
+            ];
+        });
+        it("should build summary student data for general attendance and field average", () => {});
+        it("should build summary student data for individual attendance and simple average", () => {});
+        it("should build summary student data for individual attendance and field average", () => {});
     });
 });
