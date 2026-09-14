@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ] # Runs when you push to main
   pull_request:
-    branches: [ "main" ] # Runs when you open a PR to main
+    branches: [ "main", "working" ] # Runs when you open a PR to main
 
 jobs:
   test:
@@ -32,6 +32,7 @@ jobs:
 
       # 5. Uploads the lcov file to Codecov
       - name: Upload coverage reports to Codecov
+        if: github.base_ref == 'main' || github.ref_name == 'main'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
