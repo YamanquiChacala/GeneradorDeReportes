@@ -485,7 +485,7 @@ export function buildSummaryHeadersData(
     return [header, subheader];
 }
 
-export type PeriodRanges = [GoogleAppsScript.Sheets.Schema.GridRange, GoogleAppsScript.Sheets.Schema.GridRange, GoogleAppsScript.Sheets.Schema.GridRange];
+export type PeriodRanges = [MappedNamedRange, MappedNamedRange, MappedNamedRange];
 
 /**
  * Builds the student data for the Summary sheet
@@ -497,11 +497,165 @@ export function buildSummaryStudentData(
     fields: number[],
     sudents: StudentRow[],
     assistanceSheetName: string,
-    commentRange: GoogleAppsScript.Sheets.Schema.GridRange,
+    commentRange: MappedNamedRange,
     subjectRanges: PeriodRanges,
     fieldRanges: PeriodRanges,
     averageRanges: PeriodRanges,
 ): GoogleAppsScript.Sheets.Schema.CellData[][] {
+    return [];
+}
+
+/**
+ * Builds the student data for a single row of the Summary sheet
+ */
+function buildSummarySingleStudentData(
+    attendancePerClass: boolean,
+    averagePerField: boolean,
+    subjects: number,
+    fields: number[],
+    student: StudentRow,
+    period: 0 | 1 | 2,
+    assistanceSheetName: string,
+    commentRange: MappedNamedRange,
+    subjectRanges: PeriodRanges,
+    fieldRanges: PeriodRanges,
+    averageRanges: PeriodRanges,
+): GoogleAppsScript.Sheets.Schema.CellData[] {
+    if (student.type === StudentRowType.SEPARATOR) return [];
+
     const borderColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 };
+    const rightBorderFormat: GoogleAppsScript.Sheets.Schema.CellFormat = {
+        borders: { right: { style: Style.SOLID, colorStyle: { rgbColor: borderColor } } },
+    };
+
+    // Student info
+    const studentInfoData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+        { userEnteredValue: { numberValue: student.id } },
+        { userEnteredValue: { stringValue: student.firstName } },
+        { userEnteredValue: { stringValue: student.lastName } },
+    ];
+
+    // Subject data
+    const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
+        if (attendancePerClass && averagePerField) {
+            const inasistancesA1 = getA1Notation({
+                mappedRange: subjectRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset:
+                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
+                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
+                    (period === 2 ? 3 : 2),
+                height: 1,
+                width: 1,
+            });
+            const gradeA1 = getA1Notation({
+                mappedRange: subjectRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset:
+                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
+                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
+                    (period === 2 ? 2 : 1),
+                height: 1,
+                width: 1,
+            });
+            subjectsData.push(
+                { userEnteredValue: { formulaValue: `=${inasistancesA1}` } },
+                { userEnteredValue: { formulaValue: `=${gradeA1}` }, userEnteredFormat: rightBorderFormat },
+            );
+        } else if (attendancePerClass && !averagePerField) {
+            const inasistancesA1 = getA1Notation({
+                mappedRange: subjectRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset:
+                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
+                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
+                    (period === 2 ? 3 : 2),
+                height: 1,
+                width: 1,
+            });
+            const gradeA1 = getA1Notation({
+                mappedRange: subjectRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset:
+                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
+                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
+                    (period === 2 ? 2 : 1),
+                height: 1,
+                width: 1,
+            });
+            const commentA1 = getA1Notation({
+                mappedRange: commentRange,
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset: (commentRange.namedRange.range.endColumnIndex ?? 0) - (commentRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                height: 1,
+                width: 1,
+            });
+            subjectsData.push(
+                { userEnteredValue: { formulaValue: `=${inasistancesA1}` } },
+                { userEnteredValue: { formulaValue: `=${gradeA1}` } },
+                { userEnteredValue: { formulaValue: `=${commentA1}` }, userEnteredFormat: rightBorderFormat },
+            );
+        } else if (!attendancePerClass && averagePerField) {
+            const gradeA1 = getA1Notation({
+                mappedRange: subjectRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset:
+                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
+                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
+                    (period === 2 ? 2 : 1),
+                height: 1,
+                width: 1,
+            });
+            subjectsData.push({ userEnteredValue: { formulaValue: `=${gradeA1}` }, userEnteredFormat: rightBorderFormat });
+        } else {
+            const gradeA1 = getA1Notation({
+                mappedRange: subjectRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset:
+                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
+                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
+                    (period === 2 ? 2 : 1),
+                height: 1,
+                width: 1,
+            });
+            const commentA1 = getA1Notation({
+                mappedRange: commentRange,
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: subjectIndex,
+                colOffset: (commentRange.namedRange.range.endColumnIndex ?? 0) - (commentRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                height: 1,
+                width: 1,
+            });
+            subjectsData.push(
+                { userEnteredValue: { formulaValue: `=${gradeA1}` } },
+                { userEnteredValue: { formulaValue: `=${commentA1}` }, userEnteredFormat: rightBorderFormat },
+            );
+        }
+    }
+
     return [];
 }

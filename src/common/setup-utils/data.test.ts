@@ -949,21 +949,91 @@ describe("Setup Utils. Data", () => {
             },
         ];
         const assistanceSheetName = "Asistencia";
-        const commentsRange: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 123, startColumnIndex: 0, endColumnIndex: 10, startRowIndex: 20, endRowIndex: 24 };
+        const commentsRange: MappedNamedRange = {
+            sheet: {},
+            namedRange: {
+                namedRangeId: "coments",
+                name: "comments",
+                range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 10, startRowIndex: 20, endRowIndex: 24 },
+            },
+        };
         const subjectRanges: PeriodRanges = [
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 30, endRowIndex: 34 },
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 40, endRowIndex: 44 },
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 50, endRowIndex: 54 },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "subjects",
+                    name: "subjects",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 30, endRowIndex: 34 },
+                },
+            },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "subjects",
+                    name: "subjects",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 40, endRowIndex: 44 },
+                },
+            },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "subjects",
+                    name: "subjects",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 50, endRowIndex: 54 },
+                },
+            },
         ];
         const fieldRanges: PeriodRanges = [
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 35, endRowIndex: 37 },
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 45, endRowIndex: 47 },
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 55, endRowIndex: 57 },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "fields",
+                    name: "fields",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 35, endRowIndex: 37 },
+                },
+            },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "fields",
+                    name: "fields",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 45, endRowIndex: 47 },
+                },
+            },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "fields",
+                    name: "fields",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 55, endRowIndex: 57 },
+                },
+            },
         ];
         const averageRanges: PeriodRanges = [
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 37, endRowIndex: 38 },
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 47, endRowIndex: 48 },
-            { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 57, endRowIndex: 58 },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "fields",
+                    name: "fields",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 37, endRowIndex: 38 },
+                },
+            },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "fields",
+                    name: "fields",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 5, startRowIndex: 47, endRowIndex: 48 },
+                },
+            },
+            {
+                sheet: {},
+                namedRange: {
+                    namedRangeId: "fields",
+                    name: "fields",
+                    range: { sheetId: 123, startColumnIndex: 0, endColumnIndex: 6, startRowIndex: 57, endRowIndex: 58 },
+                },
+            },
         ];
         it("should build summary student data for general attendance and simple average", () => {
             // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
