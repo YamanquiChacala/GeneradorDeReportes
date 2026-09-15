@@ -77,3 +77,16 @@ export enum Style {
     NONE = "NONE",
     DOUBLE = "DOUBLE",
 }
+
+export enum WrapStrategy {
+    OVERFLOW_CELL = "OVERFLOW_CELL",
+    LEGACY_WRAP = "LEGACY_WRAP",
+    CLIP = "CLIP",
+    WRAP = "WRAP",
+}
+
+export enum HorizontalAlign {
+    LEFT = "LEFT",
+    CENTER = "CENTER",
+    RIGHT = "RIGHT",
+}

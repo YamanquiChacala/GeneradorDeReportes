@@ -1043,6 +1043,7 @@ describe("Setup Utils. Data", () => {
                 subjects,
                 fields,
                 students,
+                0,
                 assistanceSheetName,
                 commentsRange,
                 subjectRanges,

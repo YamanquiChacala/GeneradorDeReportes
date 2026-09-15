@@ -1,4 +1,4 @@
-import { getA1Notation, type MappedNamedRange, offsetGridRange, Style } from "../gas-utils";
+import { getA1Notation, HorizontalAlign, type MappedNamedRange, offsetGridRange, Style, WrapStrategy } from "../gas-utils";
 import {
     createAttendaceFormulas,
     createSetupRowValidFormula,
@@ -496,6 +496,7 @@ export function buildSummaryStudentData(
     subjects: number,
     fields: number[],
     sudents: StudentRow[],
+    period: 0 | 1 | 2,
     assistanceSheetName: string,
     commentRange: MappedNamedRange,
     subjectRanges: PeriodRanges,
@@ -522,11 +523,6 @@ function buildSummarySingleStudentData(
     averageRanges: PeriodRanges,
 ): GoogleAppsScript.Sheets.Schema.CellData[] {
     if (student.type === StudentRowType.SEPARATOR) return [];
-
-    const borderColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 };
-    const rightBorderFormat: GoogleAppsScript.Sheets.Schema.CellFormat = {
-        borders: { right: { style: Style.SOLID, colorStyle: { rgbColor: borderColor } } },
-    };
 
     // Student info
     const studentInfoData: GoogleAppsScript.Sheets.Schema.CellData[] = [
@@ -565,10 +561,7 @@ function buildSummarySingleStudentData(
                 height: 1,
                 width: 1,
             });
-            subjectsData.push(
-                { userEnteredValue: { formulaValue: `=${inasistancesA1}` } },
-                { userEnteredValue: { formulaValue: `=${gradeA1}` }, userEnteredFormat: rightBorderFormat },
-            );
+            subjectsData.push({ userEnteredValue: { formulaValue: `=${inasistancesA1}` } }, { userEnteredValue: { formulaValue: `=${gradeA1}` } });
         } else if (attendancePerClass && !averagePerField) {
             const inasistancesA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
@@ -609,7 +602,7 @@ function buildSummarySingleStudentData(
             subjectsData.push(
                 { userEnteredValue: { formulaValue: `=${inasistancesA1}` } },
                 { userEnteredValue: { formulaValue: `=${gradeA1}` } },
-                { userEnteredValue: { formulaValue: `=${commentA1}` }, userEnteredFormat: rightBorderFormat },
+                { userEnteredValue: { formulaValue: `=${commentA1}` } },
             );
         } else if (!attendancePerClass && averagePerField) {
             const gradeA1 = getA1Notation({
@@ -625,7 +618,7 @@ function buildSummarySingleStudentData(
                 height: 1,
                 width: 1,
             });
-            subjectsData.push({ userEnteredValue: { formulaValue: `=${gradeA1}` }, userEnteredFormat: rightBorderFormat });
+            subjectsData.push({ userEnteredValue: { formulaValue: `=${gradeA1}` } });
         } else {
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
@@ -650,11 +643,14 @@ function buildSummarySingleStudentData(
                 height: 1,
                 width: 1,
             });
-            subjectsData.push(
-                { userEnteredValue: { formulaValue: `=${gradeA1}` } },
-                { userEnteredValue: { formulaValue: `=${commentA1}` }, userEnteredFormat: rightBorderFormat },
-            );
+            subjectsData.push({ userEnteredValue: { formulaValue: `=${gradeA1}` } }, { userEnteredValue: { formulaValue: `=${commentA1}` } });
         }
+    }
+
+    // General Attendance
+    const generalAttendanceData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    if (!attendancePerClass) {
+        generalAttendanceData.push({ userEnteredValue: { formulaValue: "" } });
     }
 
     return [];
