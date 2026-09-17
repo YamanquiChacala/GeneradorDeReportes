@@ -1053,15 +1053,144 @@ describe("Setup Utils. Data", () => {
 
             const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [
-                    { userEnteredValue: { numberValue: 1 } },
-                    { userEnteredValue: { stringValue: "Yama" } },
-                    { userEnteredValue: { stringValue: "Nanqui" } },
-                    { userEnteredValue: { formulaValue: "=FILTER('Asistencia'!E4,)" } },
+                    { userEnteredValue: { numberValue: 1 } }, // id
+                    { userEnteredValue: { stringValue: "Yama" } }, // Name
+                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
+                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")` } }, // Attendance
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Subject 0 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$22` } }, // Subject 1 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$23` } }, // Subject 2 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Subject 3 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
+                ],
+                [],
+                [
+                    { userEnteredValue: { numberValue: 3 } }, // id
+                    { userEnteredValue: { stringValue: "Erin" } }, // Name
+                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
+                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")` } },
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Subject 0 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$22` } }, // Subject 1 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$23` } }, // Subject 2 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Subject 3 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
+                ],
+            ];
+
+            expect(result).toEqual(expectedResult);
+        });
+        it("should build summary student data for general attendance and field average", () => {
+            // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
+            const result = buildSummaryStudentData(
+                false,
+                true,
+                subjects,
+                fields,
+                students,
+                0,
+                assistanceSheetName,
+                commentsRange,
+                subjectRanges,
+                fieldRanges,
+                averageRanges,
+            );
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { numberValue: 1 } }, // id
+                    { userEnteredValue: { stringValue: "Yama" } }, // Name
+                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
+                    {}, // Space
+                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")` } }, // Attendance
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$36` } }, // Field 0 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Field 0 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$37` } }, // Field 1 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Field 1 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
+                ],
+                [],
+                [
+                    { userEnteredValue: { numberValue: 3 } }, // id
+                    { userEnteredValue: { stringValue: "Erin" } }, // Name
+                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
+                    {}, // Space
+                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")` } }, // Attendance
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$36` } }, // Field 0 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Field 0 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$37` } }, // Field 1 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Field 1 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
+                ],
+            ];
+
+            expect(result).toEqual(expectedResult);
+        });
+        it("should build summary student data for individual attendance and simple average", () => {
+            // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
+            const result = buildSummaryStudentData(
+                true,
+                false,
+                subjects,
+                fields,
+                students,
+                0,
+                assistanceSheetName,
+                commentsRange,
+                subjectRanges,
+                fieldRanges,
+                averageRanges,
+            );
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+                [
+                    { userEnteredValue: { numberValue: 1 } }, // id
+                    { userEnteredValue: { stringValue: "Yama" } }, // Name
+                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
+                    {}, // Subject 0 attendance
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Subject 0 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$22` } }, // Subject 1 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$23` } }, // Subject 2 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Subject 3 comment
+                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
+                ],
+                [],
+                [
+                    { userEnteredValue: { numberValue: 3 } }, // id
+                    { userEnteredValue: { stringValue: "Erin" } }, // Name
+                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
+                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")` } },
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Subject 0 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$22` } }, // Subject 1 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$23` } }, // Subject 2 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
+                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Subject 3 comment
+                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
                 ],
             ];
         });
-        it("should build summary student data for general attendance and field average", () => {});
-        it("should build summary student data for individual attendance and simple average", () => {});
         it("should build summary student data for individual attendance and field average", () => {});
     });
 });

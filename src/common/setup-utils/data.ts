@@ -557,6 +557,7 @@ function buildSummarySingleStudentData(
         if (attendancePerClass && averagePerField) {
             const inasistancesA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -570,6 +571,7 @@ function buildSummarySingleStudentData(
             });
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -585,6 +587,7 @@ function buildSummarySingleStudentData(
         } else if (attendancePerClass && !averagePerField) {
             const inasistancesA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -598,6 +601,7 @@ function buildSummarySingleStudentData(
             });
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -611,6 +615,7 @@ function buildSummarySingleStudentData(
             });
             const commentA1 = getA1Notation({
                 mappedRange: commentRange,
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -627,6 +632,7 @@ function buildSummarySingleStudentData(
         } else if (!attendancePerClass && averagePerField) {
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -642,6 +648,7 @@ function buildSummarySingleStudentData(
         } else {
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -655,6 +662,7 @@ function buildSummarySingleStudentData(
             });
             const commentA1 = getA1Notation({
                 mappedRange: commentRange,
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -678,6 +686,7 @@ function buildSummarySingleStudentData(
     // Final Average
     const averageA1 = getA1Notation({
         mappedRange: averageRanges[period],
+        includeSheetName: true,
         customSheetName: student.sheetName,
         lockRows: true,
         lockColumns: true,
@@ -704,6 +713,7 @@ function buildSummarySingleStudentData(
         for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
             const gradeA1 = getA1Notation({
                 mappedRange: fieldRanges[period],
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
@@ -715,6 +725,7 @@ function buildSummarySingleStudentData(
             });
             const commentA1 = getA1Notation({
                 mappedRange: commentRange,
+                includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,

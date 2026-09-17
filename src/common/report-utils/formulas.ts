@@ -280,5 +280,5 @@ export function createSummaryGeneralAbsencesFormula(assitanceSheetName: string, 
     const safeSheetName = `'${assitanceSheetName.replace(/'/g, "''")}'`;
 
     // Construct the final formula string
-    return `=FILTER(${safeSheetName}!${returnColumn}4:${returnColumn}, ${safeSheetName}!B4:B = "${firstName}", ${safeSheetName}!C4:C = "${lastName}")`;
+    return `=FILTER(${safeSheetName}!$${returnColumn}$4:$${returnColumn}, ${safeSheetName}!$B$4:$B = "${firstName}", ${safeSheetName}!$C$4:$C = "${lastName}")`;
 }
