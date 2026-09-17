@@ -268,3 +268,17 @@ export function createSetupGradeValidationFormula(a1Cell: string) {
 export function createSetupSepCommentLenghtValidationFormula(a1Cell: string) {
     return createNumberValidationFormula(a1Cell, 20, 250);
 }
+
+/**
+ * Helper to create Summary formula for general absences.
+ */
+export function createSummaryGeneralAbsencesFormula(assitanceSheetName: string, firstName: string, lastName: string, period: 0 | 1 | 2): string {
+    const targetColumns: [string, string, string] = ["E", "G", "I"];
+    const returnColumn = targetColumns[period];
+
+    // Wrap sheet name in single quotes and safely escape any existing single quotes
+    const safeSheetName = `'${assitanceSheetName.replace(/'/g, "''")}'`;
+
+    // Construct the final formula string
+    return `=FILTER(${safeSheetName}!${returnColumn}4:${returnColumn}, ${safeSheetName}!B4:B = "${firstName}", ${safeSheetName}!C4:C = "${lastName}")`;
+}

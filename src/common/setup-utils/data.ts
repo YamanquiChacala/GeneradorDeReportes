@@ -1,7 +1,8 @@
-import { getA1Notation, HorizontalAlign, type MappedNamedRange, offsetGridRange, Style, WrapStrategy } from "../gas-utils";
+import { getA1Notation, type MappedNamedRange, offsetGridRange, Style } from "../gas-utils";
 import {
     createAttendaceFormulas,
     createSetupRowValidFormula,
+    createSummaryGeneralAbsencesFormula,
     DEFAULT_COMMENT,
     DEFAULT_SEP_STRENGHT,
     DEFAULT_SEP_SUGGESTION,
@@ -495,7 +496,7 @@ export function buildSummaryStudentData(
     averagePerField: boolean,
     subjects: number,
     fields: number[],
-    sudents: StudentRow[],
+    students: StudentRow[],
     period: 0 | 1 | 2,
     assistanceSheetName: string,
     commentRange: MappedNamedRange,
@@ -503,7 +504,26 @@ export function buildSummaryStudentData(
     fieldRanges: PeriodRanges,
     averageRanges: PeriodRanges,
 ): GoogleAppsScript.Sheets.Schema.CellData[][] {
-    return [];
+    const summaryStudentData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
+
+    for (const studentRow of students) {
+        summaryStudentData.push(
+            buildSummarySingleStudentData(
+                attendancePerClass,
+                averagePerField,
+                subjects,
+                fields,
+                studentRow,
+                period,
+                assistanceSheetName,
+                commentRange,
+                subjectRanges,
+                fieldRanges,
+                averageRanges,
+            ),
+        );
+    }
+    return summaryStudentData;
 }
 
 /**
@@ -525,7 +545,7 @@ function buildSummarySingleStudentData(
     if (student.type === StudentRowType.SEPARATOR) return [];
 
     // Student info
-    const studentInfoData: GoogleAppsScript.Sheets.Schema.CellData[] = [
+    const studentRowData: GoogleAppsScript.Sheets.Schema.CellData[] = [
         { userEnteredValue: { numberValue: student.id } },
         { userEnteredValue: { stringValue: student.firstName } },
         { userEnteredValue: { stringValue: student.lastName } },
@@ -650,8 +670,68 @@ function buildSummarySingleStudentData(
     // General Attendance
     const generalAttendanceData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
     if (!attendancePerClass) {
-        generalAttendanceData.push({ userEnteredValue: { formulaValue: "" } });
+        generalAttendanceData.push({
+            userEnteredValue: { formulaValue: createSummaryGeneralAbsencesFormula(assistanceSheetName, student.firstName, student.lastName, period) },
+        });
     }
 
-    return [];
+    // Final Average
+    const averageA1 = getA1Notation({
+        mappedRange: averageRanges[period],
+        customSheetName: student.sheetName,
+        lockRows: true,
+        lockColumns: true,
+        colOffset: (averageRanges[period].namedRange.range.endColumnIndex ?? 0) - (averageRanges[period].namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+        height: 1,
+        width: 1,
+    });
+    const finalAverage: GoogleAppsScript.Sheets.Schema.CellData = {
+        userEnteredValue: { formulaValue: `=${averageA1}` },
+    };
+
+    // Assemble the row data
+    if (averagePerField) {
+        // If there are fields, prepare them.
+        const fieldsData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+
+        let sum = 0;
+        const commentIndex = fields.map((n) => {
+            const start = sum;
+            sum += n;
+            return start;
+        });
+
+        for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+            const gradeA1 = getA1Notation({
+                mappedRange: fieldRanges[period],
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: fieldIndex,
+                colOffset:
+                    (fieldRanges[period].namedRange.range.endColumnIndex ?? 0) - (fieldRanges[period].namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                height: 1,
+                width: 1,
+            });
+            const commentA1 = getA1Notation({
+                mappedRange: commentRange,
+                customSheetName: student.sheetName,
+                lockRows: true,
+                lockColumns: true,
+                rowOffset: commentIndex[fieldIndex],
+                colOffset: (commentRange.namedRange.range.endColumnIndex ?? 0) - (commentRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                height: 1,
+                width: 1,
+            });
+            fieldsData.push({ userEnteredValue: { formulaValue: `=${gradeA1}` } }, { userEnteredValue: { formulaValue: `=${commentA1}` } });
+        }
+
+        // Here we assamble the final row of data
+        studentRowData.push(...subjectsData, {}, ...generalAttendanceData, ...fieldsData, finalAverage);
+    } else {
+        // No fields
+        studentRowData.push(...generalAttendanceData, ...subjectsData, finalAverage);
+    }
+
+    return studentRowData;
 }

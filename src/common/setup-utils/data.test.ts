@@ -1052,7 +1052,12 @@ describe("Setup Utils. Data", () => {
             );
 
             const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
-                [{ userEnteredValue: { numberValue: 1 } }, { userEnteredValue: { stringValue: "Yama" } }, { userEnteredValue: { stringValue: "Nanqui" } }],
+                [
+                    { userEnteredValue: { numberValue: 1 } },
+                    { userEnteredValue: { stringValue: "Yama" } },
+                    { userEnteredValue: { stringValue: "Nanqui" } },
+                    { userEnteredValue: { formulaValue: "=FILTER('Asistencia'!E4,)" } },
+                ],
             ];
         });
         it("should build summary student data for general attendance and field average", () => {});
