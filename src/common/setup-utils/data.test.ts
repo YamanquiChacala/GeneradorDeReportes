@@ -948,8 +948,8 @@ describe("Setup Utils. Data", () => {
                 curp: "erin5678",
             },
         ];
-        const assistanceSheetName = "Asistencia";
-        const commentsRange: MappedNamedRange = {
+        const attendanceSheetName = "Asistencia";
+        const commentRange: MappedNamedRange = {
             sheet: {},
             namedRange: {
                 namedRangeId: "coments",
@@ -987,7 +987,7 @@ describe("Setup Utils. Data", () => {
             attendancePerClass: boolean,
             averagePerField: boolean,
             period: 0 | 1 | 2,
-            ranges = { subject: subjectRanges, field: fieldRanges, average: averageRanges, comment: commentsRange },
+            ranges = { subject: subjectRanges, field: fieldRanges, average: averageRanges, comment: commentRange },
         ): GoogleAppsScript.Sheets.Schema.CellData[][] => {
             const periodOffset = period === 2 ? 3 : 2;
             const gradeOffset = period === 2 ? 2 : 1;
@@ -1004,7 +1004,7 @@ describe("Setup Utils. Data", () => {
                 if (!attendancePerClass && !averagePerField) {
                     row.push({
                         userEnteredValue: {
-                            formulaValue: createSummaryGeneralAbsencesFormula(assistanceSheetName, student.firstName, student.lastName, period),
+                            formulaValue: createSummaryGeneralAbsencesFormula(attendanceSheetName, student.firstName, student.lastName, period),
                         },
                     });
                 }
@@ -1020,7 +1020,7 @@ describe("Setup Utils. Data", () => {
                     if (!attendancePerClass) {
                         row.push({
                             userEnteredValue: {
-                                formulaValue: createSummaryGeneralAbsencesFormula(assistanceSheetName, student.firstName, student.lastName, period),
+                                formulaValue: createSummaryGeneralAbsencesFormula(attendanceSheetName, student.firstName, student.lastName, period),
                             },
                         });
                     }
@@ -1039,19 +1039,19 @@ describe("Setup Utils. Data", () => {
 
         it("should build summary student data for general attendance and simple average", () => {
             // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
-            const result = buildSummaryStudentData(
-                false,
-                false,
+            const result = buildSummaryStudentData({
+                attendancePerClass: false,
+                averagePerField: false,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                commentsRange,
+                period: 0,
+                attendanceSheetName,
+                commentRange,
                 subjectRanges,
                 fieldRanges,
                 averageRanges,
-            );
+            });
 
             const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [
@@ -1091,19 +1091,19 @@ describe("Setup Utils. Data", () => {
         });
         it("should build summary student data for general attendance and field average", () => {
             // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
-            const result = buildSummaryStudentData(
-                false,
-                true,
+            const result = buildSummaryStudentData({
+                attendancePerClass: false,
+                averagePerField: true,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                commentsRange,
+                period: 0,
+                attendanceSheetName,
+                commentRange,
                 subjectRanges,
                 fieldRanges,
                 averageRanges,
-            );
+            });
 
             const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [
@@ -1145,19 +1145,19 @@ describe("Setup Utils. Data", () => {
         });
         it("should build summary student data for individual attendance and simple average", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
-            const result = buildSummaryStudentData(
-                true,
-                false,
+            const result = buildSummaryStudentData({
+                attendancePerClass: true,
+                averagePerField: false,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                commentsRange,
+                period: 0,
+                attendanceSheetName,
+                commentRange,
                 subjectRanges,
                 fieldRanges,
                 averageRanges,
-            );
+            });
 
             const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [
@@ -1203,19 +1203,19 @@ describe("Setup Utils. Data", () => {
         });
         it("should build summary student data for individual attendance and field average", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | ... | Space | Field N grade | Field N Comment | Average
-            const result = buildSummaryStudentData(
-                true,
-                true,
+            const result = buildSummaryStudentData({
+                attendancePerClass: true,
+                averagePerField: true,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                commentsRange,
+                period: 0,
+                attendanceSheetName,
+                commentRange,
                 subjectRanges,
                 fieldRanges,
                 averageRanges,
-            );
+            });
 
             const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [
@@ -1270,19 +1270,19 @@ describe("Setup Utils. Data", () => {
         ])("should build summary student data for period 2 with attendancePerClass=%s and averagePerField=%s", (attendancePerClass, averagePerField) => {
             const period = 1 as const;
 
-            const result = buildSummaryStudentData(
+            const result = buildSummaryStudentData({
                 attendancePerClass,
                 averagePerField,
                 subjects,
                 fields,
                 students,
                 period,
-                assistanceSheetName,
-                commentsRange,
+                attendanceSheetName,
+                commentRange,
                 subjectRanges,
                 fieldRanges,
                 averageRanges,
-            );
+            });
 
             expect(result).toEqual(expectedSummaryData(attendancePerClass, averagePerField, period));
         });
@@ -1295,19 +1295,19 @@ describe("Setup Utils. Data", () => {
         ])("should build summary student data for period 3 with attendancePerClass=%s and averagePerField=%s", (attendancePerClass, averagePerField) => {
             const period = 2 as const;
 
-            const result = buildSummaryStudentData(
+            const result = buildSummaryStudentData({
                 attendancePerClass,
                 averagePerField,
                 subjects,
                 fields,
                 students,
                 period,
-                assistanceSheetName,
-                commentsRange,
+                attendanceSheetName,
+                commentRange,
                 subjectRanges,
                 fieldRanges,
                 averageRanges,
-            );
+            });
 
             expect(result).toEqual(expectedSummaryData(attendancePerClass, averagePerField, period));
         });
@@ -1328,39 +1328,39 @@ describe("Setup Utils. Data", () => {
                 })) as PeriodRanges,
                 comment: {
                     sheet: {},
-                    namedRange: { ...commentsRange.namedRange, range: { sheetId: 123, startRowIndex: 20, endRowIndex: 24 } },
+                    namedRange: { ...commentRange.namedRange, range: { sheetId: 123, startRowIndex: 20, endRowIndex: 24 } },
                 },
             };
 
-            const result = buildSummaryStudentData(
-                true,
-                true,
+            const result = buildSummaryStudentData({
+                attendancePerClass: true,
+                averagePerField: true,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                unboundedRanges.comment,
-                unboundedRanges.subject,
-                unboundedRanges.field,
-                unboundedRanges.average,
-            );
+                period: 0,
+                attendanceSheetName,
+                commentRange: unboundedRanges.comment,
+                subjectRanges: unboundedRanges.subject,
+                fieldRanges: unboundedRanges.field,
+                averageRanges: unboundedRanges.average,
+            });
 
             expect(result).toEqual(expectedSummaryData(true, true, 0, unboundedRanges));
 
-            const simpleAverageResult = buildSummaryStudentData(
-                false,
-                false,
+            const simpleAverageResult = buildSummaryStudentData({
+                attendancePerClass: false,
+                averagePerField: false,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                unboundedRanges.comment,
-                unboundedRanges.subject,
-                unboundedRanges.field,
-                unboundedRanges.average,
-            );
+                period: 0,
+                attendanceSheetName,
+                commentRange: unboundedRanges.comment,
+                subjectRanges: unboundedRanges.subject,
+                fieldRanges: unboundedRanges.field,
+                averageRanges: unboundedRanges.average,
+            });
 
             expect(simpleAverageResult).toEqual(expectedSummaryData(false, false, 0, unboundedRanges));
         });
@@ -1409,25 +1409,25 @@ describe("Setup Utils. Data", () => {
                 comment: {
                     sheet: {},
                     namedRange: {
-                        ...commentsRange.namedRange,
-                        range: { sheetId: 123, endColumnIndex: commentsRange.namedRange.range.endColumnIndex, startRowIndex: 20, endRowIndex: 24 },
+                        ...commentRange.namedRange,
+                        range: { sheetId: 123, endColumnIndex: commentRange.namedRange.range.endColumnIndex, startRowIndex: 20, endRowIndex: 24 },
                     },
                 },
             };
 
-            const result = buildSummaryStudentData(
+            const result = buildSummaryStudentData({
                 attendancePerClass,
                 averagePerField,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                missingStartColumnRanges.comment,
-                missingStartColumnRanges.subject,
-                missingStartColumnRanges.field,
-                missingStartColumnRanges.average,
-            );
+                period: 0,
+                attendanceSheetName,
+                commentRange: missingStartColumnRanges.comment,
+                subjectRanges: missingStartColumnRanges.subject,
+                fieldRanges: missingStartColumnRanges.field,
+                averageRanges: missingStartColumnRanges.average,
+            });
 
             expect(result).toEqual(expectedSummaryData(attendancePerClass, averagePerField, 0, missingStartColumnRanges));
 
@@ -1453,19 +1453,19 @@ describe("Setup Utils. Data", () => {
                 },
             };
 
-            const missingEndResult = buildSummaryStudentData(
+            const missingEndResult = buildSummaryStudentData({
                 attendancePerClass,
                 averagePerField,
                 subjects,
                 fields,
                 students,
-                0,
-                assistanceSheetName,
-                missingEndColumnRanges.comment,
-                missingEndColumnRanges.subject,
-                missingEndColumnRanges.field,
-                missingEndColumnRanges.average,
-            );
+                period: 0,
+                attendanceSheetName,
+                commentRange: missingEndColumnRanges.comment,
+                subjectRanges: missingEndColumnRanges.subject,
+                fieldRanges: missingEndColumnRanges.field,
+                averageRanges: missingEndColumnRanges.average,
+            });
 
             expect(missingEndResult).toEqual(expectedSummaryData(attendancePerClass, averagePerField, 0, missingEndColumnRanges));
         });

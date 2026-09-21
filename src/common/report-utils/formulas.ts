@@ -282,3 +282,10 @@ export function createSummaryGeneralAbsencesFormula(assitanceSheetName: string, 
     // Construct the final formula string
     return `=FILTER(${safeSheetName}!$${returnColumn}$4:$${returnColumn}, ${safeSheetName}!$B$4:$B = "${firstName}", ${safeSheetName}!$C$4:$C = "${lastName}")`;
 }
+
+/**
+ * Helper to create Summary formula for averages.
+ */
+export function createSummaryAverageFormula(a1Range: string, decimals: number = 1): string {
+    return `=IFERROR(ROUND(AVERAGE(${a1Range}), ${decimals}), "")`;
+}

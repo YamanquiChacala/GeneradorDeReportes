@@ -2,6 +2,7 @@ import { getA1Notation, type MappedNamedRange, offsetGridRange, Style } from "..
 import {
     createAttendaceFormulas,
     createSetupRowValidFormula,
+    createSummaryAverageFormula,
     createSummaryGeneralAbsencesFormula,
     DEFAULT_COMMENT,
     DEFAULT_SEP_STRENGHT,
@@ -486,22 +487,36 @@ export function buildSummaryHeadersData(
     return [header, subheader];
 }
 
+interface BuildSummaryStudentDataParams {
+    readonly attendancePerClass: boolean;
+    readonly averagePerField: boolean;
+    readonly subjects: number;
+    readonly fields: number[];
+    readonly students: StudentRow[];
+    readonly period: 0 | 1 | 2;
+    readonly attendanceSheetName: string;
+    readonly commentRange: MappedNamedRange;
+    readonly subjectRanges: PeriodRanges;
+    readonly fieldRanges: PeriodRanges;
+    readonly averageRanges: PeriodRanges;
+}
+
 /**
  * Builds the student data for the Summary sheet
  */
-export function buildSummaryStudentData(
-    attendancePerClass: boolean,
-    averagePerField: boolean,
-    subjects: number,
-    fields: number[],
-    students: StudentRow[],
-    period: 0 | 1 | 2,
-    attendanceSheetName: string,
-    commentRange: MappedNamedRange,
-    subjectRanges: PeriodRanges,
-    fieldRanges: PeriodRanges,
-    averageRanges: PeriodRanges,
-): GoogleAppsScript.Sheets.Schema.CellData[][] {
+export function buildSummaryStudentData({
+    attendancePerClass,
+    averagePerField,
+    subjects,
+    fields,
+    students,
+    period,
+    attendanceSheetName,
+    commentRange,
+    subjectRanges,
+    fieldRanges,
+    averageRanges,
+}: BuildSummaryStudentDataParams): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const summaryStudentData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
     for (const studentRow of students) {
@@ -525,7 +540,9 @@ export function buildSummaryStudentData(
 }
 
 /**
- * Builds the student data for a single row of the Summary sheet
+ * Builds one Summary-sheet row for a student, including student information,
+ * subject grades, attendance, SEP comments, field averages, and the final average.
+ * Returns an empty row for separator entries so the source student layout is preserved.
  */
 function buildSummarySingleStudentData(
     attendancePerClass: boolean,
@@ -553,6 +570,7 @@ function buildSummarySingleStudentData(
     const subjectsData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
     for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
         if (attendancePerClass && averagePerField) {
+            // Subjects have "Fal" | "Cal"
             const inasistancesA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
                 includeSheetName: true,
@@ -583,6 +601,7 @@ function buildSummarySingleStudentData(
             });
             subjectsData.push({ userEnteredValue: { formulaValue: `=${inasistancesA1}` } }, { userEnteredValue: { formulaValue: `=${gradeA1}` } });
         } else if (attendancePerClass && !averagePerField) {
+            // Subjects have "Fal" | "Cal" | "SEP"
             const inasistancesA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
                 includeSheetName: true,
@@ -628,6 +647,7 @@ function buildSummarySingleStudentData(
                 { userEnteredValue: { formulaValue: `=${commentA1}` } },
             );
         } else if (!attendancePerClass && averagePerField) {
+            // Subjects have only "Cal"
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
                 includeSheetName: true,
@@ -644,6 +664,7 @@ function buildSummarySingleStudentData(
             });
             subjectsData.push({ userEnteredValue: { formulaValue: `=${gradeA1}` } });
         } else {
+            // Subjects have "Cal" | "SEP"
             const gradeA1 = getA1Notation({
                 mappedRange: subjectRanges[period],
                 includeSheetName: true,
@@ -743,4 +764,101 @@ function buildSummarySingleStudentData(
     }
 
     return studentRowData;
+}
+
+function buildSummaryGroupAverageData(
+    mappedRange: MappedNamedRange,
+    attendancePerClass: boolean,
+    averagePerField: boolean,
+    subjects: number,
+    fields: number,
+    studentRows: number,
+): GoogleAppsScript.Sheets.Schema.CellData[] {
+    // Calculate column offsets
+    let subjectsColOffset: number;
+    let fieldsColOffset: number;
+    let averageColOffset: number;
+    // Fields, when present, have "Cal" | "SEP"
+    if (attendancePerClass && averagePerField) {
+        // Subjects have "Fal" | "Cal"
+        subjectsColOffset = 3;
+        fieldsColOffset = subjectsColOffset + 2 * subjects + 1;
+        averageColOffset = fieldsColOffset + 2 * fields;
+    } else if (attendancePerClass && !averagePerField) {
+        // Subjects have "Fal" | "Cal" | "SEP"
+        subjectsColOffset = 3;
+        fieldsColOffset = 0;
+        averageColOffset = subjectsColOffset + 3 * subjects;
+    } else if (!attendancePerClass && averagePerField) {
+        // Subjects have only "Cal"
+        subjectsColOffset = 4;
+        fieldsColOffset = subjectsColOffset + subjects + 2;
+        averageColOffset = fieldsColOffset + 2 * fields;
+    } else {
+        // Subjects have "Cal" | "SEP"
+        subjectsColOffset = 4;
+        fieldsColOffset = 0;
+        averageColOffset = subjectsColOffset + 2 * subjects;
+    }
+
+    // Static part
+    const averageRowData: GoogleAppsScript.Sheets.Schema.CellData[] = [{}, { userEnteredValue: { stringValue: "Promedio del grupo" } }, {}];
+
+    // Subject averages
+    const subjectAverageData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
+        let spaces: number;
+        let colOffset = subjectsColOffset;
+        if (attendancePerClass && averagePerField) {
+            // Subjects have "Fal" | "Cal"
+            spaces = 2;
+            colOffset += spaces * subjectIndex + 1;
+        } else if (attendancePerClass && !averagePerField) {
+            // Subjects have "Fal" | "Cal" | "SEP"
+            spaces = 3;
+            colOffset += spaces * subjectIndex + 1;
+        } else if (!attendancePerClass && averagePerField) {
+            // Subjects have only "Cal"
+            spaces = 1;
+            colOffset += spaces * subjectIndex;
+        } else {
+            // Subjects have "Cal" | "SEP"
+            spaces = 2;
+            colOffset += spaces * subjectIndex;
+        }
+        const averageRangeA1 = getA1Notation({
+            mappedRange,
+            lockRows: true,
+            colOffset,
+            height: studentRows + 1,
+            width: 1,
+        });
+        subjectAverageData.push({ userEnteredValue: { formulaValue: createSummaryAverageFormula(averageRangeA1) } });
+        for (let i = 1; i < spaces; i++) {
+            subjectAverageData.push({});
+        }
+    }
+
+    // General attendance
+    const generalAttendanceAverageData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    if (!attendancePerClass) {
+        generalAttendanceAverageData.push({});
+    }
+
+    // Final average
+    const averageRangeA1 = getA1Notation({
+        mappedRange,
+        lockRows: true,
+        colOffset: averageColOffset,
+        height: studentRows + 1,
+        width: 1,
+    });
+    const finalAverageData: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { formulaValue: createSummaryAverageFormula(averageRangeA1, 2) } };
+
+    // Fields and final build
+    if (averagePerField) {
+        const fieldAverageData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+    }
+
+    return [];
 }
