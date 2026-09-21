@@ -13,7 +13,7 @@ import {
     StudentRowType,
     type TrimesterRanges,
 } from "../report-utils";
-import { TemplateSize } from "./types";
+import { type PeriodRanges, TemplateSize } from "./types";
 
 interface MonthGroupMeta {
     year: number;
@@ -486,8 +486,6 @@ export function buildSummaryHeadersData(
     return [header, subheader];
 }
 
-export type PeriodRanges = [MappedNamedRange, MappedNamedRange, MappedNamedRange];
-
 /**
  * Builds the student data for the Summary sheet
  */
@@ -498,7 +496,7 @@ export function buildSummaryStudentData(
     fields: number[],
     students: StudentRow[],
     period: 0 | 1 | 2,
-    assistanceSheetName: string,
+    attendanceSheetName: string,
     commentRange: MappedNamedRange,
     subjectRanges: PeriodRanges,
     fieldRanges: PeriodRanges,
@@ -515,7 +513,7 @@ export function buildSummaryStudentData(
                 fields,
                 studentRow,
                 period,
-                assistanceSheetName,
+                attendanceSheetName,
                 commentRange,
                 subjectRanges,
                 fieldRanges,
@@ -536,7 +534,7 @@ function buildSummarySingleStudentData(
     fields: number[],
     student: StudentRow,
     period: 0 | 1 | 2,
-    assistanceSheetName: string,
+    attendanceSheetName: string,
     commentRange: MappedNamedRange,
     subjectRanges: PeriodRanges,
     fieldRanges: PeriodRanges,
@@ -679,7 +677,7 @@ function buildSummarySingleStudentData(
     const generalAttendanceData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
     if (!attendancePerClass) {
         generalAttendanceData.push({
-            userEnteredValue: { formulaValue: createSummaryGeneralAbsencesFormula(assistanceSheetName, student.firstName, student.lastName, period) },
+            userEnteredValue: { formulaValue: createSummaryGeneralAbsencesFormula(attendanceSheetName, student.firstName, student.lastName, period) },
         });
     }
 

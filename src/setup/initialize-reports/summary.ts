@@ -12,7 +12,7 @@ import {
     RangeBehavior,
 } from "../../common/gas-utils";
 import type { Range, ReportPersistentData } from "../../common/report-utils";
-import { buildSummaryHeadersData, getSummaryColumnWidths } from "../../common/setup-utils";
+import { buildSummaryHeadersData, getSummaryColumnWidths, type PeriodRanges } from "../../common/setup-utils";
 
 export function prepareSummarySheet(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
@@ -78,7 +78,7 @@ function addHeaders(
     persistentData: ReportPersistentData,
     mergeColumns: Range[],
 ): GoogleAppsScript.Sheets.Schema.Request[] {
-    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de 'Concentrado'");
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
     const statusHeadersRange = getMappedRange(ReportSheetSchema.sheets.summary.ranges.labels);
 
     const frozenCols = 3;
@@ -110,5 +110,17 @@ function addHeaders(
  * Fills in the content of the sheet
  */
 function addContent(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte'");
+
+    const fields = persistentData.academicFields.map((field) => field.subjects);
+    const attendanceSheetName = ReportSheetSchema.sheets.attendance.sheetName;
+
+    const commentsRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.comments);
+    const subjectRanges: PeriodRanges = [
+        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Subjects),
+        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Subjects),
+        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Subjects),
+    ];
+
     return [];
 }
