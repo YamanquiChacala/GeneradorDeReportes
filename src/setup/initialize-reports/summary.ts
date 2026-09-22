@@ -144,10 +144,10 @@ function addContent(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, p
         students: persistentData.students,
         period: 0,
         attendanceSheetName,
-        commentRange,
-        subjectRanges,
-        fieldRanges,
-        averageRanges,
+        commentsRange: commentRange,
+        subjectsRange: subjectRanges,
+        fieldsRange: fieldRanges,
+        averagesRange: averageRanges,
     });
 
     const transferResult = buildTransferRequests({

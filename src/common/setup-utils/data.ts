@@ -14,7 +14,7 @@ import {
     StudentRowType,
     type TrimesterRanges,
 } from "../report-utils";
-import { type PeriodRanges, TemplateSize } from "./types";
+import { TemplateSize } from "./types";
 
 interface MonthGroupMeta {
     year: number;
@@ -488,6 +488,7 @@ export function buildSummaryHeadersData(
 }
 
 interface BuildSummaryStudentDataParams {
+    readonly mappedRange: MappedNamedRange;
     readonly attendancePerClass: boolean;
     readonly averagePerField: boolean;
     readonly subjects: number;
@@ -495,16 +496,17 @@ interface BuildSummaryStudentDataParams {
     readonly students: StudentRow[];
     readonly period: 0 | 1 | 2;
     readonly attendanceSheetName: string;
-    readonly commentRange: MappedNamedRange;
-    readonly subjectRanges: PeriodRanges;
-    readonly fieldRanges: PeriodRanges;
-    readonly averageRanges: PeriodRanges;
+    readonly commentsRange: MappedNamedRange;
+    readonly subjectsRange: MappedNamedRange;
+    readonly fieldsRange: MappedNamedRange;
+    readonly averagesRange: MappedNamedRange;
 }
 
 /**
  * Builds the student data for the Summary sheet
  */
 export function buildSummaryStudentData({
+    mappedRange,
     attendancePerClass,
     averagePerField,
     subjects,
@@ -512,10 +514,10 @@ export function buildSummaryStudentData({
     students,
     period,
     attendanceSheetName,
-    commentRange,
-    subjectRanges,
-    fieldRanges,
-    averageRanges,
+    commentsRange,
+    subjectsRange,
+    fieldsRange,
+    averagesRange,
 }: BuildSummaryStudentDataParams): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const summaryStudentData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
@@ -529,13 +531,16 @@ export function buildSummaryStudentData({
                 studentRow,
                 period,
                 attendanceSheetName,
-                commentRange,
-                subjectRanges,
-                fieldRanges,
-                averageRanges,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
             ),
         );
     }
+
+    summaryStudentData.push([]);
+    summaryStudentData.push(buildSummaryGroupAverageData(mappedRange, attendancePerClass, averagePerField, subjects, fields.length, students.length));
     return summaryStudentData;
 }
 
@@ -552,10 +557,10 @@ function buildSummarySingleStudentData(
     student: StudentRow,
     period: 0 | 1 | 2,
     attendanceSheetName: string,
-    commentRange: MappedNamedRange,
-    subjectRanges: PeriodRanges,
-    fieldRanges: PeriodRanges,
-    averageRanges: PeriodRanges,
+    commentsRange: MappedNamedRange,
+    subjectsRange: MappedNamedRange,
+    fieldsRange: MappedNamedRange,
+    averagesRange: MappedNamedRange,
 ): GoogleAppsScript.Sheets.Schema.CellData[] {
     if (student.type === StudentRowType.SEPARATOR) return [];
 
@@ -572,30 +577,24 @@ function buildSummarySingleStudentData(
         if (attendancePerClass && averagePerField) {
             // Subjects have "Fal" | "Cal"
             const inasistancesA1 = getA1Notation({
-                mappedRange: subjectRanges[period],
+                mappedRange: subjectsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset:
-                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
-                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
-                    (period === 2 ? 3 : 2),
+                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 3 : 2),
                 height: 1,
                 width: 1,
             });
             const gradeA1 = getA1Notation({
-                mappedRange: subjectRanges[period],
+                mappedRange: subjectsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset:
-                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
-                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
-                    (period === 2 ? 2 : 1),
+                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -603,41 +602,35 @@ function buildSummarySingleStudentData(
         } else if (attendancePerClass && !averagePerField) {
             // Subjects have "Fal" | "Cal" | "SEP"
             const inasistancesA1 = getA1Notation({
-                mappedRange: subjectRanges[period],
+                mappedRange: subjectsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset:
-                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
-                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
-                    (period === 2 ? 3 : 2),
+                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 3 : 2),
                 height: 1,
                 width: 1,
             });
             const gradeA1 = getA1Notation({
-                mappedRange: subjectRanges[period],
+                mappedRange: subjectsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset:
-                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
-                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
-                    (period === 2 ? 2 : 1),
+                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
             const commentA1 = getA1Notation({
-                mappedRange: commentRange,
+                mappedRange: commentsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (commentRange.namedRange.range.endColumnIndex ?? 0) - (commentRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                colOffset: (commentsRange.namedRange.range.endColumnIndex ?? 0) - (commentsRange.namedRange.range.startColumnIndex ?? 0) - 2,
                 height: 1,
                 width: 1,
             });
@@ -649,16 +642,13 @@ function buildSummarySingleStudentData(
         } else if (!attendancePerClass && averagePerField) {
             // Subjects have only "Cal"
             const gradeA1 = getA1Notation({
-                mappedRange: subjectRanges[period],
+                mappedRange: subjectsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset:
-                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
-                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
-                    (period === 2 ? 2 : 1),
+                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -666,27 +656,24 @@ function buildSummarySingleStudentData(
         } else {
             // Subjects have "Cal" | "SEP"
             const gradeA1 = getA1Notation({
-                mappedRange: subjectRanges[period],
+                mappedRange: subjectsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset:
-                    (subjectRanges[period].namedRange.range.endColumnIndex ?? 0) -
-                    (subjectRanges[period].namedRange.range.startColumnIndex ?? 0) -
-                    (period === 2 ? 2 : 1),
+                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
             const commentA1 = getA1Notation({
-                mappedRange: commentRange,
+                mappedRange: commentsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (commentRange.namedRange.range.endColumnIndex ?? 0) - (commentRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                colOffset: (commentsRange.namedRange.range.endColumnIndex ?? 0) - (commentsRange.namedRange.range.startColumnIndex ?? 0) - 2,
                 height: 1,
                 width: 1,
             });
@@ -704,12 +691,12 @@ function buildSummarySingleStudentData(
 
     // Final Average
     const averageA1 = getA1Notation({
-        mappedRange: averageRanges[period],
+        mappedRange: averagesRange,
         includeSheetName: true,
         customSheetName: student.sheetName,
         lockRows: true,
         lockColumns: true,
-        colOffset: (averageRanges[period].namedRange.range.endColumnIndex ?? 0) - (averageRanges[period].namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+        colOffset: (averagesRange.namedRange.range.endColumnIndex ?? 0) - (averagesRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
         height: 1,
         width: 1,
     });
@@ -731,25 +718,24 @@ function buildSummarySingleStudentData(
 
         for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
             const gradeA1 = getA1Notation({
-                mappedRange: fieldRanges[period],
+                mappedRange: fieldsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: fieldIndex,
-                colOffset:
-                    (fieldRanges[period].namedRange.range.endColumnIndex ?? 0) - (fieldRanges[period].namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                colOffset: (fieldsRange.namedRange.range.endColumnIndex ?? 0) - (fieldsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
             const commentA1 = getA1Notation({
-                mappedRange: commentRange,
+                mappedRange: commentsRange,
                 includeSheetName: true,
                 customSheetName: student.sheetName,
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: commentIndex[fieldIndex],
-                colOffset: (commentRange.namedRange.range.endColumnIndex ?? 0) - (commentRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                colOffset: (commentsRange.namedRange.range.endColumnIndex ?? 0) - (commentsRange.namedRange.range.startColumnIndex ?? 0) - 2,
                 height: 1,
                 width: 1,
             });
@@ -766,6 +752,14 @@ function buildSummarySingleStudentData(
     return studentRowData;
 }
 
+/**
+ * Builds the Summary-sheet row that contains group averages for one period.
+ *
+ * The row layout mirrors the Summary headers, adding formulas for subject,
+ * field, and final averages while leaving attendance and SEP-only columns
+ * empty. Subject and field averages are calculated from the corresponding
+ * student rows in `mappedRange`.
+ */
 function buildSummaryGroupAverageData(
     mappedRange: MappedNamedRange,
     attendancePerClass: boolean,
@@ -858,7 +852,23 @@ function buildSummaryGroupAverageData(
     // Fields and final build
     if (averagePerField) {
         const fieldAverageData: GoogleAppsScript.Sheets.Schema.CellData[] = [];
+        for (let fieldIndex = 0; fieldIndex < fields; fieldIndex++) {
+            const colOffset = fieldsColOffset + 2 * fieldIndex;
+            const averageRangeA1 = getA1Notation({
+                mappedRange,
+                lockRows: true,
+                colOffset,
+                height: studentRows + 1,
+                width: 1,
+            });
+            fieldAverageData.push({ userEnteredValue: { formulaValue: createSummaryAverageFormula(averageRangeA1) } }, {});
+        }
+
+        averageRowData.push(...subjectAverageData, {}, ...generalAttendanceAverageData, ...fieldAverageData, finalAverageData);
+    } else {
+        // No fields
+        averageRowData.push(...generalAttendanceAverageData, ...subjectAverageData, finalAverageData);
     }
 
-    return [];
+    return averageRowData;
 }
