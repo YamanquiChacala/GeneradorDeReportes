@@ -489,6 +489,7 @@ export function buildSummaryHeadersData(
 
 interface BuildSummaryStudentDataParams {
     readonly mappedRange: MappedNamedRange;
+    readonly rowOffset: number;
     readonly attendancePerClass: boolean;
     readonly averagePerField: boolean;
     readonly subjects: number;
@@ -507,6 +508,7 @@ interface BuildSummaryStudentDataParams {
  */
 export function buildSummaryStudentData({
     mappedRange,
+    rowOffset,
     attendancePerClass,
     averagePerField,
     subjects,
@@ -521,6 +523,7 @@ export function buildSummaryStudentData({
 }: BuildSummaryStudentDataParams): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const summaryStudentData: GoogleAppsScript.Sheets.Schema.CellData[][] = [];
 
+    // Student data
     for (const studentRow of students) {
         summaryStudentData.push(
             buildSummarySingleStudentData(
@@ -539,8 +542,11 @@ export function buildSummaryStudentData({
         );
     }
 
+    // Space
     summaryStudentData.push([]);
-    summaryStudentData.push(buildSummaryGroupAverageData(mappedRange, attendancePerClass, averagePerField, subjects, fields.length, students.length));
+
+    // Averages
+    summaryStudentData.push(buildSummaryGroupAverageData(mappedRange, rowOffset, attendancePerClass, averagePerField, subjects, fields.length, students.length));
     return summaryStudentData;
 }
 
@@ -795,6 +801,7 @@ function buildSummarySingleStudentData(
  */
 function buildSummaryGroupAverageData(
     mappedRange: MappedNamedRange,
+    rowOffset: number,
     attendancePerClass: boolean,
     averagePerField: boolean,
     subjects: number,
@@ -856,6 +863,7 @@ function buildSummaryGroupAverageData(
         const averageRangeA1 = getA1Notation({
             mappedRange,
             lockRows: true,
+            rowOffset,
             colOffset,
             height: studentRows + 1,
             width: 1,
@@ -876,6 +884,7 @@ function buildSummaryGroupAverageData(
     const averageRangeA1 = getA1Notation({
         mappedRange,
         lockRows: true,
+        rowOffset,
         colOffset: averageColOffset,
         height: studentRows + 1,
         width: 1,
@@ -890,6 +899,7 @@ function buildSummaryGroupAverageData(
             const averageRangeA1 = getA1Notation({
                 mappedRange,
                 lockRows: true,
+                rowOffset,
                 colOffset,
                 height: studentRows + 1,
                 width: 1,

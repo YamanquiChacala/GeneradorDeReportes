@@ -918,6 +918,7 @@ describe("Setup Utils. Data", () => {
     });
 
     describe("buildSummaryStudentData", () => {
+        const rowOffset = 0;
         const subjects = 4;
         const fields = [3, 1];
         const students: StudentRow[] = [
@@ -993,6 +994,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: false,
                 averagePerField: false,
                 subjects,
@@ -1063,6 +1065,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: false,
                 averagePerField: false,
                 subjects,
@@ -1133,6 +1136,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: false,
                 averagePerField: true,
                 subjects,
@@ -1206,6 +1210,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: false,
                 averagePerField: true,
                 subjects,
@@ -1279,6 +1284,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: true,
                 averagePerField: false,
                 subjects,
@@ -1358,6 +1364,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: true,
                 averagePerField: false,
                 subjects,
@@ -1437,6 +1444,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | ... | Space | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: true,
                 averagePerField: true,
                 subjects,
@@ -1519,6 +1527,7 @@ describe("Setup Utils. Data", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | ... | Space | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
                 mappedRange,
+                rowOffset,
                 attendancePerClass: true,
                 averagePerField: true,
                 subjects,
