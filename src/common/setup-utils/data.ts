@@ -583,7 +583,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 3 : 2),
+                colOffset:
+                    (subjectsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (subjectsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 3 : 2),
                 height: 1,
                 width: 1,
             });
@@ -594,7 +597,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                colOffset:
+                    (subjectsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (subjectsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -608,7 +614,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 3 : 2),
+                colOffset:
+                    (subjectsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (subjectsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 3 : 2),
                 height: 1,
                 width: 1,
             });
@@ -619,7 +628,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                colOffset:
+                    (subjectsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (subjectsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -630,7 +642,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (commentsRange.namedRange.range.endColumnIndex ?? 0) - (commentsRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                colOffset:
+                    (commentsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (commentsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    2,
                 height: 1,
                 width: 1,
             });
@@ -648,7 +663,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                colOffset:
+                    (subjectsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (subjectsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -662,7 +680,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (subjectsRange.namedRange.range.endColumnIndex ?? 0) - (subjectsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                colOffset:
+                    (subjectsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (subjectsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -673,7 +694,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: subjectIndex,
-                colOffset: (commentsRange.namedRange.range.endColumnIndex ?? 0) - (commentsRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                colOffset:
+                    (commentsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (commentsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    2,
                 height: 1,
                 width: 1,
             });
@@ -696,7 +720,10 @@ function buildSummarySingleStudentData(
         customSheetName: student.sheetName,
         lockRows: true,
         lockColumns: true,
-        colOffset: (averagesRange.namedRange.range.endColumnIndex ?? 0) - (averagesRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+        colOffset:
+            (averagesRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+            (averagesRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+            (period === 2 ? 2 : 1),
         height: 1,
         width: 1,
     });
@@ -724,7 +751,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: fieldIndex,
-                colOffset: (fieldsRange.namedRange.range.endColumnIndex ?? 0) - (fieldsRange.namedRange.range.startColumnIndex ?? 0) - (period === 2 ? 2 : 1),
+                colOffset:
+                    (fieldsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (fieldsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (period === 2 ? 2 : 1),
                 height: 1,
                 width: 1,
             });
@@ -735,7 +765,10 @@ function buildSummarySingleStudentData(
                 lockRows: true,
                 lockColumns: true,
                 rowOffset: commentIndex[fieldIndex],
-                colOffset: (commentsRange.namedRange.range.endColumnIndex ?? 0) - (commentsRange.namedRange.range.startColumnIndex ?? 0) - 2,
+                colOffset:
+                    (commentsRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                    (commentsRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                    2,
                 height: 1,
                 width: 1,
             });

@@ -989,7 +989,7 @@ describe("Setup Utils. Data", () => {
             );
         }
 
-        it("should build summary student data for general attendance and simple average", () => {
+        it("should build summary student data for general attendance and simple average for 1st period", () => {
             // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
             const result = buildSummaryStudentData({
                 mappedRange,
@@ -1058,7 +1058,78 @@ describe("Setup Utils. Data", () => {
 
             expect(result).toEqual(expectedResult);
         });
-        it("should build summary student data for general attendance and field average", () => {
+
+        it("should build summary student data for general attendance and simple average for 3rd period", () => {
+            // id | Name | Last Name | Attendance | Subject N grade | Subject N Comment | ... | Average
+            const result = buildSummaryStudentData({
+                mappedRange,
+                attendancePerClass: false,
+                averagePerField: false,
+                subjects,
+                fields,
+                students,
+                period: 2,
+                attendanceSheetName,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
+            });
+
+            const expectedResult = generateMockResult([
+                [
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `=FILTER('Asistencia'!$I$4:$I, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")`, // Attendance
+                    `='yama nanqui'!$E$31`, // Subject 0 grade
+                    `='yama nanqui'!$I$21`, // Subject 0 comment
+                    `='yama nanqui'!$E$32`, // Subject 1 grade
+                    `='yama nanqui'!$I$22`, // Subject 1 comment
+                    `='yama nanqui'!$E$33`, // Subject 2 grade
+                    `='yama nanqui'!$I$23`, // Subject 2 comment
+                    `='yama nanqui'!$E$34`, // Subject 3 grade
+                    `='yama nanqui'!$I$24`, // Subject 3 comment
+                    `='yama nanqui'!$E$51`, // Average
+                ],
+                [],
+                [
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `=FILTER('Asistencia'!$I$4:$I, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")`, // Attendance
+                    `='erin smith'!$E$31`, // Subject 0 grade
+                    `='erin smith'!$I$21`, // Subject 0 comment
+                    `='erin smith'!$E$32`, // Subject 1 grade
+                    `='erin smith'!$I$22`, // Subject 1 comment
+                    `='erin smith'!$E$33`, // Subject 2 grade
+                    `='erin smith'!$I$23`, // Subject 2 comment
+                    `='erin smith'!$E$34`, // Subject 3 grade
+                    `='erin smith'!$I$24`, // Subject 3 comment
+                    `='erin smith'!$E$51`, // Average
+                ],
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    null, // Attendance
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(G$1:G$4), 1), "")', // Subject 1 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(I$1:I$4), 1), "")', // Subject 2 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 3 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(M$1:M$4), 2), "")', // Final average
+                ],
+            ]);
+
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should build summary student data for general attendance and field average for 2nd period", () => {
             // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
                 mappedRange,
@@ -1130,7 +1201,81 @@ describe("Setup Utils. Data", () => {
 
             expect(result).toEqual(expectedResult);
         });
-        it("should build summary student data for individual attendance and simple average", () => {
+
+        it("should build summary student data for general attendance and field average for 3rd period", () => {
+            // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
+            const result = buildSummaryStudentData({
+                mappedRange,
+                attendancePerClass: false,
+                averagePerField: true,
+                subjects,
+                fields,
+                students,
+                period: 2,
+                attendanceSheetName,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
+            });
+
+            const expectedResult = generateMockResult([
+                [
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `='yama nanqui'!$E$31`, // Subject 0 grade
+                    `='yama nanqui'!$E$32`, // Subject 1 grade
+                    `='yama nanqui'!$E$33`, // Subject 2 grade
+                    `='yama nanqui'!$E$34`, // Subject 3 grade
+                    null, // Space
+                    `=FILTER('Asistencia'!$I$4:$I, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")`, // Attendance
+                    `='yama nanqui'!$E$41`, // Field 0 grade
+                    `='yama nanqui'!$I$21`, // Field 0 comment
+                    `='yama nanqui'!$E$42`, // Field 1 grade
+                    `='yama nanqui'!$I$24`, // Field 1 comment
+                    `='yama nanqui'!$E$51`, // Average
+                ],
+                [],
+                [
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `='erin smith'!$E$31`, // Subject 0 grade
+                    `='erin smith'!$E$32`, // Subject 1 grade
+                    `='erin smith'!$E$33`, // Subject 2 grade
+                    `='erin smith'!$E$34`, // Subject 3 grade
+                    null, // Space
+                    `=FILTER('Asistencia'!$I$4:$I, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")`, // Attendance
+                    `='erin smith'!$E$41`, // Field 0 grade
+                    `='erin smith'!$I$21`, // Field 0 comment
+                    `='erin smith'!$E$42`, // Field 1 grade
+                    `='erin smith'!$I$24`, // Field 1 comment
+                    `='erin smith'!$E$51`, // Average
+                ],
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(D$1:D$4), 1), "")', // Subject 0 average
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 1 average
+                    '=IFERROR(ROUND(AVERAGE(F$1:F$4), 1), "")', // Subject 2 average
+                    '=IFERROR(ROUND(AVERAGE(G$1:G$4), 1), "")', // Subject 3 average
+                    null, // Space
+                    null, // Attendance
+                    '=IFERROR(ROUND(AVERAGE(J$1:J$4), 1), "")', // Field 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(L$1:L$4), 1), "")', // Field 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(N$1:N$4), 2), "")', // Final average
+                ],
+            ]);
+
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should build summary student data for individual attendance and simple average for 1st period", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
             const result = buildSummaryStudentData({
                 mappedRange,
@@ -1208,7 +1353,169 @@ describe("Setup Utils. Data", () => {
 
             expect(result).toEqual(expectedResult);
         });
-        it("should build summary student data for individual attendance and field average", () => {
+
+        it("should build summary student data for individual attendance and simple average for 3rd period", () => {
+            // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
+            const result = buildSummaryStudentData({
+                mappedRange,
+                attendancePerClass: true,
+                averagePerField: false,
+                subjects,
+                fields,
+                students,
+                period: 2,
+                attendanceSheetName,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
+            });
+
+            const expectedResult = generateMockResult([
+                [
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `='yama nanqui'!$D$31`, // Subject 0 attendance
+                    `='yama nanqui'!$E$31`, // Subject 0 grade
+                    `='yama nanqui'!$I$21`, // Subject 0 comment
+                    `='yama nanqui'!$D$32`, // Subject 1 attendance
+                    `='yama nanqui'!$E$32`, // Subject 1 grade
+                    `='yama nanqui'!$I$22`, // Subject 1 comment
+                    `='yama nanqui'!$D$33`, // Subject 2 attendance
+                    `='yama nanqui'!$E$33`, // Subject 2 grade
+                    `='yama nanqui'!$I$23`, // Subject 2 comment
+                    `='yama nanqui'!$D$34`, // Subject 3 attendance
+                    `='yama nanqui'!$E$34`, // Subject 3 grade
+                    `='yama nanqui'!$I$24`, // Subject 3 comment
+                    `='yama nanqui'!$E$51`, // Average
+                ],
+                [],
+                [
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `='erin smith'!$D$31`, // Subject 0 attendance
+                    `='erin smith'!$E$31`, // Subject 0 grade
+                    `='erin smith'!$I$21`, // Subject 0 comment
+                    `='erin smith'!$D$32`, // Subject 1 attendance
+                    `='erin smith'!$E$32`, // Subject 1 grade
+                    `='erin smith'!$I$22`, // Subject 1 comment
+                    `='erin smith'!$D$33`, // Subject 2 attendance
+                    `='erin smith'!$E$33`, // Subject 2 grade
+                    `='erin smith'!$I$23`, // Subject 2 comment
+                    `='erin smith'!$D$34`, // Subject 3 attendance
+                    `='erin smith'!$E$34`, // Subject 3 grade
+                    `='erin smith'!$I$24`, // Subject 3 comment
+                    `='erin smith'!$E$51`, // Average
+                ],
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(H$1:H$4), 1), "")', // Subject 1 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 2 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(N$1:N$4), 1), "")', // Subject 3 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(P$1:P$4), 2), "")', // Final average
+                ],
+            ]);
+
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should build summary student data for individual attendance and field average for 2nd period", () => {
+            // id | Name | Last Name | Subject N attendance | Subject N grade | ... | Space | Field N grade | Field N Comment | Average
+            const result = buildSummaryStudentData({
+                mappedRange,
+                attendancePerClass: true,
+                averagePerField: true,
+                subjects,
+                fields,
+                students,
+                period: 1,
+                attendanceSheetName,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
+            });
+
+            const expectedResult = generateMockResult([
+                [
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `='yama nanqui'!$E$31`, // Subject 0 attendance
+                    `='yama nanqui'!$F$31`, // Subject 0 grade
+                    `='yama nanqui'!$E$32`, // Subject 1 attendance
+                    `='yama nanqui'!$F$32`, // Subject 1 grade
+                    `='yama nanqui'!$E$33`, // Subject 2 attendance
+                    `='yama nanqui'!$F$33`, // Subject 2 grade
+                    `='yama nanqui'!$E$34`, // Subject 3 attendance
+                    `='yama nanqui'!$F$34`, // Subject 3 grade
+                    null, // Space
+                    `='yama nanqui'!$F$41`, // Field 0 grade
+                    `='yama nanqui'!$I$21`, // Field 0 comment
+                    `='yama nanqui'!$F$42`, // Field 1 grade
+                    `='yama nanqui'!$I$24`, // Field 1 comment
+                    `='yama nanqui'!$F$51`, // Average
+                ],
+                [],
+                [
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `='erin smith'!$E$31`, // Subject 0 attendance
+                    `='erin smith'!$F$31`, // Subject 0 grade
+                    `='erin smith'!$E$32`, // Subject 1 attendance
+                    `='erin smith'!$F$32`, // Subject 1 grade
+                    `='erin smith'!$E$33`, // Subject 2 attendance
+                    `='erin smith'!$F$33`, // Subject 2 grade
+                    `='erin smith'!$E$34`, // Subject 3 attendance
+                    `='erin smith'!$F$34`, // Subject 3 grade
+                    null, // Space
+                    `='erin smith'!$F$41`, // Field 0 grade
+                    `='erin smith'!$I$21`, // Field 0 comment
+                    `='erin smith'!$F$42`, // Field 1 grade
+                    `='erin smith'!$I$24`, // Field 1 comment
+                    `='erin smith'!$F$51`, // Average
+                ],
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(G$1:G$4), 1), "")', // Subject 1 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(I$1:I$4), 1), "")', // Subject 2 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 3 average
+                    null,
+                    null, // Space
+                    '=IFERROR(ROUND(AVERAGE(M$1:M$4), 1), "")', // Field 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(O$1:O$4), 1), "")', // Field 1 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(Q$1:Q$4), 2), "")', // Final average
+                ],
+            ]);
+
+            expect(result).toEqual(expectedResult);
+        });
+
+        it("should build summary student data for individual attendance and field average for 3rd period", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | ... | Space | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
                 mappedRange,
