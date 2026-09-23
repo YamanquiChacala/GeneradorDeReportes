@@ -12,7 +12,7 @@ import {
     RangeBehavior,
 } from "../../common/gas-utils";
 import type { Range, ReportPersistentData } from "../../common/report-utils";
-import { buildSummaryHeadersData, buildSummaryStudentData, getSummaryColumnWidths, type PeriodRanges } from "../../common/setup-utils";
+import { buildSummaryHeadersData, getSummaryColumnWidths } from "../../common/setup-utils";
 
 export function prepareSummarySheet(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
@@ -109,57 +109,59 @@ function addHeaders(
 /**
  * Fills in the content of the sheet
  */
-function addContent(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
-    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte'");
 
-    const fields = persistentData.academicFields.map((field) => field.subjects);
-    const attendanceSheetName = ReportSheetSchema.sheets.attendance.sheetName;
+function addContent(_parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, _persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+    // const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte'");
 
-    const commentRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.comments);
-    const subjectRanges: PeriodRanges = [
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Subjects),
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Subjects),
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Subjects),
-    ];
-    const fieldRanges: PeriodRanges = [
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Fields),
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Fields),
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Fields),
-    ];
-    const averageRanges: PeriodRanges = [
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Totals),
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Totals),
-        getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Totals),
-    ];
+    // const fields = persistentData.academicFields.map((field) => field.subjects);
+    // const attendanceSheetName = ReportSheetSchema.sheets.attendance.sheetName;
 
-    const trim1SummaryRange = getMappedRange(ReportSheetSchema.sheets.summary.ranges.trim1);
+    // const commentRange = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.comments);
+    // const subjectRanges: PeriodRanges = [
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Subjects),
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Subjects),
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Subjects),
+    // ];
+    // const fieldRanges: PeriodRanges = [
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Fields),
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Fields),
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Fields),
+    // ];
+    // const averageRanges: PeriodRanges = [
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim1Totals),
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim2Totals),
+    //     getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.trim3Totals),
+    // ];
 
-    let rowOffset = 0;
+    // const trim1SummaryRange = getMappedRange(ReportSheetSchema.sheets.summary.ranges.trim1);
 
-    const trim1SummaryData = buildSummaryStudentData({
-        attendancePerClass: persistentData.configData.attendancePerClass,
-        averagePerField: persistentData.configData.averagePerField,
-        subjects: persistentData.subjects.length,
-        fields,
-        students: persistentData.students,
-        period: 0,
-        attendanceSheetName,
-        commentsRange: commentRange,
-        subjectsRange: subjectRanges,
-        fieldsRange: fieldRanges,
-        averagesRange: averageRanges,
-    });
+    // let rowOffset = 0;
 
-    const transferResult = buildTransferRequests({
-        destination: trim1SummaryRange,
-        data: trim1SummaryData,
-        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
-        rowBehavior: RangeBehavior.INSERT_DELETE,
-        colBehavior: RangeBehavior.MODIFY_RANGE,
-        rowOffset,
-    });
+    // const trim1SummaryData = buildSummaryStudentData({
+    //     attendancePerClass: persistentData.configData.attendancePerClass,
+    //     averagePerField: persistentData.configData.averagePerField,
+    //     subjects: persistentData.subjects.length,
+    //     fields,
+    //     students: persistentData.students,
+    //     period: 0,
+    //     attendanceSheetName,
+    //     commentsRange: commentRange,
+    //     subjectsRange: subjectRanges,
+    //     fieldsRange: fieldRanges,
+    //     averagesRange: averageRanges,
+    // });
 
-    rowOffset = transferResult.rowOffset;
+    // const transferResult = buildTransferRequests({
+    //     destination: trim1SummaryRange,
+    //     data: trim1SummaryData,
+    //     fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue"),
+    //     rowBehavior: RangeBehavior.INSERT_DELETE,
+    //     colBehavior: RangeBehavior.MODIFY_RANGE,
+    //     rowOffset,
+    // });
 
-    return transferResult.requests;
+    // rowOffset = transferResult.rowOffset;
+
+    // return transferResult.requests;
+    return [];
 }

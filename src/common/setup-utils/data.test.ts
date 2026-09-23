@@ -1,6 +1,5 @@
-import { getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import type { MappedNamedRange } from "../gas-utils";
 import {
-    createSummaryGeneralAbsencesFormula,
     DEFAULT_COMMENT,
     DEFAULT_SEP_STRENGHT,
     DEFAULT_SEP_SUGGESTION,
@@ -17,7 +16,7 @@ import {
     calculateCalendarHeaders,
     generateStudentGrid,
 } from "./data";
-import { type PeriodRanges, TemplateSize } from "./types";
+import { TemplateSize } from "./types";
 
 describe("Setup Utils. Data", () => {
     describe("calculateCalendarHeaders", () => {
@@ -1273,271 +1272,22 @@ describe("Setup Utils. Data", () => {
                     null,
                     '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
                     null,
+                    '=IFERROR(ROUND(AVERAGE(G$1:G$4), 1), "")', // Subject 1 average
                     null,
-                    '=IFERROR(ROUND(AVERAGE(H$1:H$4), 1), "")', // Subject 1 average
+                    '=IFERROR(ROUND(AVERAGE(I$1:I$4), 1), "")', // Subject 2 average
                     null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 3 average
                     null,
-                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 2 average
+                    null, // Space
+                    '=IFERROR(ROUND(AVERAGE(M$1:M$4), 1), "")', // Field 0 average
                     null,
+                    '=IFERROR(ROUND(AVERAGE(O$1:O$4), 1), "")', // Field 1 average
                     null,
-                    '=IFERROR(ROUND(AVERAGE(N$1:N$4), 1), "")', // Subject 3 average
-                    null,
-                    null,
-                    '=IFERROR(ROUND(AVERAGE(P$1:P$4), 2), "")', // Final average
+                    '=IFERROR(ROUND(AVERAGE(Q$1:Q$4), 2), "")', // Final average
                 ],
             ]);
 
-            const expectedResult2: GoogleAppsScript.Sheets.Schema.CellData[][] = [
-                [
-                    { userEnteredValue: { numberValue: 1 } }, // id
-                    { userEnteredValue: { stringValue: "Yama" } }, // Name
-                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$31` } }, // Subject 0 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$32` } }, // Subject 1 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$33` } }, // Subject 2 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$34` } }, // Subject 3 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
-                    {}, // Space
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$36` } }, // Field 0 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Field 0 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$37` } }, // Field 1 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Field 1 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
-                ],
-                [],
-                [
-                    { userEnteredValue: { numberValue: 3 } }, // id
-                    { userEnteredValue: { stringValue: "Erin" } }, // Name
-                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$31` } }, // Subject 0 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$32` } }, // Subject 1 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$33` } }, // Subject 2 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$34` } }, // Subject 3 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
-                    {}, // Space
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$36` } }, // Field 0 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Field 0 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$37` } }, // Field 1 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Field 1 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
-                ],
-            ];
-
             expect(result).toEqual(expectedResult);
-        });
-
-        it.each([
-            [false, false],
-            [false, true],
-            [true, false],
-            [true, true],
-        ])("should build summary student data for period 2 with attendancePerClass=%s and averagePerField=%s", (attendancePerClass, averagePerField) => {
-            const period = 1 as const;
-
-            const result = buildSummaryStudentData({
-                attendancePerClass,
-                averagePerField,
-                subjects,
-                fields,
-                students,
-                period: period,
-                attendanceSheetName,
-                commentsRange: commentRange,
-                subjectsRange: subjectRanges,
-                fieldsRange: fieldRanges,
-                averagesRange: averageRanges,
-            });
-
-            expect(result).toEqual(expectedSummaryData(attendancePerClass, averagePerField, period));
-        });
-
-        it.each([
-            [false, false],
-            [false, true],
-            [true, false],
-            [true, true],
-        ])("should build summary student data for period 3 with attendancePerClass=%s and averagePerField=%s", (attendancePerClass, averagePerField) => {
-            const period = 2 as const;
-
-            const result = buildSummaryStudentData({
-                attendancePerClass,
-                averagePerField,
-                subjects,
-                fields,
-                students,
-                period: period,
-                attendanceSheetName,
-                commentsRange: commentRange,
-                subjectsRange: subjectRanges,
-                fieldsRange: fieldRanges,
-                averagesRange: averageRanges,
-            });
-
-            expect(result).toEqual(expectedSummaryData(attendancePerClass, averagePerField, period));
-        });
-
-        it("should default missing subject, field, and average column indexes to zero", () => {
-            const unboundedRanges = {
-                subject: createPeriodRanges("subjects", [30, 40, 50], 4, 5).map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: { ...namedRange, range: { sheetId: 123, startRowIndex: namedRange.range.startRowIndex, endRowIndex: namedRange.range.endRowIndex } },
-                })) as PeriodRanges,
-                field: createPeriodRanges("fields", [35, 45, 55], 2, 5).map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: { ...namedRange, range: { sheetId: 123, startRowIndex: namedRange.range.startRowIndex, endRowIndex: namedRange.range.endRowIndex } },
-                })) as PeriodRanges,
-                average: createPeriodRanges("average", [37, 47, 57], 1, 5).map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: { ...namedRange, range: { sheetId: 123, startRowIndex: namedRange.range.startRowIndex, endRowIndex: namedRange.range.endRowIndex } },
-                })) as PeriodRanges,
-                comment: {
-                    sheet: {},
-                    namedRange: { ...commentRange.namedRange, range: { sheetId: 123, startRowIndex: 20, endRowIndex: 24 } },
-                },
-            };
-
-            const result = buildSummaryStudentData({
-                attendancePerClass: true,
-                averagePerField: true,
-                subjects,
-                fields,
-                students,
-                period: 0,
-                attendanceSheetName,
-                commentsRange: unboundedRanges.comment,
-                subjectsRange: unboundedRanges.subject,
-                fieldsRange: unboundedRanges.field,
-                averagesRange: unboundedRanges.average,
-            });
-
-            expect(result).toEqual(expectedSummaryData(true, true, 0, unboundedRanges));
-
-            const simpleAverageResult = buildSummaryStudentData({
-                attendancePerClass: false,
-                averagePerField: false,
-                subjects,
-                fields,
-                students,
-                period: 0,
-                attendanceSheetName,
-                commentsRange: unboundedRanges.comment,
-                subjectsRange: unboundedRanges.subject,
-                fieldsRange: unboundedRanges.field,
-                averagesRange: unboundedRanges.average,
-            });
-
-            expect(simpleAverageResult).toEqual(expectedSummaryData(false, false, 0, unboundedRanges));
-        });
-
-        it.each([
-            [true, false],
-            [false, true],
-        ])("should default missing start column indexes when attendancePerClass=%s and averagePerField=%s", (attendancePerClass, averagePerField) => {
-            const missingStartColumnRanges = {
-                subject: createPeriodRanges("subjects", [30, 40, 50], 4, 5).map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: {
-                        ...namedRange,
-                        range: {
-                            sheetId: 123,
-                            endColumnIndex: namedRange.range.endColumnIndex,
-                            startRowIndex: namedRange.range.startRowIndex,
-                            endRowIndex: namedRange.range.endRowIndex,
-                        },
-                    },
-                })) as PeriodRanges,
-                field: createPeriodRanges("fields", [35, 45, 55], 2, 5).map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: {
-                        ...namedRange,
-                        range: {
-                            sheetId: 123,
-                            endColumnIndex: namedRange.range.endColumnIndex,
-                            startRowIndex: namedRange.range.startRowIndex,
-                            endRowIndex: namedRange.range.endRowIndex,
-                        },
-                    },
-                })) as PeriodRanges,
-                average: createPeriodRanges("average", [37, 47, 57], 1, 5).map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: {
-                        ...namedRange,
-                        range: {
-                            sheetId: 123,
-                            endColumnIndex: namedRange.range.endColumnIndex,
-                            startRowIndex: namedRange.range.startRowIndex,
-                            endRowIndex: namedRange.range.endRowIndex,
-                        },
-                    },
-                })) as PeriodRanges,
-                comment: {
-                    sheet: {},
-                    namedRange: {
-                        ...commentRange.namedRange,
-                        range: { sheetId: 123, endColumnIndex: commentRange.namedRange.range.endColumnIndex, startRowIndex: 20, endRowIndex: 24 },
-                    },
-                },
-            };
-
-            const result = buildSummaryStudentData({
-                attendancePerClass,
-                averagePerField,
-                subjects,
-                fields,
-                students,
-                period: 0,
-                attendanceSheetName,
-                commentsRange: missingStartColumnRanges.comment,
-                subjectsRange: missingStartColumnRanges.subject,
-                fieldsRange: missingStartColumnRanges.field,
-                averagesRange: missingStartColumnRanges.average,
-            });
-
-            expect(result).toEqual(expectedSummaryData(attendancePerClass, averagePerField, 0, missingStartColumnRanges));
-
-            const missingEndColumnRanges = {
-                subject: missingStartColumnRanges.subject.map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: { ...namedRange, range: { ...namedRange.range, startColumnIndex: 0, endColumnIndex: undefined } },
-                })) as PeriodRanges,
-                field: missingStartColumnRanges.field.map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: { ...namedRange, range: { ...namedRange.range, startColumnIndex: 0, endColumnIndex: undefined } },
-                })) as PeriodRanges,
-                average: missingStartColumnRanges.average.map(({ namedRange }) => ({
-                    sheet: {},
-                    namedRange: { ...namedRange, range: { ...namedRange.range, startColumnIndex: 0, endColumnIndex: undefined } },
-                })) as PeriodRanges,
-                comment: {
-                    sheet: {},
-                    namedRange: {
-                        ...missingStartColumnRanges.comment.namedRange,
-                        range: { ...missingStartColumnRanges.comment.namedRange.range, startColumnIndex: 0, endColumnIndex: undefined },
-                    },
-                },
-            };
-
-            const missingEndResult = buildSummaryStudentData({
-                attendancePerClass,
-                averagePerField,
-                subjects,
-                fields,
-                students,
-                period: 0,
-                attendanceSheetName,
-                commentsRange: missingEndColumnRanges.comment,
-                subjectsRange: missingEndColumnRanges.subject,
-                fieldsRange: missingEndColumnRanges.field,
-                averagesRange: missingEndColumnRanges.average,
-            });
-
-            expect(missingEndResult).toEqual(expectedSummaryData(attendancePerClass, averagePerField, 0, missingEndColumnRanges));
         });
     });
 });

@@ -1,5 +1,3 @@
-import type { MappedNamedRange } from "../gas-utils";
-
 export interface SubjectBlockLayout {
     readonly subjectIndex: number;
     readonly titleFormatStartRow: number;
@@ -67,5 +65,3 @@ export enum DayType {
     TRIM3 = "trimester 3 day",
     REST = "rest day",
 }
-
-export type PeriodRanges = [MappedNamedRange, MappedNamedRange, MappedNamedRange];
