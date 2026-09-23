@@ -958,10 +958,10 @@ describe("Setup Utils. Data", () => {
             },
         });
         const mappedRange = createMockMappedRange("main", 1, 0, 0, 1, 1); //A1:
-        const commentRange = createMockMappedRange("comments", 123, 20, 0, 4, 10); // A21:J24
-        const subjectsRange = createMockMappedRange("subjects", 123, 30, 0, 4, 8); // A31:H34
-        const fieldsRange = createMockMappedRange("fields", 123, 40, 0, 2, 8); // A41:H42
-        const averagesRange = createMockMappedRange("averages", 123, 50, 0, 1, 8); // A51:H51
+        const commentsRange = createMockMappedRange("comments", 123, 20, 0, 4, 10); // A21:J24
+        const subjectsRange = createMockMappedRange("subjects", 123, 30, 0, 4, 6); // A31:F34
+        const fieldsRange = createMockMappedRange("fields", 123, 40, 0, 2, 6); // A41:F42
+        const averagesRange = createMockMappedRange("averages", 123, 50, 0, 1, 6); // A51:F51
 
         function generateMockResult(data: (string | number | boolean | null | undefined)[][]): GoogleAppsScript.Sheets.Schema.CellData[][] {
             return data.map((row) =>
@@ -1001,7 +1001,7 @@ describe("Setup Utils. Data", () => {
                 students,
                 period: 0,
                 attendanceSheetName,
-                commentsRange: commentRange,
+                commentsRange,
                 subjectsRange,
                 fieldsRange,
                 averagesRange,
@@ -1013,111 +1013,128 @@ describe("Setup Utils. Data", () => {
                     "Yama", // Name
                     "Nanqui", // Last Name
                     `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")`, // Attendance
-                    `='yama nanqui'!$E$31`, // Subject 0 grade
+                    `='yama nanqui'!$F$31`, // Subject 0 grade
                     `='yama nanqui'!$I$21`, // Subject 0 comment
-                    `='yama nanqui'!$E$32`, // Subject 1 grade
+                    `='yama nanqui'!$F$32`, // Subject 1 grade
                     `='yama nanqui'!$I$22`, // Subject 1 comment
-                    `='yama nanqui'!$E$33`, // Subject 2 grade
+                    `='yama nanqui'!$F$33`, // Subject 2 grade
                     `='yama nanqui'!$I$23`, // Subject 2 comment
-                    `='yama nanqui'!$E$34`, // Subject 3 grade
+                    `='yama nanqui'!$F$34`, // Subject 3 grade
                     `='yama nanqui'!$I$24`, // Subject 3 comment
-                    `='yama nanqui'!$E$38`, // Average
-                ],
-            ]);
-
-            const expectedResult2: GoogleAppsScript.Sheets.Schema.CellData[][] = [
-                [
-                    { userEnteredValue: { numberValue: 1 } }, // id
-                    { userEnteredValue: { stringValue: "Yama" } }, // Name
-                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")` } }, // Attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Subject 0 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$22` } }, // Subject 1 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$23` } }, // Subject 2 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Subject 3 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
+                    `='yama nanqui'!$F$51`, // Average
                 ],
                 [],
                 [
-                    { userEnteredValue: { numberValue: 3 } }, // id
-                    { userEnteredValue: { stringValue: "Erin" } }, // Name
-                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")` } },
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Subject 0 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$22` } }, // Subject 1 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$23` } }, // Subject 2 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Subject 3 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")`, // Attendance
+                    `='erin smith'!$F$31`, // Subject 0 grade
+                    `='erin smith'!$I$21`, // Subject 0 comment
+                    `='erin smith'!$F$32`, // Subject 1 grade
+                    `='erin smith'!$I$22`, // Subject 1 comment
+                    `='erin smith'!$F$33`, // Subject 2 grade
+                    `='erin smith'!$I$23`, // Subject 2 comment
+                    `='erin smith'!$F$34`, // Subject 3 grade
+                    `='erin smith'!$I$24`, // Subject 3 comment
+                    `='erin smith'!$F$51`, // Average
                 ],
-            ];
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    null, // Attendance
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(G$1:G$4), 1), "")', // Subject 1 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(I$1:I$4), 1), "")', // Subject 2 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 3 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(M$1:M$4), 2), "")', // Final average
+                ],
+            ]);
 
             expect(result).toEqual(expectedResult);
         });
         it("should build summary student data for general attendance and field average", () => {
             // id | Name | Last Name |  Subject N grade | ... | Space | Attendance | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
+                mappedRange,
                 attendancePerClass: false,
                 averagePerField: true,
                 subjects,
                 fields,
                 students,
-                period: 0,
+                period: 1,
                 attendanceSheetName,
-                commentsRange: commentRange,
-                subjectsRange: subjectRanges,
-                fieldsRange: fieldRanges,
-                averagesRange: averageRanges,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
             });
 
-            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+            const expectedResult = generateMockResult([
                 [
-                    { userEnteredValue: { numberValue: 1 } }, // id
-                    { userEnteredValue: { stringValue: "Yama" } }, // Name
-                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
-                    {}, // Space
-                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")` } }, // Attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$36` } }, // Field 0 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Field 0 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$37` } }, // Field 1 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Field 1 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `='yama nanqui'!$F$31`, // Subject 0 grade
+                    `='yama nanqui'!$F$32`, // Subject 1 grade
+                    `='yama nanqui'!$F$33`, // Subject 2 grade
+                    `='yama nanqui'!$F$34`, // Subject 3 grade
+                    null, // Space
+                    `=FILTER('Asistencia'!$G$4:$G, 'Asistencia'!$B$4:$B = "Yama", 'Asistencia'!$C$4:$C = "Nanqui")`, // Attendance
+                    `='yama nanqui'!$F$41`, // Field 0 grade
+                    `='yama nanqui'!$I$21`, // Field 0 comment
+                    `='yama nanqui'!$F$42`, // Field 1 grade
+                    `='yama nanqui'!$I$24`, // Field 1 comment
+                    `='yama nanqui'!$F$51`, // Average
                 ],
                 [],
                 [
-                    { userEnteredValue: { numberValue: 3 } }, // id
-                    { userEnteredValue: { stringValue: "Erin" } }, // Name
-                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
-                    {}, // Space
-                    { userEnteredValue: { formulaValue: `=FILTER('Asistencia'!$E$4:$E, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")` } }, // Attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$36` } }, // Field 0 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Field 0 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$37` } }, // Field 1 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Field 1 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `='erin smith'!$F$31`, // Subject 0 grade
+                    `='erin smith'!$F$32`, // Subject 1 grade
+                    `='erin smith'!$F$33`, // Subject 2 grade
+                    `='erin smith'!$F$34`, // Subject 3 grade
+                    null, // Space
+                    `=FILTER('Asistencia'!$G$4:$G, 'Asistencia'!$B$4:$B = "Erin", 'Asistencia'!$C$4:$C = "Smith")`, // Attendance
+                    `='erin smith'!$F$41`, // Field 0 grade
+                    `='erin smith'!$I$21`, // Field 0 comment
+                    `='erin smith'!$F$42`, // Field 1 grade
+                    `='erin smith'!$I$24`, // Field 1 comment
+                    `='erin smith'!$F$51`, // Average
                 ],
-            ];
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(D$1:D$4), 1), "")', // Subject 0 average
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 1 average
+                    '=IFERROR(ROUND(AVERAGE(F$1:F$4), 1), "")', // Subject 2 average
+                    '=IFERROR(ROUND(AVERAGE(G$1:G$4), 1), "")', // Subject 3 average
+                    null, // Space
+                    null, // Attendance
+                    '=IFERROR(ROUND(AVERAGE(J$1:J$4), 1), "")', // Field 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(L$1:L$4), 1), "")', // Field 0 average
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(N$1:N$4), 2), "")', // Final average
+                ],
+            ]);
 
             expect(result).toEqual(expectedResult);
         });
         it("should build summary student data for individual attendance and simple average", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | Subject N comment | ... | Average
             const result = buildSummaryStudentData({
+                mappedRange,
                 attendancePerClass: true,
                 averagePerField: false,
                 subjects,
@@ -1125,71 +1142,152 @@ describe("Setup Utils. Data", () => {
                 students,
                 period: 0,
                 attendanceSheetName,
-                commentsRange: commentRange,
-                subjectsRange: subjectRanges,
-                fieldsRange: fieldRanges,
-                averagesRange: averageRanges,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
             });
 
-            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+            const expectedResult = generateMockResult([
                 [
-                    { userEnteredValue: { numberValue: 1 } }, // id
-                    { userEnteredValue: { stringValue: "Yama" } }, // Name
-                    { userEnteredValue: { stringValue: "Nanqui" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$31` } }, // Subject 0 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$21` } }, // Subject 0 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$32` } }, // Subject 1 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$22` } }, // Subject 1 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$33` } }, // Subject 2 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$23` } }, // Subject 2 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$D$34` } }, // Subject 3 attendance
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$34` } }, // Subject 3 grade
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$I$24` } }, // Subject 3 comment
-                    { userEnteredValue: { formulaValue: `='yama nanqui'!$E$38` } }, // Average
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `='yama nanqui'!$E$31`, // Subject 0 attendance
+                    `='yama nanqui'!$F$31`, // Subject 0 grade
+                    `='yama nanqui'!$I$21`, // Subject 0 comment
+                    `='yama nanqui'!$E$32`, // Subject 1 attendance
+                    `='yama nanqui'!$F$32`, // Subject 1 grade
+                    `='yama nanqui'!$I$22`, // Subject 1 comment
+                    `='yama nanqui'!$E$33`, // Subject 2 attendance
+                    `='yama nanqui'!$F$33`, // Subject 2 grade
+                    `='yama nanqui'!$I$23`, // Subject 2 comment
+                    `='yama nanqui'!$E$34`, // Subject 3 attendance
+                    `='yama nanqui'!$F$34`, // Subject 3 grade
+                    `='yama nanqui'!$I$24`, // Subject 3 comment
+                    `='yama nanqui'!$F$51`, // Average
                 ],
                 [],
                 [
-                    { userEnteredValue: { numberValue: 3 } }, // id
-                    { userEnteredValue: { stringValue: "Erin" } }, // Name
-                    { userEnteredValue: { stringValue: "Smith" } }, // Last Name
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$31` } }, // Subject 0 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$31` } }, // Subject 0 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$21` } }, // Subject 0 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$32` } }, // Subject 1 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$32` } }, // Subject 1 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$22` } }, // Subject 1 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$33` } }, // Subject 2 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$33` } }, // Subject 2 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$23` } }, // Subject 2 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$D$34` } }, // Subject 3 attendance
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$34` } }, // Subject 3 grade
-                    { userEnteredValue: { formulaValue: `='erin smith'!$I$24` } }, // Subject 3 comment
-                    { userEnteredValue: { formulaValue: `='erin smith'!$E$38` } }, // Average
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `='erin smith'!$E$31`, // Subject 0 attendance
+                    `='erin smith'!$F$31`, // Subject 0 grade
+                    `='erin smith'!$I$21`, // Subject 0 comment
+                    `='erin smith'!$E$32`, // Subject 1 attendance
+                    `='erin smith'!$F$32`, // Subject 1 grade
+                    `='erin smith'!$I$22`, // Subject 1 comment
+                    `='erin smith'!$E$33`, // Subject 2 attendance
+                    `='erin smith'!$F$33`, // Subject 2 grade
+                    `='erin smith'!$I$23`, // Subject 2 comment
+                    `='erin smith'!$E$34`, // Subject 3 attendance
+                    `='erin smith'!$F$34`, // Subject 3 grade
+                    `='erin smith'!$I$24`, // Subject 3 comment
+                    `='erin smith'!$F$51`, // Average
                 ],
-            ];
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(H$1:H$4), 1), "")', // Subject 1 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 2 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(N$1:N$4), 1), "")', // Subject 3 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(P$1:P$4), 2), "")', // Final average
+                ],
+            ]);
 
             expect(result).toEqual(expectedResult);
         });
         it("should build summary student data for individual attendance and field average", () => {
             // id | Name | Last Name | Subject N attendance | Subject N grade | ... | Space | Field N grade | Field N Comment | Average
             const result = buildSummaryStudentData({
+                mappedRange,
                 attendancePerClass: true,
                 averagePerField: true,
                 subjects,
                 fields,
                 students,
-                period: 0,
+                period: 2,
                 attendanceSheetName,
-                commentsRange: commentRange,
-                subjectsRange: subjectRanges,
-                fieldsRange: fieldRanges,
-                averagesRange: averageRanges,
+                commentsRange,
+                subjectsRange,
+                fieldsRange,
+                averagesRange,
             });
 
-            const expectedResult: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+            const expectedResult = generateMockResult([
+                [
+                    1, // id
+                    "Yama", // Name
+                    "Nanqui", // Last Name
+                    `='yama nanqui'!$D$31`, // Subject 0 attendance
+                    `='yama nanqui'!$E$31`, // Subject 0 grade
+                    `='yama nanqui'!$D$32`, // Subject 1 attendance
+                    `='yama nanqui'!$E$32`, // Subject 1 grade
+                    `='yama nanqui'!$D$33`, // Subject 2 attendance
+                    `='yama nanqui'!$E$33`, // Subject 2 grade
+                    `='yama nanqui'!$D$34`, // Subject 3 attendance
+                    `='yama nanqui'!$E$34`, // Subject 3 grade
+                    null, // Space
+                    `='yama nanqui'!$E$41`, // Field 0 grade
+                    `='yama nanqui'!$I$21`, // Field 0 comment
+                    `='yama nanqui'!$E$42`, // Field 1 grade
+                    `='yama nanqui'!$I$24`, // Field 1 comment
+                    `='yama nanqui'!$E$51`, // Average
+                ],
+                [],
+                [
+                    3, // id
+                    "Erin", // Name
+                    "Smith", // Last Name
+                    `='erin smith'!$D$31`, // Subject 0 attendance
+                    `='erin smith'!$E$31`, // Subject 0 grade
+                    `='erin smith'!$D$32`, // Subject 1 attendance
+                    `='erin smith'!$E$32`, // Subject 1 grade
+                    `='erin smith'!$D$33`, // Subject 2 attendance
+                    `='erin smith'!$E$33`, // Subject 2 grade
+                    `='erin smith'!$D$34`, // Subject 3 attendance
+                    `='erin smith'!$E$34`, // Subject 3 grade
+                    null, // Space
+                    `='erin smith'!$E$41`, // Field 0 grade
+                    `='erin smith'!$I$21`, // Field 0 comment
+                    `='erin smith'!$E$42`, // Field 1 grade
+                    `='erin smith'!$I$24`, // Field 1 comment
+                    `='erin smith'!$E$51`, // Average
+                ],
+                [],
+                [
+                    null,
+                    "Promedio del grupo",
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(E$1:E$4), 1), "")', // Subject 0 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(H$1:H$4), 1), "")', // Subject 1 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(K$1:K$4), 1), "")', // Subject 2 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(N$1:N$4), 1), "")', // Subject 3 average
+                    null,
+                    null,
+                    '=IFERROR(ROUND(AVERAGE(P$1:P$4), 2), "")', // Final average
+                ],
+            ]);
+
+            const expectedResult2: GoogleAppsScript.Sheets.Schema.CellData[][] = [
                 [
                     { userEnteredValue: { numberValue: 1 } }, // id
                     { userEnteredValue: { stringValue: "Yama" } }, // Name

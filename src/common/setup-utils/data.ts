@@ -785,7 +785,7 @@ function buildSummaryGroupAverageData(
         averageColOffset = subjectsColOffset + 3 * subjects;
     } else if (!attendancePerClass && averagePerField) {
         // Subjects have only "Cal"
-        subjectsColOffset = 4;
+        subjectsColOffset = 3;
         fieldsColOffset = subjectsColOffset + subjects + 2;
         averageColOffset = fieldsColOffset + 2 * fields;
     } else {
