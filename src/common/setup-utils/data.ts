@@ -1,4 +1,16 @@
-import { getA1Notation, type MappedNamedRange, offsetGridRange, Style } from "../gas-utils";
+import {
+    buildFieldsMask,
+    type ConditionalFormatRuleParams,
+    ConditionType,
+    getA1Notation,
+    HorizontalAlign,
+    type MappedNamedRange,
+    type MergeCellsRequestParams,
+    MergeType,
+    offsetGridRange,
+    type RepeatCellRequestParams,
+    Style,
+} from "../gas-utils";
 import {
     createAttendaceFormulas,
     createSetupRowValidFormula,
@@ -914,4 +926,171 @@ function buildSummaryGroupAverageData(
     }
 
     return averageRowData;
+}
+
+interface SummaryPeriodFormatParams {
+    readonly mappedRange: MappedNamedRange;
+    readonly attendancePerClass: boolean;
+    readonly averagePerField: boolean;
+    readonly subjects: number;
+    readonly fields: number;
+}
+
+interface SummaryPeriodFormatResponse {
+    conditionalFormat: ConditionalFormatRuleParams;
+    merges: MergeCellsRequestParams[];
+    updateCells: RepeatCellRequestParams[];
+}
+
+export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, averagePerField, subjects, fields }: SummaryPeriodFormatParams): SummaryPeriodFormatResponse {
+    // Helper to get individual columns of the mappedRange
+    const getSingleCol = (colOffset: number): GoogleAppsScript.Sheets.Schema.GridRange => {
+        return offsetGridRange({
+            origin: mappedRange.namedRange.range,
+            width: 1,
+            colOffset,
+        });
+    };
+
+    const getMergeAverages = (colOffset: number, width: number): GoogleAppsScript.Sheets.Schema.GridRange => {
+        return offsetGridRange({
+            origin: mappedRange.namedRange.range,
+            rowOffset:
+                (mappedRange.namedRange.range.endRowIndex ?? /* istanbul ignore next */ 0) -
+                (mappedRange.namedRange.range.startRowIndex ?? /* istanbul ignore next */ 0) -
+                1,
+            height: 1,
+            colOffset,
+            width,
+        });
+    };
+
+    const borderColor: GoogleAppsScript.Sheets.Schema.Color = { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 };
+
+    const formatCell: GoogleAppsScript.Sheets.Schema.CellData = {
+        userEnteredFormat: {
+            borders: { right: { style: Style.SOLID, colorStyle: { rgbColor: borderColor } } },
+            padding: { left: 10, right: 10 },
+            horizontalAlignment: HorizontalAlign.LEFT,
+            textFormat: {
+                fontFamily: "Bebas Neue",
+                fontSize: 5,
+            },
+        },
+    };
+
+    const allFields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>(
+        "userEnteredFormat.borders.right",
+        "userEnteredFormat.padding.left",
+        "userEnteredFormat.padding.right",
+        "userEnteredFormat.horizontalAlignment",
+        "userEnteredFormat.textFormat.fontFamily",
+        "userEnteredFormat.textFormat.fontSize",
+    );
+
+    const justBorderFields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.borders.right");
+
+    // Ranges to return
+    const condFormatRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+    const mergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+    const justBorderRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+    const fullFormatRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+
+    // Fields, when present, have "Cal" | "SEP"
+    if (attendancePerClass && averagePerField) {
+        // Subjects have "Fal" | "Cal"
+        const subjectsColOffset = 3;
+        const fieldsColOffset = subjectsColOffset + 2 * subjects + 1;
+
+        for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
+            condFormatRanges.push(getSingleCol(subjectsColOffset + 2 * subjectIndex + 1));
+            mergeRanges.push(getMergeAverages(subjectsColOffset + 2 * subjectIndex, 2));
+            justBorderRanges.push(getSingleCol(subjectsColOffset + 2 * subjectIndex + 1));
+        }
+        // Space
+        justBorderRanges.push(getSingleCol(fieldsColOffset - 1));
+
+        for (let fieldIndex = 0; fieldIndex < fields; fieldIndex++) {
+            condFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fieldIndex));
+            mergeRanges.push(getMergeAverages(fieldsColOffset + 2 * fieldIndex, 2));
+            fullFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fieldIndex + 1));
+        }
+    } else if (attendancePerClass && !averagePerField) {
+        // Subjects have "Fal" | "Cal" | "SEP"
+        const subjectsColOffset = 3;
+
+        for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
+            condFormatRanges.push(getSingleCol(subjectsColOffset + 3 * subjectIndex + 1));
+            mergeRanges.push(getMergeAverages(subjectsColOffset + 3 * subjectIndex, 3));
+            fullFormatRanges.push(getSingleCol(subjectsColOffset + 3 * subjectIndex + 2));
+        }
+    } else if (!attendancePerClass && averagePerField) {
+        // Subjects have only "Cal"
+        const subjectsColOffset = 3;
+        const fieldsColOffset = subjectsColOffset + subjects + 2;
+
+        for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
+            condFormatRanges.push(getSingleCol(subjectsColOffset + subjectIndex));
+            justBorderRanges.push(getSingleCol(subjectsColOffset + subjectIndex));
+        }
+        // Space
+        justBorderRanges.push(getSingleCol(fieldsColOffset - 2));
+        // General absences
+        justBorderRanges.push(getSingleCol(fieldsColOffset - 1));
+
+        for (let fieldIndex = 0; fieldIndex < fields; fieldIndex++) {
+            condFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fieldIndex));
+            mergeRanges.push(getMergeAverages(fieldsColOffset + 2 * fieldIndex, 2));
+            fullFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fieldIndex + 1));
+        }
+    } else {
+        // Subjects have "Cal" | "SEP"
+        const subjectsColOffset = 4;
+
+        // General absences
+        justBorderRanges.push(getSingleCol(subjectsColOffset - 1));
+
+        for (let subjectIndex = 0; subjectIndex < subjects; subjectIndex++) {
+            condFormatRanges.push(getSingleCol(subjectsColOffset + 2 * subjectIndex));
+            mergeRanges.push(getMergeAverages(subjectsColOffset + 2 * subjectIndex, 2));
+            fullFormatRanges.push(getSingleCol(subjectsColOffset + 2 * subjectIndex + 1));
+        }
+    }
+    // Average row
+    condFormatRanges.push(
+        offsetGridRange({
+            origin: mappedRange.namedRange.range,
+            rowOffset:
+                (mappedRange.namedRange.range.endRowIndex ?? /* istanbul ignore next */ 0) -
+                (mappedRange.namedRange.range.startRowIndex ?? /* istanbul ignore next */ 0) -
+                1,
+            colOffset: 3,
+            height: 1,
+            width:
+                (mappedRange.namedRange.range.endColumnIndex ?? /* istanbul ignore next */ 0) -
+                (mappedRange.namedRange.range.startColumnIndex ?? /* istanbul ignore next */ 0) -
+                3,
+        }),
+    );
+
+    const conditionalFormat: ConditionalFormatRuleParams = {
+        ranges: condFormatRanges,
+        condition: { type: ConditionType.NUMBER_LESS_THAN_EQ, values: [{ userEnteredValue: "5" }] },
+        format: { textFormat: { bold: true, foregroundColorStyle: { rgbColor: { red: 1 } } } },
+    };
+
+    const merges: MergeCellsRequestParams[] = [];
+    for (const mergeRange of mergeRanges) {
+        merges.push({ mergeType: MergeType.MERGE_ALL, range: mergeRange });
+    }
+
+    const updateCells: RepeatCellRequestParams[] = [];
+    for (const updateRange of justBorderRanges) {
+        updateCells.push({ cell: formatCell, fields: justBorderFields, range: updateRange });
+    }
+    for (const updateRange of fullFormatRanges) {
+        updateCells.push({ cell: formatCell, fields: allFields, range: updateRange });
+    }
+
+    return { conditionalFormat, merges, updateCells };
 }

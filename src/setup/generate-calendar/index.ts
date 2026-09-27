@@ -19,7 +19,7 @@ import {
     type ParsedSpreadsheet,
     parseSpreadsheet,
 } from "../../common/gas-utils";
-import { ConditionType, MergeType, PasteType } from "../../common/gas-utils/api-types";
+import { ConditionType, PasteType } from "../../common/gas-utils/api-types";
 import { type CalendarDates, calculateCalendarDates, calculateCalendarGrid, DayType, type MonthBlock } from "../../common/setup-utils";
 
 type RangeName = ExtractRangeNames<typeof SetupSheetSchema>;
@@ -217,7 +217,7 @@ function buildMonthLabelRequests(
 
         // Make the requests
         requests.push(buildCopyPasteRequest(sourceMonthNameRange, destinationMonthNameRange, PasteType.PASTE_FORMAT));
-        requests.push(buildMergeCellsRequest(monthMergeRange, MergeType.MERGE_ALL));
+        requests.push(buildMergeCellsRequest({ range: monthMergeRange }));
 
         // Inject text into the pre-existing row data array
         const targetRowData = calendarData[block.startRow - 1]; // Array starts on row 1, blocks on 0, so we have to substract the header.

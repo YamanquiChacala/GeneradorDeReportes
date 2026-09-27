@@ -19,7 +19,7 @@ import {
     type MappedNamedRange,
     offsetGridRange,
 } from "../../common/gas-utils";
-import { MergeType, PasteType } from "../../common/gas-utils/api-types";
+import { PasteType } from "../../common/gas-utils/api-types";
 import {
     calculateAssistanceTrimRanges as calculateAttendanceTrimRanges,
     type FrozenArea,
@@ -205,7 +205,7 @@ function addDateHeaders(
 
         if (group.count !== 5 && group.count > 2) {
             const mergeRange = createRange(sheetId, 0, group.startCol, 1, group.count);
-            formatRequests.push(buildMergeCellsRequest(mergeRange, MergeType.MERGE_ALL));
+            formatRequests.push(buildMergeCellsRequest({ range: mergeRange }));
         }
     }
 

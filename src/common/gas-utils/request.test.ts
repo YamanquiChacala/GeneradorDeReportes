@@ -1,13 +1,15 @@
-import { Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
+import { ConditionType, Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
 import {
     addNewNamedRange,
     addNewSheet,
     buildAddBandingRequest,
+    buildAddConditionalFormatRuleRequest,
     buildBorderRequest,
     buildCopyPasteRequest,
     buildMergeCellsRequest,
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
+    buildRepeatCellRequest,
     buildSetBackgroundRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
@@ -91,7 +93,7 @@ describe("GAS Util, Requests", () => {
     describe("buildMergeCellsRequest", () => {
         it("should build a valid mergeCells request", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildMergeCellsRequest(range, MergeType.MERGE_ROWS);
+            const request = buildMergeCellsRequest({ range, mergeType: MergeType.MERGE_ROWS });
 
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
@@ -100,7 +102,7 @@ describe("GAS Util, Requests", () => {
 
         it("should default to MERGE_ALL", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildMergeCellsRequest(range);
+            const request = buildMergeCellsRequest({ range });
 
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
@@ -231,6 +233,50 @@ describe("GAS Util, Requests", () => {
                         range: mockRange,
                         rowProperties: mockBandingProperties,
                     },
+                },
+            });
+        });
+    });
+
+    describe("buildAddConditionalFormatRuleRequest", () => {
+        it("should construct a request with the given inputs", () => {
+            const ranges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 },
+                { startRowIndex: 2, endRowIndex: 10, endColumnIndex: 13 },
+            ];
+            const condition: GoogleAppsScript.Sheets.Schema.BooleanCondition = { type: ConditionType.NUMBER_EQ, values: [{ userEnteredValue: "4" }] };
+            const format: GoogleAppsScript.Sheets.Schema.CellFormat = { textFormat: { bold: true } };
+
+            const result = buildAddConditionalFormatRuleRequest({ ranges, condition, format });
+
+            expect(result).toEqual({
+                addConditionalFormatRule: {
+                    index: 0,
+                    rule: {
+                        ranges,
+                        booleanRule: {
+                            condition,
+                            format,
+                        },
+                    },
+                },
+            });
+        });
+    });
+
+    describe("buildRepeatCellRequest", () => {
+        it("should construct a request with the given inputs", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 };
+            const cell: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Test" } };
+            const fields = "userEnteredValue.stringValue";
+
+            const result = buildRepeatCellRequest({ range, cell, fields });
+
+            expect(result).toEqual({
+                repeatCell: {
+                    range,
+                    cell,
+                    fields,
                 },
             });
         });

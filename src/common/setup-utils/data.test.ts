@@ -12,6 +12,7 @@ import {
     buildDefaultCommentForStudentTemplateData,
     buildStatusSectionData,
     buildSummaryHeadersData,
+    buildSummaryPeriodFormat,
     buildSummaryStudentData,
     calculateCalendarHeaders,
     generateStudentGrid,
@@ -1604,6 +1605,201 @@ describe("Setup Utils. Data", () => {
             ]);
 
             expect(result).toEqual(expectedResult);
+        });
+    });
+
+    describe("buildSummaryPeriodFormat", () => {
+        const mappedRange: MappedNamedRange = {
+            namedRange: {
+                namedRangeId: "summary-period",
+                name: "Summary period",
+                range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 5, endColumnIndex: 15 },
+            },
+            sheet: {},
+        };
+        const subjects = 2;
+        const fields = 2;
+        const conditionalFormat = {
+            condition: { type: "NUMBER_LESS_THAN_EQ", values: [{ userEnteredValue: "5" }] },
+            format: { textFormat: { bold: true, foregroundColorStyle: { rgbColor: { red: 1 } } } },
+        };
+        const borderFormat = {
+            userEnteredFormat: {
+                borders: { right: { style: "SOLID", colorStyle: { rgbColor: { red: 0.7176, green: 0.7176, blue: 0.7176, alpha: 1 } } } },
+                padding: { left: 10, right: 10 },
+                horizontalAlignment: "LEFT",
+                textFormat: { fontFamily: "Bebas Neue", fontSize: 5 },
+            },
+        };
+
+        it("should build format data for attendance per class with field averages", () => {
+            const result = buildSummaryPeriodFormat({ mappedRange, attendancePerClass: true, averagePerField: true, subjects, fields });
+
+            expect(result).toEqual({
+                conditionalFormat: {
+                    ranges: [
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 10 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 11, endColumnIndex: 12 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 13, endColumnIndex: 14 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 15, endColumnIndex: 16 },
+                        { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 15 },
+                    ],
+                    ...conditionalFormat,
+                },
+                merges: [
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 10 } },
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 10, endColumnIndex: 12 } },
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 13, endColumnIndex: 15 } },
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 15, endColumnIndex: 17 } },
+                ],
+                updateCells: [
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 10 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 11, endColumnIndex: 12 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 12, endColumnIndex: 13 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 14, endColumnIndex: 15 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 16, endColumnIndex: 17 },
+                    },
+                ],
+            });
+        });
+
+        it("should build format data for attendance per class without field averages", () => {
+            const result = buildSummaryPeriodFormat({ mappedRange, attendancePerClass: true, averagePerField: false, subjects, fields });
+
+            expect(result).toEqual({
+                conditionalFormat: {
+                    ranges: [
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 10 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 12, endColumnIndex: 13 },
+                        { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 15 },
+                    ],
+                    ...conditionalFormat,
+                },
+                merges: [
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 11 } },
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 11, endColumnIndex: 14 } },
+                ],
+                updateCells: [
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 10, endColumnIndex: 11 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 13, endColumnIndex: 14 },
+                    },
+                ],
+            });
+        });
+
+        it("should build format data without attendance per class with field averages", () => {
+            const result = buildSummaryPeriodFormat({ mappedRange, attendancePerClass: false, averagePerField: true, subjects, fields });
+
+            expect(result).toEqual({
+                conditionalFormat: {
+                    ranges: [
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 9 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 10 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 12, endColumnIndex: 13 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 14, endColumnIndex: 15 },
+                        { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 15 },
+                    ],
+                    ...conditionalFormat,
+                },
+                merges: [
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 12, endColumnIndex: 14 } },
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 14, endColumnIndex: 16 } },
+                ],
+                updateCells: [
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 9 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 10 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 10, endColumnIndex: 11 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 11, endColumnIndex: 12 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 13, endColumnIndex: 14 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 15, endColumnIndex: 16 },
+                    },
+                ],
+            });
+        });
+
+        it("should build format data without attendance per class or field averages", () => {
+            const result = buildSummaryPeriodFormat({ mappedRange, attendancePerClass: false, averagePerField: false, subjects, fields });
+
+            expect(result).toEqual({
+                conditionalFormat: {
+                    ranges: [
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 10 },
+                        { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 11, endColumnIndex: 12 },
+                        { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 15 },
+                    ],
+                    ...conditionalFormat,
+                },
+                merges: [
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 9, endColumnIndex: 11 } },
+                    { mergeType: "MERGE_ALL", range: { sheetId: 42, startRowIndex: 19, endRowIndex: 20, startColumnIndex: 11, endColumnIndex: 13 } },
+                ],
+                updateCells: [
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 8, endColumnIndex: 9 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 10, endColumnIndex: 11 },
+                    },
+                    {
+                        cell: borderFormat,
+                        fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 12, endColumnIndex: 13 },
+                    },
+                ],
+            });
         });
     });
 });

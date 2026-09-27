@@ -1,7 +1,9 @@
 import { ReportSheetSchema } from "../../common/gas-parts";
 import {
+    buildAddConditionalFormatRuleRequest,
     buildFieldsMask,
     buildMergeCellsRequest,
+    buildRepeatCellRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateColumnWidthRequests,
@@ -13,7 +15,7 @@ import {
     RangeBehavior,
 } from "../../common/gas-utils";
 import type { Range, ReportPersistentData } from "../../common/report-utils";
-import { buildSummaryHeadersData, buildSummaryStudentData, getSummaryColumnWidths } from "../../common/setup-utils";
+import { buildSummaryHeadersData, buildSummaryPeriodFormat, buildSummaryStudentData, getSummaryColumnWidths } from "../../common/setup-utils";
 
 export function prepareSummarySheet(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
@@ -25,11 +27,13 @@ export function prepareSummarySheet(
     // Fill header
     const headerRequests = addHeaders(parsedReport, persistentData, mergeColumns);
 
-    // Fill cntents
+    // Fill contents
     const contentRequests = addContent(parsedReport, persistentData);
 
-    // TODO: Fill periods
-    return [...prepareSheetRequests, ...headerRequests, ...contentRequests];
+    // Add format
+    const formatRequests = setFormat(parsedReport, persistentData);
+
+    return [...prepareSheetRequests, ...headerRequests, ...contentRequests, ...formatRequests];
 }
 
 /**
@@ -101,7 +105,7 @@ function addHeaders(
 
     for (const merge of mergeColumns) {
         const mergeRange = createRange(statusHeadersRange.sheet.properties?.sheetId ?? 0, 0, frozenCols + merge.start, 1, merge.end - merge.start);
-        mergeRequests.push(buildMergeCellsRequest(mergeRange));
+        mergeRequests.push(buildMergeCellsRequest({ range: mergeRange }));
     }
 
     return [...transferResult.requests, ...mergeRequests];
@@ -110,7 +114,6 @@ function addHeaders(
 /**
  * Fills in the content of the sheet
  */
-
 function addContent(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte'");
 
@@ -185,4 +188,40 @@ function addContent(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, p
     }
 
     return requests;
+}
+
+/**
+ * Adds the formatting so things look good.
+ */
+function setFormat(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte'");
+
+    const mappedRangePeriodBundle = [
+        getMappedRange(ReportSheetSchema.sheets.summary.ranges.trim1),
+        getMappedRange(ReportSheetSchema.sheets.summary.ranges.trim2),
+        getMappedRange(ReportSheetSchema.sheets.summary.ranges.trim3),
+    ];
+
+    const repeatCellsRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    const conditionalFormatRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    const mergeRequests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    for (const mappedRange of mappedRangePeriodBundle) {
+        const formatResponse = buildSummaryPeriodFormat({
+            mappedRange,
+            attendancePerClass: persistentData.configData.attendancePerClass,
+            averagePerField: persistentData.configData.averagePerField,
+            subjects: persistentData.subjects.length,
+            fields: persistentData.academicFields.length,
+        });
+        for (const params of formatResponse.updateCells) {
+            repeatCellsRequests.push(buildRepeatCellRequest(params));
+        }
+        conditionalFormatRequests.push(buildAddConditionalFormatRuleRequest(formatResponse.conditionalFormat));
+        for (const params of formatResponse.merges) {
+            mergeRequests.push(buildMergeCellsRequest(params));
+        }
+    }
+
+    return [...repeatCellsRequests, ...conditionalFormatRequests, ...mergeRequests];
 }

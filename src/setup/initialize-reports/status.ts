@@ -286,7 +286,7 @@ function fillStatusSection({
 
     // Merge cells
     for (const mergeRange of mergeRanges) {
-        formatRequests.push(buildMergeCellsRequest(mergeRange, MergeType.MERGE_ROWS));
+        formatRequests.push(buildMergeCellsRequest({ range: mergeRange, mergeType: MergeType.MERGE_ROWS }));
     }
 
     // Borders

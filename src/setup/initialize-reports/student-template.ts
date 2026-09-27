@@ -181,8 +181,8 @@ function adaptSizeAndRanges(parsedReport: ParsedSpreadsheet<typeof ReportSheetSc
     const userCommentRange = offsetGridRange({ origin: commentsOriginalRange, colOffset: 1, width: 3 });
     const sepCommentRange = offsetGridRange({ origin: commentsOriginalRange, colOffset: 8, width: 2 });
 
-    requests.push(buildMergeCellsRequest(userCommentRange, MergeType.MERGE_ROWS));
-    requests.push(buildMergeCellsRequest(sepCommentRange, MergeType.MERGE_ROWS));
+    requests.push(buildMergeCellsRequest({ range: userCommentRange, mergeType: MergeType.MERGE_ROWS }));
+    requests.push(buildMergeCellsRequest({ range: sepCommentRange, mergeType: MergeType.MERGE_ROWS }));
 
     // Add ranges for unprotected parts of the sheet
     const unprotectedRangeOperations: Array<{ origin: RangeName; width: number; name: RangeName }> = [
@@ -311,7 +311,7 @@ function prepareComments(mappedRanges: Partial<Record<RangeName, MappedNamedRang
         averagePerField: persistentData.configData.averagePerField,
     });
 
-    const mergeRequests: GoogleAppsScript.Sheets.Schema.Request[] = mergeRanges.map((range) => buildMergeCellsRequest(range));
+    const mergeRequests: GoogleAppsScript.Sheets.Schema.Request[] = mergeRanges.map((range) => buildMergeCellsRequest({ range }));
 
     if (persistentData.configData.averagePerField) {
         const mergedRange = offsetGridRange({

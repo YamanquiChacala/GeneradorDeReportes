@@ -1,3 +1,5 @@
+import type { MergeType } from "./api-types";
+
 export interface StrictNameRange extends GoogleAppsScript.Sheets.Schema.NamedRange {
     readonly namedRangeId: string;
     readonly name: string;
@@ -56,6 +58,29 @@ export interface ResizeRangeParams {
     readonly colOffset?: number;
     readonly rowBehavior?: RangeBehavior;
     readonly colBehavior?: RangeBehavior;
+}
+
+export interface MergeCellsRequestParams {
+    readonly range: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly mergeType?: MergeType;
+}
+
+export interface ConditionalFormatRuleParams {
+    readonly ranges: GoogleAppsScript.Sheets.Schema.GridRange[];
+    readonly condition: GoogleAppsScript.Sheets.Schema.BooleanCondition;
+    readonly format: GoogleAppsScript.Sheets.Schema.CellFormat;
+}
+
+export interface RepeatCellRequestParams {
+    readonly range: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly cell: GoogleAppsScript.Sheets.Schema.CellData;
+    readonly fields: string;
+}
+
+export interface UpdateCellsRequestParams {
+    readonly destination: GoogleAppsScript.Sheets.Schema.GridRange;
+    readonly data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    readonly fields: string;
 }
 
 export interface RangeOperationResult {
