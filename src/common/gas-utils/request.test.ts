@@ -1,17 +1,20 @@
-import { MergeType, PasteOrientation, PasteType, Style } from "./api-types";
+import { ConditionType, Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
 import {
     addNewNamedRange,
     addNewSheet,
     buildAddBandingRequest,
+    buildAddConditionalFormatRuleRequest,
     buildBorderRequest,
     buildCopyPasteRequest,
     buildMergeCellsRequest,
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
+    buildRepeatCellRequest,
     buildSetBackgroundRequest,
     buildTransferRequests,
     buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
+    buildUpdateColumnWidthRequests,
     buildUpdateSheetPropertiesRequest,
 } from "./request";
 import { BorderSide, type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
@@ -90,7 +93,7 @@ describe("GAS Util, Requests", () => {
     describe("buildMergeCellsRequest", () => {
         it("should build a valid mergeCells request", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildMergeCellsRequest(range, MergeType.MERGE_ROWS);
+            const request = buildMergeCellsRequest({ range, mergeType: MergeType.MERGE_ROWS });
 
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
@@ -99,7 +102,7 @@ describe("GAS Util, Requests", () => {
 
         it("should default to MERGE_ALL", () => {
             const range = { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 };
-            const request = buildMergeCellsRequest(range);
+            const request = buildMergeCellsRequest({ range });
 
             expect(request.mergeCells).toBeDefined();
             expect(request.mergeCells?.range).toBe(range);
@@ -230,6 +233,50 @@ describe("GAS Util, Requests", () => {
                         range: mockRange,
                         rowProperties: mockBandingProperties,
                     },
+                },
+            });
+        });
+    });
+
+    describe("buildAddConditionalFormatRuleRequest", () => {
+        it("should construct a request with the given inputs", () => {
+            const ranges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 },
+                { startRowIndex: 2, endRowIndex: 10, endColumnIndex: 13 },
+            ];
+            const condition: GoogleAppsScript.Sheets.Schema.BooleanCondition = { type: ConditionType.NUMBER_EQ, values: [{ userEnteredValue: "4" }] };
+            const format: GoogleAppsScript.Sheets.Schema.CellFormat = { textFormat: { bold: true } };
+
+            const result = buildAddConditionalFormatRuleRequest({ ranges, condition, format });
+
+            expect(result).toEqual({
+                addConditionalFormatRule: {
+                    index: 0,
+                    rule: {
+                        ranges,
+                        booleanRule: {
+                            condition,
+                            format,
+                        },
+                    },
+                },
+            });
+        });
+    });
+
+    describe("buildRepeatCellRequest", () => {
+        it("should construct a request with the given inputs", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 };
+            const cell: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Test" } };
+            const fields = "userEnteredValue.stringValue";
+
+            const result = buildRepeatCellRequest({ range, cell, fields });
+
+            expect(result).toEqual({
+                repeatCell: {
+                    range,
+                    cell,
+                    fields,
                 },
             });
         });
@@ -561,6 +608,160 @@ describe("GAS Util, Requests", () => {
                         users: ["yamanqui@chacala.school"],
                         groups: [],
                         domainUsersCanEdit: false,
+                    },
+                },
+            ]);
+        });
+    });
+
+    describe("buildUpdateColumnWidthRequests", () => {
+        it("should build a valid updateDimensionProperties request for a single column", () => {
+            const sheetId = 1;
+            const startCol = 0;
+            const colWidths = [100];
+
+            const result = buildUpdateColumnWidthRequests(sheetId, startCol, colWidths);
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.Request[] = [
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 100 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 0,
+                            endIndex: 1,
+                        },
+                    },
+                },
+            ];
+
+            expect(result).toStrictEqual(expectedResult);
+        });
+
+        it("should build individual requests for multiple widths", () => {
+            const sheetId = 9;
+            const startCol = 2;
+            const colWidths = [40, 90, 120];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 40 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 2,
+                            endIndex: 3,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 90 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 3,
+                            endIndex: 4,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 120 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 4,
+                            endIndex: 5,
+                        },
+                    },
+                },
+            ]);
+        });
+
+        it("should return an empty array when no widths are provided", () => {
+            expect(buildUpdateColumnWidthRequests(1, 0, [])).toStrictEqual([]);
+        });
+
+        it("should merge consecutive equal widths into a single range request", () => {
+            const sheetId = 5;
+            const startCol = 3;
+            const colWidths = [100, 100, 80, 80, 80, 120];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 100 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 3,
+                            endIndex: 5,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 80 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 5,
+                            endIndex: 8,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 120 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 8,
+                            endIndex: 9,
+                        },
+                    },
+                },
+            ]);
+        });
+
+        it("should stop processing once a nullish width is encountered", () => {
+            const sheetId = 7;
+            const startCol = 1;
+            const colWidths = [60, 75, null as unknown as number, 110];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 60 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 1,
+                            endIndex: 2,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 75 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 2,
+                            endIndex: 3,
+                        },
                     },
                 },
             ]);

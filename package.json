@@ -3,17 +3,17 @@
   "description": "A simple GAS tool to help my school create student reports.",
   "version": "0.1.0",
   "devDependencies": {
-    "@biomejs/biome": "^2.5.12",
+    "@biomejs/biome": "^2.5.14",
     "@gas-plugin/unplugin": "^0.2.2",
     "@google/clasp": "^3.4.1",
     "@swc/core": "^1.16.2",
     "@swc/jest": "^0.2.39",
     "@types/google-apps-script": "^2.0.13",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.5.1",
+    "@types/node": "^26.6.2",
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.2",
-    "jest": "^30.5.1",
+    "jest": "^30.5.2",
     "typescript": "^7.0.2"
   },
   "scripts": {
@@ -28,8 +28,8 @@
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true,
-    "esbuild@0.28.2": true,
-    "@swc/core@1.16.1": true,
+    "esbuild": true,
+    "@swc/core": true,
     "@parcel/watcher@2.6.0": true
   }
 }

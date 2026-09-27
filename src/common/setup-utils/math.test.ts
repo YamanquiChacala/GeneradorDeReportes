@@ -1,5 +1,5 @@
 import type { AcademicField, WeightedSubject } from "../report-utils";
-import { calculateAttendanceGridSize, calculatePerClassLayout, normalizeSubjectWeights, normalizeTrimesterWeights } from "./math";
+import { calculateAttendanceGridSize, calculatePerClassLayout, getSummaryColumnWidths, normalizeSubjectWeights, normalizeTrimesterWeights } from "./math";
 
 describe("Setup Utils. Math", () => {
     describe("calculateAttendanceGridSize", () => {
@@ -192,6 +192,97 @@ describe("Setup Utils. Math", () => {
                 { subject: "Math", weight: 0.2 },
                 { subject: "Physics", weight: 0.8 },
             ]);
+        });
+    });
+
+    describe("getSummaryColumnWidths", () => {
+        it.each([
+            {
+                name: "general attendance and overall average",
+                attendancePerClass: false,
+                averagePerField: false,
+                expectedWidths: [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 80],
+                expectedMerges: [
+                    { start: 1, end: 3 },
+                    { start: 3, end: 5 },
+                    { start: 5, end: 7 },
+                    { start: 7, end: 9 },
+                    { start: 9, end: 11 },
+                ],
+            },
+            {
+                name: "attendance per class and overall average",
+                attendancePerClass: true,
+                averagePerField: false,
+                expectedWidths: [40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 80],
+                expectedMerges: [
+                    { start: 0, end: 3 },
+                    { start: 3, end: 6 },
+                    { start: 6, end: 9 },
+                    { start: 9, end: 12 },
+                    { start: 12, end: 15 },
+                ],
+            },
+            {
+                name: "general attendance and average per field",
+                attendancePerClass: false,
+                averagePerField: true,
+                expectedWidths: [120, 120, 120, 120, 120, 40, 60, 60, 60, 60, 60, 60, 60, 80],
+                expectedMerges: [
+                    { start: 7, end: 9 },
+                    { start: 9, end: 11 },
+                    { start: 11, end: 13 },
+                ],
+            },
+            {
+                name: "attendance per class and average per field",
+                attendancePerClass: true,
+                averagePerField: true,
+                expectedWidths: [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 40, 60, 60, 60, 60, 60, 60, 80],
+                expectedMerges: [
+                    { start: 0, end: 2 },
+                    { start: 2, end: 4 },
+                    { start: 4, end: 6 },
+                    { start: 6, end: 8 },
+                    { start: 8, end: 10 },
+                    { start: 11, end: 13 },
+                    { start: 13, end: 15 },
+                    { start: 15, end: 17 },
+                ],
+            },
+        ])("generates widths for $name", ({ attendancePerClass, averagePerField, expectedWidths, expectedMerges }) => {
+            const result = getSummaryColumnWidths(attendancePerClass, averagePerField, 5, 3);
+
+            expect(result.columWidths).toEqual(expectedWidths);
+            expect(result.mergeRanges).toEqual(expectedMerges);
+        });
+
+        it("does not add field columns when averagePerField is false", () => {
+            const withNoFields = getSummaryColumnWidths(false, false, 2, 0);
+            const withFields = getSummaryColumnWidths(false, false, 2, 3);
+
+            expect(withFields).toEqual(withNoFields);
+        });
+
+        it("returns only the final average column when there are no subjects or fields", () => {
+            expect(getSummaryColumnWidths(false, false, 0, 0)).toEqual({
+                columWidths: [60, 80],
+                mergeRanges: [],
+            });
+            expect(getSummaryColumnWidths(true, true, 0, 0)).toEqual({
+                columWidths: [40, 80],
+                mergeRanges: [],
+            });
+        });
+
+        it("keeps field columns and merges when there are no subjects", () => {
+            expect(getSummaryColumnWidths(false, true, 0, 2)).toEqual({
+                columWidths: [40, 60, 60, 60, 60, 60, 80],
+                mergeRanges: [
+                    { start: 2, end: 4 },
+                    { start: 4, end: 6 },
+                ],
+            });
         });
     });
 });

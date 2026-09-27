@@ -6,6 +6,12 @@
     "source.fixAll.eslint": "explicit",
     "source.organizeImports.biome": "explicit"
   },
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false
+  },
   "html.validate.styles": false,
   "js/ts.tsserver.experimental.enableProjectDiagnostics": true,
   "js/ts.tsserver.maxMemory": 8192,

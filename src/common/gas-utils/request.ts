@@ -6,15 +6,19 @@ import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
 import {
     type BorderSide,
+    type ConditionalFormatRuleParams,
     type ExtractDynamicRangeNames,
     type ExtractRangeNames,
     type ExtractSheetNames,
     type MappedNamedRange,
+    type MergeCellsRequestParams,
     type NestedSheetSchema,
     type ParsedSpreadsheet,
     RangeBehavior,
     type RangeOperationResult,
+    type RepeatCellRequestParams,
     type StrictNameRange,
+    type UpdateCellsRequestParams,
 } from "./types";
 
 /**
@@ -54,10 +58,7 @@ export function buildSetBackgroundRequest(range: Readonly<GoogleAppsScript.Sheet
 /**
  * Generates batch upate `mergeCells` request.
  */
-export function buildMergeCellsRequest(
-    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
-    mergeType: MergeType = MergeType.MERGE_ALL,
-): GoogleAppsScript.Sheets.Schema.Request {
+export function buildMergeCellsRequest({ range, mergeType = MergeType.MERGE_ALL }: MergeCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request {
     return {
         mergeCells: {
             range,
@@ -126,6 +127,25 @@ export function buildAddBandingRequest(
             bandedRange: {
                 range,
                 rowProperties: bandingProperties,
+            },
+        },
+    };
+}
+
+/**
+ * Generates a batch update request to add a conditional formatting rule to the given ranges.
+ * The rule is inserted at index 0, giving it the highest priority.
+ */
+export function buildAddConditionalFormatRuleRequest({ ranges, condition, format }: ConditionalFormatRuleParams): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        addConditionalFormatRule: {
+            index: 0,
+            rule: {
+                ranges,
+                booleanRule: {
+                    condition,
+                    format,
+                },
             },
         },
     };
@@ -258,34 +278,34 @@ export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number
     return result;
 }
 
-interface ContiguousWidth {
-    width: number;
-    count: number;
-}
+// interface ContiguousWidth {
+//     width: number;
+//     count: number;
+// }
 
-export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
-    const result: ContiguousWidth[] = [];
+// export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
+//     const result: ContiguousWidth[] = [];
 
-    let workingWidth: ContiguousWidth | null = null;
+//     let workingWidth: ContiguousWidth | null = null;
 
-    for (const width of widths) {
-        if (workingWidth == null) {
-            workingWidth = { width, count: 1 };
-        }
-        if (workingWidth.width !== width) {
-            result.push(workingWidth);
-            workingWidth = { width, count: 1 };
-        } else {
-            workingWidth.count++;
-        }
-    }
+//     for (const width of widths) {
+//         if (workingWidth == null) {
+//             workingWidth = { width, count: 1 };
+//         }
+//         if (workingWidth.width !== width) {
+//             result.push(workingWidth);
+//             workingWidth = { width, count: 1 };
+//         } else {
+//             workingWidth.count++;
+//         }
+//     }
 
-    if (workingWidth != null) {
-        result.push(workingWidth);
-    }
+//     if (workingWidth != null) {
+//         result.push(workingWidth);
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
 interface BuildUpdateSheetPropertiesParams {
     readonly sheetId: number;
@@ -364,17 +384,24 @@ export function buildUpdateSheetPropertiesRequest({
     };
 }
 
-interface BuildUpdateCellsRequestParams {
-    readonly destination: GoogleAppsScript.Sheets.Schema.GridRange;
-    readonly data: GoogleAppsScript.Sheets.Schema.CellData[][];
-    readonly fields: string;
+/**
+ * Builds a `repeatCell` request that applies `cell` data across `destination`, updating only the fields selected by `fields`.
+ */
+export function buildRepeatCellRequest({ range, cell, fields }: RepeatCellRequestParams): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        repeatCell: {
+            range,
+            cell,
+            fields,
+        },
+    };
 }
 
 /**
  * Generates a batch update requests to put `data` into the range defined by `destination`.
  * @param fields Mask to see what to copy.
  */
-export function buildUpdateCellsRequest({ destination, data, fields }: BuildUpdateCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
+export function buildUpdateCellsRequest({ destination, data, fields }: UpdateCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request | undefined {
     const startRow = destination.startRowIndex ?? 0;
     const endRow = destination.endRowIndex ?? 0;
     const startCol = destination.startColumnIndex ?? 0;
@@ -417,6 +444,10 @@ interface BuildTransferRequestParams {
     readonly colOffset?: number;
 }
 
+/**
+ * Creates batch requests to resize `destination` according to the row and column behaviors and offsets,
+ * then writes `data` into the destination range.
+ */
 export function buildTransferRequests({
     destination,
     data,

@@ -133,34 +133,79 @@ export function getSummaryColumnWidths(
 ): { columWidths: number[]; mergeRanges: Range[] } {
     const columWidths: number[] = [];
     const mergeRanges: Range[] = [];
+    let currentIndex = 0; // Tracks our position for the merge ranges
 
-    const subjectColumns: number[] = [];
-    const widths = attendancePerClass ? [40, 40, 40] : [60, 60];
-
-    const generalAttendance = attendancePerClass ? [] : [60];
-    const average = 80;
-
-    const subjectOffset = averagePerField ? 0 : generalAttendance.length;
-
-    for (let i = 0; i < subjects; i++) {
-        subjectColumns.push(...widths);
-        mergeRanges.push({ start: subjectOffset + i * widths.length, end: subjectOffset + (i + 1) * widths.length });
+    // Subject Column Widths must add to 120
+    let subjectWidths: number[];
+    if (attendancePerClass && averagePerField) {
+        // 2 columns (Fal, Cal)
+        subjectWidths = [60, 60];
+    } else if (attendancePerClass && !averagePerField) {
+        // 3 columns (Fal, Cal, SEP)
+        subjectWidths = [40, 40, 40];
+    } else if (!attendancePerClass && averagePerField) {
+        // 1 column (Cal)
+        subjectWidths = [120];
+    } else {
+        // 2 columns (Cal, SEP)
+        subjectWidths = [60, 60];
     }
 
+    const fieldWidths = [60, 60]; // Fields always have "Cal" and "SEP"
+    const emptyColumnWidth = 40;
+    const generalAttendanceWidth = 60;
+    const averageWidth = 80;
+
+    // Helper to cleanly push general attendance when appropriate
+    const pushGeneralAttendance = () => {
+        if (!attendancePerClass) {
+            columWidths.push(generalAttendanceWidth);
+            currentIndex += 1;
+        }
+    };
+
+    // Helper to push subjects and their merge ranges
+    const pushSubjects = () => {
+        for (let i = 0; i < subjects; i++) {
+            columWidths.push(...subjectWidths);
+            // We only need a merge range if a subject spans more than 1 column
+            if (subjectWidths.length > 1) {
+                mergeRanges.push({ start: currentIndex, end: currentIndex + subjectWidths.length });
+            }
+            currentIndex += subjectWidths.length;
+        }
+    };
+
+    // Assemble the columns
     if (averagePerField) {
-        const spacer = [40];
+        // Subjects
+        pushSubjects();
 
-        const fieldOffset = subjects * widths.length + 1 + generalAttendance.length;
+        // Empty Column
+        columWidths.push(emptyColumnWidth);
+        currentIndex += 1;
 
-        const fieldColumns: number[] = [];
+        // General Attendance
+        pushGeneralAttendance();
+
+        // Fields
         for (let i = 0; i < fields; i++) {
-            fieldColumns.push(60, 60);
-            mergeRanges.push({ start: fieldOffset + i * 2, end: fieldOffset + (i + 1) * 2 });
+            columWidths.push(...fieldWidths);
+            mergeRanges.push({ start: currentIndex, end: currentIndex + fieldWidths.length });
+            currentIndex += fieldWidths.length;
         }
 
-        columWidths.push(...subjectColumns, ...spacer, ...generalAttendance, ...fieldColumns, average);
+        // Final Average
+        columWidths.push(averageWidth);
     } else {
-        columWidths.push(...generalAttendance, ...subjectColumns, average);
+        // General Attendance
+        pushGeneralAttendance();
+
+        // Subjects
+        pushSubjects();
+
+        // Final Average
+        columWidths.push(averageWidth);
     }
 
     return { columWidths, mergeRanges };
