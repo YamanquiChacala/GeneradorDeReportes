@@ -75,3 +75,14 @@ export function textButton({ text, action, style, backgroundColor }: TextButtonP
     if (goodColor) button.setBackgroundColor(goodColor);
     return button;
 }
+
+interface DecoratedTextParams {
+    readonly text: string;
+    readonly topText?: string;
+    readonly bottomText?: string;
+    readonly startIcon?: GoogleAppsScript.Card_Service.IconImage;
+    readonly endIcon?: GoogleAppsScript.Card_Service.IconImage;
+    readonly action?: GoogleAppsScript.Card_Service.Action;
+}
+
+export function decoratedText({ text, topText, bottomText, startIcon, endIcon, action }: DecoratedTextParams) {}

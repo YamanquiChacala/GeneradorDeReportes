@@ -1,5 +1,6 @@
 import { buildRequestAuthorizationCard, buildWrongSelectionCard, getFileType } from "./common/gas-parts";
 import { FileType } from "./common/gas-utils";
+import { buildReportOptionsMainCard } from "./report/cards";
 import { buildEditSetupFileCard } from "./setup/cards";
 
 /**
@@ -20,7 +21,7 @@ export function buildSheetsCard(e: GoogleAppsScript.Addons.EventObject): GoogleA
         case FileType.SETUP:
             return buildEditSetupFileCard(sheetId);
         case FileType.REPORT:
-        // TODO: Return Card "Report options"
+            return buildReportOptionsMainCard(sheetId);
     }
 
     return buildWrongSelectionCard();

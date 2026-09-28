@@ -27,6 +27,9 @@
 * [ ] Double check the first row is frozen (the student name) 
 * [ ] Check editable ranges for comments
 
+## Cards
+* [ ] Add peekHeader (`newCardHeader`) to all Cards (`card.setPeekCardHeader`)
+
 ## Student Sheets
 
 ## Status
@@ -38,17 +41,56 @@
 * [x] Use `createRequiredGetter` and siplified names everywhere.
 * [ ] Request "sheets.protectedRanges" to be able to edit them from the `protectedRangeId: number`;
 
-# Menu
-## Assistance
-* [ ] Recalculate periods
-* [ ] Insert / Delete days
-* [ ] Add / Remove / Reorder students
+# Menu 
+## Reports
+* [ ] Generate individual report
+    - Dropdown to select student
+    - Text field to set file name
+* [ ] Generate all reports
 
-## Persistant Data
-* [ ] Normalize weights (for grades and subjects) 
-* [ ] Change weights
+## Periods
+* [ ] Set current period
+    - Radio select period (3 in total)
+* [ ] Reset comments
+* [ ] Protect/unprotect period
+    - Checkbox select period(s) (3 in total)
 
-## Deploy
+## Calendar
+* [ ] Add/remove day
+    - Day (range) select
+* [ ] Change period dates
+    - Text field for each period date (3 in total)
+
+## Students
+* [ ] Add student
+    - Full card with all the new studetn's data
+* [ ] Remove student
+    - Dropdown to select student
+* [ ] Reorder student
+    - Dropdown to select student
+    - Dropdown? to select new position
+
+## Grades
+* [ ] Change general weights
+    - Text field for each weight (3 in total)
+* [ ] Change subject weights
+    - Text field for each subject (about 15 in total)
+
+## Subjects / Fields
+* [ ] Rename Subject/Field
+    - Dropdown to select subject/field
+    - Text field to put new name
+* [ ] Reorder Subject/Field
+    - Dropdown to select subject/field
+    - Dropdown? to select new position
+* [ ] Add subject/field
+    - Text field for name
+    - Dropdown? for position
+* [ ] Remove subject/field
+    - Dropdown to select item
+
+
+# Automatic Deploy on GitHub
 * [ ] Update Template
 * [ ] Create script / github action to auto-deploy
 * [ ] Copy ~/.clasprc as a secret
@@ -82,7 +124,8 @@
                 - 🛠️ [`prepareStatusSheet`](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
                 - 🛠️ [`prepareSummarySheet`](../src/setup/initialize-reports/summary.ts) - Prepare the Summary to see the data of each student.
 
-    - 📄 TODO Report file editing (this is the biggest UI entry point)
+    - 📄 [`buildReportOptionsMainCard`](..src/report/cards.ts) - Main 📊 Report Admin Menu
+
 
 
 
@@ -92,4 +135,7 @@
 🔀 (twisted)
 📋 (clipboard)
 📊 (bar-chart)
-
+📅 (date) 
+🧑‍🎓 (student)
+📚 (books)
+⚖️ (balance-scale)

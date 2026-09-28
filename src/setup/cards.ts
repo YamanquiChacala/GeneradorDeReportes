@@ -21,7 +21,9 @@ export const CreateSetupFileParams = defineActionParameters({
  * Presents the user with a form to fill and a button to create the initialization file.
  */
 export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Card_Service.Card {
-    const card = CardService.newCardBuilder().setHeader(headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala" }));
+    const header = headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala" });
+
+    const card = CardService.newCardBuilder().setHeader(header);
 
     const generalSection = CardService.newCardSection().setHeader("Configuración General:");
 
@@ -82,7 +84,7 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
 
     const footer = CardService.newFixedFooter().setPrimaryButton(submitButton);
 
-    return card.addSection(generalSection).addSection(datesSection).setFixedFooter(footer).build();
+    return card.addSection(generalSection).addSection(datesSection).setFixedFooter(footer).setPeekCardHeader(header).build();
 }
 
 export const GenerateCalendarParams = defineActionParameters({
