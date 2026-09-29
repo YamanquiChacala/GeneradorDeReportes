@@ -76,13 +76,69 @@ export function textButton({ text, action, style, backgroundColor }: TextButtonP
     return button;
 }
 
-interface DecoratedTextParams {
+interface DecoratedTextOptions {
     readonly text: string;
     readonly topText?: string;
     readonly bottomText?: string;
     readonly startIcon?: GoogleAppsScript.Card_Service.IconImage;
     readonly endIcon?: GoogleAppsScript.Card_Service.IconImage;
+}
+
+interface DecoratedTextParams extends DecoratedTextOptions {
     readonly action?: GoogleAppsScript.Card_Service.Action;
 }
 
-export function decoratedText({ text, topText, bottomText, startIcon, endIcon, action }: DecoratedTextParams) {}
+/**
+ * Creates a decorated text widget with optional labels, icons, and click action.
+ *
+ * @param params Text and optional display or action settings for the widget.
+ * @returns A configured CardService decorated text widget.
+ */
+export function decoratedText({ text, topText, bottomText, startIcon, endIcon, action }: DecoratedTextParams): GoogleAppsScript.Card_Service.DecoratedText {
+    const decoratedText = CardService.newDecoratedText().setText(text);
+    if (topText) {
+        decoratedText.setTopLabel(topText);
+    }
+    if (bottomText) {
+        decoratedText.setBottomLabel(bottomText);
+    }
+    if (startIcon) {
+        decoratedText.setStartIcon(startIcon);
+    }
+    if (endIcon) {
+        decoratedText.setEndIcon(endIcon);
+    }
+    if (action) {
+        decoratedText.setOnClickAction(action);
+    }
+    return decoratedText;
+}
+
+type ActionParameters = Parameters<GoogleAppsScript.Card_Service.Action["setParameters"]>[0];
+
+interface DecoratedTextWithCallbackParams extends DecoratedTextOptions {
+    readonly callback: string;
+    readonly parameters?: ActionParameters;
+}
+
+/**
+ * Creates a decorated text widget whose click action invokes a named callback.
+ *
+ * @param params Text, callback name, and optional display settings for the widget.
+ * @returns A configured CardService decorated text widget.
+ */
+export function decoratedTextWithCallback({
+    text,
+    callback,
+    parameters,
+    topText,
+    bottomText,
+    startIcon,
+    endIcon,
+}: DecoratedTextWithCallbackParams): GoogleAppsScript.Card_Service.DecoratedText {
+    const action = CardService.newAction().setFunctionName(callback);
+    if (parameters) {
+        action.setParameters(parameters);
+    }
+    return decoratedText({ text, topText, bottomText, startIcon, endIcon, action });
+}
