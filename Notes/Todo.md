@@ -124,7 +124,7 @@
                 - 🛠️ [`prepareStatusSheet`](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
                 - 🛠️ [`prepareSummarySheet`](../src/setup/initialize-reports/summary.ts) - Prepare the Summary to see the data of each student.
 
-    - 📄 [`buildReportOptionsMainCard`](..src/report/cards.ts) - Main 📊 Report Admin Menu
+    - 📄 [`buildReportOptionsMainCard`](../src/report/cards.ts) - Main 📊 Report Admin Menu
 
 
 

@@ -43,6 +43,20 @@ export function initializeReport(setupFileId: string, parentId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: setupFieldsMask });
+
+    // Start replacement.
+    // URL for just the specific range data you need (e.g., 'Sheet1!A1:D10') as a simple array of strings
+    // or array of raw values appending ?valueRenderOption=UNFORMATTED_VALUE
+    // const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${setupFileId}/values/${encodeURIComponent(targetRange)}`;
+
+    // const token = ScriptApp.getOAuthToken();
+    // const headers = { Authorization: `Bearer ${token}` };
+    // const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${setupFileId}?fields=${encodeURIComponent(setupFieldsMask)}`;
+
+    // const responses = UrlFetchApp.fetchAll([{ url: metadataUrl, headers: headers, muteHttpExceptions: true }]);
+    // const SetupSpreadsheet = JSON.parse(responses[0]?.getContentText() ?? "");
+    // End replacement
+
     const { mappedRanges: setupMappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Create report file.
