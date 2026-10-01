@@ -3,6 +3,9 @@ export const SHEETS_EPOCH_OFFSET = 25569; // Days from Dec 30, 1899 (Sheets) to 
 // Key for the Drive property to store what kind of file we're seeing.
 export const FILE_VALIDATION_KEY = "fileType";
 
+// Key for Report Spreadsheet metadata to store the persistent data.
+export const PERSISTENT_DATA_KEY = "reportPersistentData";
+
 // Banding coloring
 export const LIGHT_GREY_COLOR: GoogleAppsScript.Sheets.Schema.Color = { red: 0.98, green: 0.98, blue: 0.98 };
 export const BAND_LIGHT = 0.95;

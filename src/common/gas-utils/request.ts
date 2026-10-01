@@ -1,6 +1,8 @@
+import type { ReportPersistentData } from "../report-utils";
 import { getRandomId } from "../utils";
-import { Dimension, MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
+import { DeveloperMetadataVisibility, Dimension, MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
 import { hexToColor } from "./color";
+import { PERSISTENT_DATA_KEY } from "./constants";
 import { buildFieldsMask, createRequiredGetter } from "./helpers";
 import { resizeMappedRange } from "./mapped-range";
 import { offsetGridRange } from "./range";
@@ -571,6 +573,37 @@ export function buildAddBandingRequest(
                 range,
                 rowProperties: bandingProperties,
             },
+        },
+    };
+}
+
+export function buildAddPersistentMetadata(persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        createDeveloperMetadata: {
+            developerMetadata: {
+                metadataKey: PERSISTENT_DATA_KEY,
+                location: { spreadsheet: true },
+                visibility: DeveloperMetadataVisibility.DOCUMENT,
+                metadataValue: JSON.stringify(persistentData),
+            },
+        },
+    };
+}
+
+export function buildUpdatePersistenMetadata(persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        updateDeveloperMetadata: {
+            dataFilters: [
+                {
+                    developerMetadataLookup: {
+                        metadataKey: PERSISTENT_DATA_KEY,
+                    },
+                },
+            ],
+            developerMetadata: {
+                metadataValue: JSON.stringify(persistentData),
+            },
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DeveloperMetadata>("metadataValue"),
         },
     };
 }
