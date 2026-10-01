@@ -55,17 +55,208 @@ describe("GAS Util, Requests", () => {
         } as unknown as typeof Utilities;
     });
 
-    describe("buildCopyPasteRequest", () => {
-        it("should build a valid copyPaste request with normal orientation", () => {
-            const source = { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 };
-            const destination = { sheetId: 2, startRowIndex: 5, endRowIndex: 10, startColumnIndex: 0, endColumnIndex: 5 };
-            const request = buildCopyPasteRequest(source, destination, PasteType.PASTE_FORMAT);
+    describe("buildUpdateSheetPropertiesRequest", () => {
+        it("should construct a request with only default hideGridlines if no other params provided", () => {
+            const req = buildUpdateSheetPropertiesRequest({ sheetId: 1 });
+            expect(req.updateSheetProperties?.properties?.sheetId).toBe(1);
+            expect(req.updateSheetProperties?.properties?.gridProperties?.hideGridlines).toBe(true);
+            expect(req.updateSheetProperties?.fields).toBe("gridProperties.hideGridlines");
+        });
 
-            expect(request.copyPaste).toBeDefined();
-            expect(request.copyPaste?.source).toBe(source);
-            expect(request.copyPaste?.destination).toBe(destination);
-            expect(request.copyPaste?.pasteType).toBe(PasteType.PASTE_FORMAT);
-            expect(request.copyPaste?.pasteOrientation).toBe(PasteOrientation.NORMAL);
+        it("should accurately map sheet and grid properties and compile the fields mask", () => {
+            const req = buildUpdateSheetPropertiesRequest({
+                sheetId: 5,
+                index: 2,
+                hidden: true,
+                rowCount: 100,
+                columnCount: 20,
+                frozenRowCount: 1,
+                frozenColumnCount: 2,
+                hideGridlines: false,
+            });
+
+            const props = req.updateSheetProperties?.properties;
+            expect(props?.sheetId).toBe(5);
+            expect(props?.index).toBe(2);
+            expect(props?.hidden).toBe(true);
+
+            const gridProps = props?.gridProperties;
+            expect(gridProps?.rowCount).toBe(100);
+            expect(gridProps?.columnCount).toBe(20);
+            expect(gridProps?.frozenRowCount).toBe(1);
+            expect(gridProps?.frozenColumnCount).toBe(2);
+            expect(gridProps?.hideGridlines).toBeUndefined();
+
+            const fields = req.updateSheetProperties?.fields?.split(",") ?? [];
+            expect(fields).toContain("index");
+            expect(fields).toContain("hidden");
+            expect(fields).toContain("gridProperties.rowCount");
+            expect(fields).toContain("gridProperties.frozenColumnCount");
+            expect(fields).not.toContain("gridProperties.hideGridlines");
+        });
+
+        it("should return an empty request if no options are changed", () => {
+            const req = buildUpdateSheetPropertiesRequest({ sheetId: 1, hideGridlines: false });
+            expect(req).toEqual({
+                updateSheetProperties: {
+                    properties: { sheetId: 1 },
+                    fields: "",
+                },
+            });
+        });
+    });
+
+    describe("buildUpdateColumnWidthRequests", () => {
+        it("should build a valid updateDimensionProperties request for a single column", () => {
+            const sheetId = 1;
+            const startCol = 0;
+            const colWidths = [100];
+
+            const result = buildUpdateColumnWidthRequests(sheetId, startCol, colWidths);
+
+            const expectedResult: GoogleAppsScript.Sheets.Schema.Request[] = [
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 100 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 0,
+                            endIndex: 1,
+                        },
+                    },
+                },
+            ];
+
+            expect(result).toStrictEqual(expectedResult);
+        });
+
+        it("should build individual requests for multiple widths", () => {
+            const sheetId = 9;
+            const startCol = 2;
+            const colWidths = [40, 90, 120];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 40 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 2,
+                            endIndex: 3,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 90 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 3,
+                            endIndex: 4,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 120 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 4,
+                            endIndex: 5,
+                        },
+                    },
+                },
+            ]);
+        });
+
+        it("should return an empty array when no widths are provided", () => {
+            expect(buildUpdateColumnWidthRequests(1, 0, [])).toStrictEqual([]);
+        });
+
+        it("should merge consecutive equal widths into a single range request", () => {
+            const sheetId = 5;
+            const startCol = 3;
+            const colWidths = [100, 100, 80, 80, 80, 120];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 100 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 3,
+                            endIndex: 5,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 80 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 5,
+                            endIndex: 8,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 120 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 8,
+                            endIndex: 9,
+                        },
+                    },
+                },
+            ]);
+        });
+
+        it("should stop processing once a nullish width is encountered", () => {
+            const sheetId = 7;
+            const startCol = 1;
+            const colWidths = [60, 75, null as unknown as number, 110];
+
+            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 60 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 1,
+                            endIndex: 2,
+                        },
+                    },
+                },
+                {
+                    updateDimensionProperties: {
+                        properties: { pixelSize: 75 },
+                        fields: "pixelSize",
+                        range: {
+                            sheetId,
+                            dimension: Dimension.COLUMNS,
+                            startIndex: 2,
+                            endIndex: 3,
+                        },
+                    },
+                },
+            ]);
         });
     });
 
@@ -87,6 +278,134 @@ describe("GAS Util, Requests", () => {
             expect(request.repeatCell?.range).toBe(range);
             expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle).toBeDefined();
             expect(request.repeatCell?.cell?.userEnteredFormat?.backgroundColorStyle?.rgbColor).toBeUndefined();
+        });
+    });
+
+    describe("buildRepeatCellRequest", () => {
+        it("should construct a request with the given inputs", () => {
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 };
+            const cell: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Test" } };
+            const fields = "userEnteredValue.stringValue";
+
+            const result = buildRepeatCellRequest({ range, cell, fields });
+
+            expect(result).toEqual({
+                repeatCell: {
+                    range,
+                    cell,
+                    fields,
+                },
+            });
+        });
+    });
+
+    describe("State Mutation: addNewNamedRange", () => {
+        let mockParsedData: ParsedSpreadsheet<MockSchema>;
+
+        beforeEach(() => {
+            mockParsedData = {
+                mappedSheets: {
+                    TemplateSheet: { properties: { sheetId: 12, title: "TemplateSheet" } },
+                    DataSheet: { properties: { sheetId: 42, title: "DataSheet" } },
+                },
+                mappedSheetNamedRanges: { DataSheet: [] },
+                mappedRanges: {},
+                dynamicMappedRanges: { Dyn2: [] },
+                extraSheets: [],
+                usedIds: new Set(),
+            };
+        });
+
+        it("should throw an error if the specified sheet does not exist in mappedSheets", () => {
+            expect(() => {
+                addNewNamedRange({
+                    parsedData: mockParsedData,
+                    // @ts-expect-error - intentionally passing an invalid sheet title to test runtime validation
+                    sheetTitle: "UnknownSheet",
+                    gridRange: { startRowIndex: 0 },
+                    staticRangeKey: "TempRange",
+                });
+            }).toThrow("Adding range name to sheet");
+        });
+
+        it("should successfully add a static named range and update state", () => {
+            const req = addNewNamedRange({
+                parsedData: mockParsedData,
+                sheetTitle: "DataSheet",
+                gridRange: { startRowIndex: 1, endRowIndex: 2 },
+                staticRangeKey: "TempRange",
+            });
+
+            expect(req.addNamedRange?.namedRange?.namedRangeId).toBe("mock-uuid-1234");
+            expect(req.addNamedRange?.namedRange?.name).toBe("TempRange");
+            expect(req.addNamedRange?.namedRange?.range?.sheetId).toBe(42);
+
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
+            expect(mockParsedData.mappedRanges.TempRange).toBeDefined();
+            expect(mockParsedData.mappedRanges.TempRange?.sheet.properties?.sheetId).toBe(42);
+        });
+
+        it("should successfully add a static named range when still not declared in mappedSheetNamedRanges", () => {
+            const req = addNewNamedRange({
+                parsedData: mockParsedData,
+                sheetTitle: "TemplateSheet",
+                gridRange: { startRowIndex: 1, endRowIndex: 2 },
+                staticRangeKey: "TempRange",
+            });
+
+            expect(req.addNamedRange?.namedRange?.namedRangeId).toBe("mock-uuid-1234");
+            expect(req.addNamedRange?.namedRange?.name).toBe("TempRange");
+            expect(req.addNamedRange?.namedRange?.range?.sheetId).toBe(12);
+
+            expect(mockParsedData.mappedSheetNamedRanges.TemplateSheet).toHaveLength(1);
+            expect(mockParsedData.mappedRanges.TempRange).toBeDefined();
+            expect(mockParsedData.mappedRanges.TempRange?.sheet.properties?.sheetId).toBe(12);
+        });
+
+        it("should successfully add a dynamic named range and update state", () => {
+            const req = addNewNamedRange({
+                parsedData: mockParsedData,
+                sheetTitle: "DataSheet",
+                gridRange: { startRowIndex: 5, endRowIndex: 10 },
+                rangeName: "dyn_A_1",
+                dynamicRangeKey: "DynPrefix_",
+            });
+
+            expect(req.addNamedRange?.namedRange?.name).toBe("dyn_A_1");
+
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.DynPrefix_).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.DynPrefix_?.[0]?.namedRange.name).toBe("dyn_A_1");
+        });
+
+        it("should successfully add a dynamic named range and update state", () => {
+            const req = addNewNamedRange({
+                parsedData: mockParsedData,
+                sheetTitle: "DataSheet",
+                gridRange: { startRowIndex: 5, endRowIndex: 10 },
+                rangeName: "dyn2_A_1",
+                dynamicRangeKey: "Dyn2",
+            });
+
+            expect(req.addNamedRange?.namedRange?.name).toBe("dyn2_A_1");
+
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.Dyn2).toHaveLength(1);
+            expect(mockParsedData.dynamicMappedRanges.Dyn2?.[0]?.namedRange.name).toBe("dyn2_A_1");
+        });
+    });
+
+    describe("buildCopyPasteRequest", () => {
+        it("should build a valid copyPaste request with normal orientation", () => {
+            const source = { sheetId: 1, startRowIndex: 0, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: 5 };
+            const destination = { sheetId: 2, startRowIndex: 5, endRowIndex: 10, startColumnIndex: 0, endColumnIndex: 5 };
+            const request = buildCopyPasteRequest(source, destination, PasteType.PASTE_FORMAT);
+
+            expect(request.copyPaste).toBeDefined();
+            expect(request.copyPaste?.source).toBe(source);
+            expect(request.copyPaste?.destination).toBe(destination);
+            expect(request.copyPaste?.pasteType).toBe(PasteType.PASTE_FORMAT);
+            expect(request.copyPaste?.pasteOrientation).toBe(PasteOrientation.NORMAL);
         });
     });
 
@@ -216,123 +535,6 @@ describe("GAS Util, Requests", () => {
         });
     });
 
-    describe("buildAddBandingRequest", () => {
-        it("should correctly build an addBanding request with the provided range and properties", () => {
-            const mockRange = { sheetId: 12345, startRowIndex: 0, endRowIndex: 10, startColumnIndex: 0, endColumnIndex: 5 };
-            const mockBandingProperties = {
-                headerColor: { red: 0.8, green: 0.8, blue: 0.8 },
-                firstBandColor: { red: 1, green: 1, blue: 1 },
-                secondBandColor: { red: 0.9, green: 0.9, blue: 0.9 },
-            };
-
-            const result = buildAddBandingRequest(mockRange, mockBandingProperties);
-
-            expect(result).toEqual({
-                addBanding: {
-                    bandedRange: {
-                        range: mockRange,
-                        rowProperties: mockBandingProperties,
-                    },
-                },
-            });
-        });
-    });
-
-    describe("buildAddConditionalFormatRuleRequest", () => {
-        it("should construct a request with the given inputs", () => {
-            const ranges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
-                { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 },
-                { startRowIndex: 2, endRowIndex: 10, endColumnIndex: 13 },
-            ];
-            const condition: GoogleAppsScript.Sheets.Schema.BooleanCondition = { type: ConditionType.NUMBER_EQ, values: [{ userEnteredValue: "4" }] };
-            const format: GoogleAppsScript.Sheets.Schema.CellFormat = { textFormat: { bold: true } };
-
-            const result = buildAddConditionalFormatRuleRequest({ ranges, condition, format });
-
-            expect(result).toEqual({
-                addConditionalFormatRule: {
-                    index: 0,
-                    rule: {
-                        ranges,
-                        booleanRule: {
-                            condition,
-                            format,
-                        },
-                    },
-                },
-            });
-        });
-    });
-
-    describe("buildRepeatCellRequest", () => {
-        it("should construct a request with the given inputs", () => {
-            const range: GoogleAppsScript.Sheets.Schema.GridRange = { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 };
-            const cell: GoogleAppsScript.Sheets.Schema.CellData = { userEnteredValue: { stringValue: "Test" } };
-            const fields = "userEnteredValue.stringValue";
-
-            const result = buildRepeatCellRequest({ range, cell, fields });
-
-            expect(result).toEqual({
-                repeatCell: {
-                    range,
-                    cell,
-                    fields,
-                },
-            });
-        });
-    });
-
-    describe("buildUpdateSheetPropertiesRequest", () => {
-        it("should construct a request with only default hideGridlines if no other params provided", () => {
-            const req = buildUpdateSheetPropertiesRequest({ sheetId: 1 });
-            expect(req.updateSheetProperties?.properties?.sheetId).toBe(1);
-            expect(req.updateSheetProperties?.properties?.gridProperties?.hideGridlines).toBe(true);
-            expect(req.updateSheetProperties?.fields).toBe("gridProperties.hideGridlines");
-        });
-
-        it("should accurately map sheet and grid properties and compile the fields mask", () => {
-            const req = buildUpdateSheetPropertiesRequest({
-                sheetId: 5,
-                index: 2,
-                hidden: true,
-                rowCount: 100,
-                columnCount: 20,
-                frozenRowCount: 1,
-                frozenColumnCount: 2,
-                hideGridlines: false,
-            });
-
-            const props = req.updateSheetProperties?.properties;
-            expect(props?.sheetId).toBe(5);
-            expect(props?.index).toBe(2);
-            expect(props?.hidden).toBe(true);
-
-            const gridProps = props?.gridProperties;
-            expect(gridProps?.rowCount).toBe(100);
-            expect(gridProps?.columnCount).toBe(20);
-            expect(gridProps?.frozenRowCount).toBe(1);
-            expect(gridProps?.frozenColumnCount).toBe(2);
-            expect(gridProps?.hideGridlines).toBeUndefined();
-
-            const fields = req.updateSheetProperties?.fields?.split(",") ?? [];
-            expect(fields).toContain("index");
-            expect(fields).toContain("hidden");
-            expect(fields).toContain("gridProperties.rowCount");
-            expect(fields).toContain("gridProperties.frozenColumnCount");
-            expect(fields).not.toContain("gridProperties.hideGridlines");
-        });
-
-        it("should return an empty request if no options are changed", () => {
-            const req = buildUpdateSheetPropertiesRequest({ sheetId: 1, hideGridlines: false });
-            expect(req).toEqual({
-                updateSheetProperties: {
-                    properties: { sheetId: 1 },
-                    fields: "",
-                },
-            });
-        });
-    });
-
     describe("buildUpdateCellsRequest", () => {
         it("should return undefined if the range has no rows or columns", () => {
             const zeroRange = { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 };
@@ -359,6 +561,127 @@ describe("GAS Util, Requests", () => {
             expect(rows[0]?.values?.[0]).toEqual({ userEnteredValue: { stringValue: "A1" } });
             expect(rows[0]?.values?.[1]).toEqual({});
             expect(rows[1]?.values?.length).toBe(3);
+        });
+    });
+
+    describe("State Mutation: addNewSheet", () => {
+        let mockParsedData: ParsedSpreadsheet<MockSchema>;
+
+        beforeEach(() => {
+            mockParsedData = {
+                mappedSheets: {
+                    TemplateSheet: { properties: { sheetId: 1 } },
+                    BoundSheet: { properties: {} },
+                },
+                mappedSheetNamedRanges: {
+                    TemplateSheet: [{ namedRangeId: "nr-1", name: "TempRange", range: { sheetId: 1 } }],
+                    BoundSheet: [],
+                },
+                mappedRanges: {},
+                dynamicMappedRanges: {},
+                extraSheets: [],
+                usedIds: new Set(),
+            };
+        });
+
+        it("should handle schema-bound duplication for a NEW sheet, managing state and named ranges", () => {
+            const { requests, newSheetIds } = addNewSheet({
+                parsedData: mockParsedData,
+                sourceSheetTitle: "TemplateSheet",
+                insertSheetIndex: 2,
+                schemaSheetName: "DataSheet",
+            });
+
+            expect(requests.length).toBeGreaterThan(0);
+            expect(requests[0]?.deleteNamedRange?.namedRangeId).toBe("nr-1");
+            expect(requests[1]?.duplicateSheet?.newSheetName).toBe("DataSheet");
+            expect(requests[2]?.addNamedRange?.namedRange?.namedRangeId).toBe("nr-1");
+
+            expect(newSheetIds).toEqual([9999]);
+            expect(mockParsedData.mappedSheets.DataSheet).toBeDefined();
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toEqual([]);
+            expect(mockParsedData.extraSheets).toHaveLength(0);
+        });
+
+        it("should delete existing schema-bound sheet and its named ranges before duplication", () => {
+            // Setup existing sheet and named ranges in the parsed data
+            mockParsedData.mappedSheets.DataSheet = { properties: { sheetId: 555 } };
+            mockParsedData.mappedSheetNamedRanges.DataSheet = [
+                { namedRangeId: "old-nr-1", name: "OldRange", range: { sheetId: 555 } },
+                { namedRangeId: "old-nr-2", name: "OldRangeTwo", range: { sheetId: 555 } },
+            ];
+
+            const { requests, newSheetIds } = addNewSheet({
+                parsedData: mockParsedData,
+                sourceSheetTitle: "TemplateSheet",
+                insertSheetIndex: 2,
+                schemaSheetName: "DataSheet",
+            });
+
+            // Analyze the sequence of generated requests
+            // const deleteTemplateNrReq = requests[0];
+            const deleteOldNr1Req = requests[1];
+            const deleteOldNr2Req = requests[2];
+            const deleteOldSheetReq = requests[3];
+            const duplicateReq = requests[4];
+            // const restoreTemplateNrReq = requests[5];
+
+            // Assertions on the specific deletion logic
+            expect(deleteOldNr1Req?.deleteNamedRange?.namedRangeId).toBe("old-nr-1");
+            expect(deleteOldNr2Req?.deleteNamedRange?.namedRangeId).toBe("old-nr-2");
+            expect(deleteOldSheetReq?.deleteSheet?.sheetId).toBe(555);
+
+            // Assert duplication still happens correctly
+            expect(duplicateReq?.duplicateSheet?.newSheetName).toBe("DataSheet");
+            expect(duplicateReq?.duplicateSheet?.insertSheetIndex).toBe(2);
+
+            // Assert State mutations
+            expect(newSheetIds).toEqual([9999]);
+            // The old sheet object should be replaced with the new one (having the mocked 9999 ID)
+            expect(mockParsedData.mappedSheets.DataSheet?.properties?.sheetId).toBe(9999);
+            // The old named ranges should be wiped clean for the new sheet
+            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toEqual([]);
+        });
+
+        it("should handle non-schema multiple sheet duplications", () => {
+            const { requests, newSheetIds } = addNewSheet({
+                parsedData: mockParsedData,
+                sourceSheetTitle: "BoundSheet",
+                insertSheetIndex: 2,
+                multipleSheetNames: ["ExtraOne", "ExtraTwo"],
+            });
+
+            expect(newSheetIds).toEqual([9999, 9999]);
+            expect(requests.filter((r) => r.duplicateSheet)).toHaveLength(2);
+
+            expect(mockParsedData.extraSheets).toHaveLength(2);
+            expect(mockParsedData.extraSheets[0]?.properties?.title).toBe("ExtraOne");
+        });
+    });
+
+    describe("buildAddConditionalFormatRuleRequest", () => {
+        it("should construct a request with the given inputs", () => {
+            const ranges: GoogleAppsScript.Sheets.Schema.GridRange[] = [
+                { sheetId: 5, endRowIndex: 3, endColumnIndex: 7 },
+                { startRowIndex: 2, endRowIndex: 10, endColumnIndex: 13 },
+            ];
+            const condition: GoogleAppsScript.Sheets.Schema.BooleanCondition = { type: ConditionType.NUMBER_EQ, values: [{ userEnteredValue: "4" }] };
+            const format: GoogleAppsScript.Sheets.Schema.CellFormat = { textFormat: { bold: true } };
+
+            const result = buildAddConditionalFormatRuleRequest({ ranges, condition, format });
+
+            expect(result).toEqual({
+                addConditionalFormatRule: {
+                    index: 0,
+                    rule: {
+                        ranges,
+                        booleanRule: {
+                            condition,
+                            format,
+                        },
+                    },
+                },
+            });
         });
     });
 
@@ -614,157 +937,25 @@ describe("GAS Util, Requests", () => {
         });
     });
 
-    describe("buildUpdateColumnWidthRequests", () => {
-        it("should build a valid updateDimensionProperties request for a single column", () => {
-            const sheetId = 1;
-            const startCol = 0;
-            const colWidths = [100];
+    describe("buildAddBandingRequest", () => {
+        it("should correctly build an addBanding request with the provided range and properties", () => {
+            const mockRange = { sheetId: 12345, startRowIndex: 0, endRowIndex: 10, startColumnIndex: 0, endColumnIndex: 5 };
+            const mockBandingProperties = {
+                headerColor: { red: 0.8, green: 0.8, blue: 0.8 },
+                firstBandColor: { red: 1, green: 1, blue: 1 },
+                secondBandColor: { red: 0.9, green: 0.9, blue: 0.9 },
+            };
 
-            const result = buildUpdateColumnWidthRequests(sheetId, startCol, colWidths);
+            const result = buildAddBandingRequest(mockRange, mockBandingProperties);
 
-            const expectedResult: GoogleAppsScript.Sheets.Schema.Request[] = [
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 100 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 0,
-                            endIndex: 1,
-                        },
+            expect(result).toEqual({
+                addBanding: {
+                    bandedRange: {
+                        range: mockRange,
+                        rowProperties: mockBandingProperties,
                     },
                 },
-            ];
-
-            expect(result).toStrictEqual(expectedResult);
-        });
-
-        it("should build individual requests for multiple widths", () => {
-            const sheetId = 9;
-            const startCol = 2;
-            const colWidths = [40, 90, 120];
-
-            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 40 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 2,
-                            endIndex: 3,
-                        },
-                    },
-                },
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 90 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 3,
-                            endIndex: 4,
-                        },
-                    },
-                },
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 120 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 4,
-                            endIndex: 5,
-                        },
-                    },
-                },
-            ]);
-        });
-
-        it("should return an empty array when no widths are provided", () => {
-            expect(buildUpdateColumnWidthRequests(1, 0, [])).toStrictEqual([]);
-        });
-
-        it("should merge consecutive equal widths into a single range request", () => {
-            const sheetId = 5;
-            const startCol = 3;
-            const colWidths = [100, 100, 80, 80, 80, 120];
-
-            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 100 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 3,
-                            endIndex: 5,
-                        },
-                    },
-                },
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 80 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 5,
-                            endIndex: 8,
-                        },
-                    },
-                },
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 120 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 8,
-                            endIndex: 9,
-                        },
-                    },
-                },
-            ]);
-        });
-
-        it("should stop processing once a nullish width is encountered", () => {
-            const sheetId = 7;
-            const startCol = 1;
-            const colWidths = [60, 75, null as unknown as number, 110];
-
-            expect(buildUpdateColumnWidthRequests(sheetId, startCol, colWidths)).toStrictEqual([
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 60 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 1,
-                            endIndex: 2,
-                        },
-                    },
-                },
-                {
-                    updateDimensionProperties: {
-                        properties: { pixelSize: 75 },
-                        fields: "pixelSize",
-                        range: {
-                            sheetId,
-                            dimension: Dimension.COLUMNS,
-                            startIndex: 2,
-                            endIndex: 3,
-                        },
-                    },
-                },
-            ]);
+            });
         });
     });
 
@@ -848,197 +1039,6 @@ describe("GAS Util, Requests", () => {
             expect(hasUpdateReq).toBe(false);
 
             expect(mockDestination.namedRange.range.endRowIndex).toBe(0);
-        });
-    });
-
-    describe("State Mutation: addNewSheet", () => {
-        let mockParsedData: ParsedSpreadsheet<MockSchema>;
-
-        beforeEach(() => {
-            mockParsedData = {
-                mappedSheets: {
-                    TemplateSheet: { properties: { sheetId: 1 } },
-                    BoundSheet: { properties: {} },
-                },
-                mappedSheetNamedRanges: {
-                    TemplateSheet: [{ namedRangeId: "nr-1", name: "TempRange", range: { sheetId: 1 } }],
-                    BoundSheet: [],
-                },
-                mappedRanges: {},
-                dynamicMappedRanges: {},
-                extraSheets: [],
-                usedIds: new Set(),
-            };
-        });
-
-        it("should handle schema-bound duplication for a NEW sheet, managing state and named ranges", () => {
-            const { requests, newSheetIds } = addNewSheet({
-                parsedData: mockParsedData,
-                sourceSheetTitle: "TemplateSheet",
-                insertSheetIndex: 2,
-                schemaSheetName: "DataSheet",
-            });
-
-            expect(requests.length).toBeGreaterThan(0);
-            expect(requests[0]?.deleteNamedRange?.namedRangeId).toBe("nr-1");
-            expect(requests[1]?.duplicateSheet?.newSheetName).toBe("DataSheet");
-            expect(requests[2]?.addNamedRange?.namedRange?.namedRangeId).toBe("nr-1");
-
-            expect(newSheetIds).toEqual([9999]);
-            expect(mockParsedData.mappedSheets.DataSheet).toBeDefined();
-            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toEqual([]);
-            expect(mockParsedData.extraSheets).toHaveLength(0);
-        });
-
-        it("should delete existing schema-bound sheet and its named ranges before duplication", () => {
-            // Setup existing sheet and named ranges in the parsed data
-            mockParsedData.mappedSheets.DataSheet = { properties: { sheetId: 555 } };
-            mockParsedData.mappedSheetNamedRanges.DataSheet = [
-                { namedRangeId: "old-nr-1", name: "OldRange", range: { sheetId: 555 } },
-                { namedRangeId: "old-nr-2", name: "OldRangeTwo", range: { sheetId: 555 } },
-            ];
-
-            const { requests, newSheetIds } = addNewSheet({
-                parsedData: mockParsedData,
-                sourceSheetTitle: "TemplateSheet",
-                insertSheetIndex: 2,
-                schemaSheetName: "DataSheet",
-            });
-
-            // Analyze the sequence of generated requests
-            // const deleteTemplateNrReq = requests[0];
-            const deleteOldNr1Req = requests[1];
-            const deleteOldNr2Req = requests[2];
-            const deleteOldSheetReq = requests[3];
-            const duplicateReq = requests[4];
-            // const restoreTemplateNrReq = requests[5];
-
-            // Assertions on the specific deletion logic
-            expect(deleteOldNr1Req?.deleteNamedRange?.namedRangeId).toBe("old-nr-1");
-            expect(deleteOldNr2Req?.deleteNamedRange?.namedRangeId).toBe("old-nr-2");
-            expect(deleteOldSheetReq?.deleteSheet?.sheetId).toBe(555);
-
-            // Assert duplication still happens correctly
-            expect(duplicateReq?.duplicateSheet?.newSheetName).toBe("DataSheet");
-            expect(duplicateReq?.duplicateSheet?.insertSheetIndex).toBe(2);
-
-            // Assert State mutations
-            expect(newSheetIds).toEqual([9999]);
-            // The old sheet object should be replaced with the new one (having the mocked 9999 ID)
-            expect(mockParsedData.mappedSheets.DataSheet?.properties?.sheetId).toBe(9999);
-            // The old named ranges should be wiped clean for the new sheet
-            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toEqual([]);
-        });
-
-        it("should handle non-schema multiple sheet duplications", () => {
-            const { requests, newSheetIds } = addNewSheet({
-                parsedData: mockParsedData,
-                sourceSheetTitle: "BoundSheet",
-                insertSheetIndex: 2,
-                multipleSheetNames: ["ExtraOne", "ExtraTwo"],
-            });
-
-            expect(newSheetIds).toEqual([9999, 9999]);
-            expect(requests.filter((r) => r.duplicateSheet)).toHaveLength(2);
-
-            expect(mockParsedData.extraSheets).toHaveLength(2);
-            expect(mockParsedData.extraSheets[0]?.properties?.title).toBe("ExtraOne");
-        });
-    });
-
-    describe("State Mutation: addNewNamedRange", () => {
-        let mockParsedData: ParsedSpreadsheet<MockSchema>;
-
-        beforeEach(() => {
-            mockParsedData = {
-                mappedSheets: {
-                    TemplateSheet: { properties: { sheetId: 12, title: "TemplateSheet" } },
-                    DataSheet: { properties: { sheetId: 42, title: "DataSheet" } },
-                },
-                mappedSheetNamedRanges: { DataSheet: [] },
-                mappedRanges: {},
-                dynamicMappedRanges: { Dyn2: [] },
-                extraSheets: [],
-                usedIds: new Set(),
-            };
-        });
-
-        it("should throw an error if the specified sheet does not exist in mappedSheets", () => {
-            expect(() => {
-                addNewNamedRange({
-                    parsedData: mockParsedData,
-                    // @ts-expect-error - intentionally passing an invalid sheet title to test runtime validation
-                    sheetTitle: "UnknownSheet",
-                    gridRange: { startRowIndex: 0 },
-                    staticRangeKey: "TempRange",
-                });
-            }).toThrow("Adding range name to sheet");
-        });
-
-        it("should successfully add a static named range and update state", () => {
-            const req = addNewNamedRange({
-                parsedData: mockParsedData,
-                sheetTitle: "DataSheet",
-                gridRange: { startRowIndex: 1, endRowIndex: 2 },
-                staticRangeKey: "TempRange",
-            });
-
-            expect(req.addNamedRange?.namedRange?.namedRangeId).toBe("mock-uuid-1234");
-            expect(req.addNamedRange?.namedRange?.name).toBe("TempRange");
-            expect(req.addNamedRange?.namedRange?.range?.sheetId).toBe(42);
-
-            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
-            expect(mockParsedData.mappedRanges.TempRange).toBeDefined();
-            expect(mockParsedData.mappedRanges.TempRange?.sheet.properties?.sheetId).toBe(42);
-        });
-
-        it("should successfully add a static named range when still not declared in mappedSheetNamedRanges", () => {
-            const req = addNewNamedRange({
-                parsedData: mockParsedData,
-                sheetTitle: "TemplateSheet",
-                gridRange: { startRowIndex: 1, endRowIndex: 2 },
-                staticRangeKey: "TempRange",
-            });
-
-            expect(req.addNamedRange?.namedRange?.namedRangeId).toBe("mock-uuid-1234");
-            expect(req.addNamedRange?.namedRange?.name).toBe("TempRange");
-            expect(req.addNamedRange?.namedRange?.range?.sheetId).toBe(12);
-
-            expect(mockParsedData.mappedSheetNamedRanges.TemplateSheet).toHaveLength(1);
-            expect(mockParsedData.mappedRanges.TempRange).toBeDefined();
-            expect(mockParsedData.mappedRanges.TempRange?.sheet.properties?.sheetId).toBe(12);
-        });
-
-        it("should successfully add a dynamic named range and update state", () => {
-            const req = addNewNamedRange({
-                parsedData: mockParsedData,
-                sheetTitle: "DataSheet",
-                gridRange: { startRowIndex: 5, endRowIndex: 10 },
-                rangeName: "dyn_A_1",
-                dynamicRangeKey: "DynPrefix_",
-            });
-
-            expect(req.addNamedRange?.namedRange?.name).toBe("dyn_A_1");
-
-            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.DynPrefix_).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.DynPrefix_?.[0]?.namedRange.name).toBe("dyn_A_1");
-        });
-
-        it("should successfully add a dynamic named range and update state", () => {
-            const req = addNewNamedRange({
-                parsedData: mockParsedData,
-                sheetTitle: "DataSheet",
-                gridRange: { startRowIndex: 5, endRowIndex: 10 },
-                rangeName: "dyn2_A_1",
-                dynamicRangeKey: "Dyn2",
-            });
-
-            expect(req.addNamedRange?.namedRange?.name).toBe("dyn2_A_1");
-
-            expect(mockParsedData.mappedSheetNamedRanges.DataSheet).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.Dyn2).toHaveLength(1);
-            expect(mockParsedData.dynamicMappedRanges.Dyn2?.[0]?.namedRange.name).toBe("dyn2_A_1");
         });
     });
 });
