@@ -78,6 +78,8 @@ export function fillPersistentData(
         subjects,
     };
 
+    // Add persistentData to report metadata
+
     return { persistentData, requests };
 }
 

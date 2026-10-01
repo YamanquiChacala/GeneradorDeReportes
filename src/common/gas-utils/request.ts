@@ -21,292 +21,6 @@ import {
     type UpdateCellsRequestParams,
 } from "./types";
 
-/**
- * Generates batch update `copyPaste` request to copy data from `origin` into `destination` ranges.
- */
-export function buildCopyPasteRequest(
-    source: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
-    destination: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
-    pasteType: PasteType,
-): GoogleAppsScript.Sheets.Schema.Request {
-    return {
-        copyPaste: {
-            source,
-            destination,
-            pasteType,
-            pasteOrientation: PasteOrientation.NORMAL,
-        },
-    };
-}
-
-/**
- * Generates batch update `repeatCell` to set the background color.
- */
-export function buildSetBackgroundRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, hexColor: string): GoogleAppsScript.Sheets.Schema.Request {
-    const rgbColor = hexToColor(hexColor) ?? undefined;
-    return {
-        repeatCell: {
-            range,
-            cell: {
-                userEnteredFormat: { backgroundColorStyle: { rgbColor } },
-            },
-            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.backgroundColorStyle.rgbColor"),
-        },
-    };
-}
-
-/**
- * Generates batch upate `mergeCells` request.
- */
-export function buildMergeCellsRequest({ range, mergeType = MergeType.MERGE_ALL }: MergeCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request {
-    return {
-        mergeCells: {
-            range,
-            mergeType,
-        },
-    };
-}
-
-/**
- * Generates batch update `unmergeCells` request.
- */
-export function buildUnmergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>): GoogleAppsScript.Sheets.Schema.Request {
-    return {
-        unmergeCells: {
-            range,
-        },
-    };
-}
-
-/**
- * Generates batch update `updateBorders` request.
- */
-export function buildBorderRequest(
-    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
-    hexColor: string,
-    sides: BorderSide | BorderSide[],
-): GoogleAppsScript.Sheets.Schema.Request {
-    const black: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 0, blue: 0, alpha: 1 };
-    const rgbColor = hexToColor(hexColor) ?? black;
-
-    // Define the border style once
-    const borderStyle: GoogleAppsScript.Sheets.Schema.Border = {
-        style: Style.SOLID,
-        colorStyle: { rgbColor },
-    };
-
-    // Normalize the input to always be an array
-    const sidesArray = Array.isArray(sides) ? sides : [sides];
-
-    // Dynamically build the sides configuration
-    const borderConfig = sidesArray.reduce(
-        (acc, side) => {
-            acc[side] = borderStyle;
-            return acc;
-        },
-        {} as Partial<GoogleAppsScript.Sheets.Schema.UpdateBordersRequest>,
-    );
-
-    return {
-        updateBorders: {
-            range,
-            ...borderConfig,
-        },
-    };
-}
-
-/**
- * Generate batch update `addBanding` request.
- */
-export function buildAddBandingRequest(
-    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
-    bandingProperties: Readonly<GoogleAppsScript.Sheets.Schema.BandingProperties>,
-): GoogleAppsScript.Sheets.Schema.Request {
-    return {
-        addBanding: {
-            bandedRange: {
-                range,
-                rowProperties: bandingProperties,
-            },
-        },
-    };
-}
-
-/**
- * Generates a batch update request to add a conditional formatting rule to the given ranges.
- * The rule is inserted at index 0, giving it the highest priority.
- */
-export function buildAddConditionalFormatRuleRequest({ ranges, condition, format }: ConditionalFormatRuleParams): GoogleAppsScript.Sheets.Schema.Request {
-    return {
-        addConditionalFormatRule: {
-            index: 0,
-            rule: {
-                ranges,
-                booleanRule: {
-                    condition,
-                    format,
-                },
-            },
-        },
-    };
-}
-
-/**
- * Generates batch updates to either modify or create a protectedRange.
- */
-export function buildProtectSheetRequest<T extends NestedSheetSchema>(
-    parsedData: ParsedSpreadsheet<T>,
-    sheetName: ExtractSheetNames<T>,
-    owner: string,
-    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
-): GoogleAppsScript.Sheets.Schema.Request {
-    const getSheet = createRequiredGetter(parsedData.mappedSheets, "hoja para proteger");
-    const sheet = getSheet(sheetName);
-
-    return buildSingleSheetProtectRequest(sheet, parsedData.usedIds, owner, unprotectedRanges);
-}
-
-/**
- * Generates batch updates to add or modify protectedRanges of a series of sheets.
- */
-export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
-    parsedData: ParsedSpreadsheet<T>,
-    owner: string,
-    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
-): GoogleAppsScript.Sheets.Schema.Request[] {
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-
-    for (const sheet of parsedData.extraSheets) {
-        const sheetId = sheet.properties?.sheetId ?? 0;
-        const sheetUnprotectedRanges = unprotectedRanges?.map((range) => offsetGridRange({ origin: range, sheetId }));
-        requests.push(buildSingleSheetProtectRequest(sheet, parsedData.usedIds, owner, sheetUnprotectedRanges));
-    }
-
-    return requests;
-}
-
-/**
- * Helper function to generate a protect request for a single sheet.
- * Mutates the sheet.protectedRanges property in place.
- */
-function buildSingleSheetProtectRequest(
-    sheet: GoogleAppsScript.Sheets.Schema.Sheet,
-    usedIds: Set<number>,
-    owner: string,
-    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
-): GoogleAppsScript.Sheets.Schema.Request {
-    const sheetId = sheet.properties?.sheetId;
-    const sheetName = sheet.properties?.title;
-    const protectedRanges = sheet.protectedRanges;
-
-    const newProtectedRange: GoogleAppsScript.Sheets.Schema.ProtectedRange = {
-        range: { sheetId },
-        description: sheetName,
-        warningOnly: false,
-        unprotectedRanges,
-        editors: {
-            users: [owner],
-            groups: [],
-            domainUsersCanEdit: false,
-        },
-    };
-
-    let request: GoogleAppsScript.Sheets.Schema.Request;
-
-    if (!protectedRanges || protectedRanges.length === 0) {
-        newProtectedRange.protectedRangeId = getRandomId(usedIds);
-        request = { addProtectedRange: { protectedRange: newProtectedRange } };
-    } else if (protectedRanges.length !== 1) {
-        throw new Error("Demasiados rangos protegidos en la hoja.");
-    } else {
-        newProtectedRange.protectedRangeId = protectedRanges[0]?.protectedRangeId;
-        request = {
-            updateProtectedRange: {
-                protectedRange: newProtectedRange,
-                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.ProtectedRange>("range", "description", "warningOnly", "unprotectedRanges"),
-            },
-        };
-    }
-
-    // Update the sheet object
-    sheet.protectedRanges = [newProtectedRange];
-
-    return request;
-}
-
-/**
- * Generates batch update for UpdateDimensionProperties to modify the width of the columns of a sheet.
- */
-export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number, colWidths: number[]): GoogleAppsScript.Sheets.Schema.Request[] {
-    interface WidthRange {
-        width: number;
-        start: number;
-        end: number;
-    }
-
-    const widthRanges: WidthRange[] = [];
-
-    for (let i = 0; i < colWidths.length; i++) {
-        const width = colWidths[i];
-        if (width == null) break;
-
-        const last = widthRanges[widthRanges.length - 1];
-        if (last && last.width === width) {
-            last.end = i + 1;
-        } else {
-            widthRanges.push({ width, start: i, end: i + 1 });
-        }
-    }
-
-    const result: GoogleAppsScript.Sheets.Schema.Request[] = [];
-
-    for (const widthRange of widthRanges) {
-        result.push({
-            updateDimensionProperties: {
-                properties: { pixelSize: widthRange.width },
-                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DimensionProperties>("pixelSize"),
-                range: {
-                    sheetId,
-                    dimension: Dimension.COLUMNS,
-                    startIndex: startCol + widthRange.start,
-                    endIndex: startCol + widthRange.end,
-                },
-            },
-        });
-    }
-
-    return result;
-}
-
-// interface ContiguousWidth {
-//     width: number;
-//     count: number;
-// }
-
-// export function getContiguousWidth(widths: number[]): ContiguousWidth[] {
-//     const result: ContiguousWidth[] = [];
-
-//     let workingWidth: ContiguousWidth | null = null;
-
-//     for (const width of widths) {
-//         if (workingWidth == null) {
-//             workingWidth = { width, count: 1 };
-//         }
-//         if (workingWidth.width !== width) {
-//             result.push(workingWidth);
-//             workingWidth = { width, count: 1 };
-//         } else {
-//             workingWidth.count++;
-//         }
-//     }
-
-//     if (workingWidth != null) {
-//         result.push(workingWidth);
-//     }
-
-//     return result;
-// }
-
 interface BuildUpdateSheetPropertiesParams {
     readonly sheetId: number;
     readonly index?: number;
@@ -385,6 +99,66 @@ export function buildUpdateSheetPropertiesRequest({
 }
 
 /**
+ * Generates batch update for UpdateDimensionProperties to modify the width of the columns of a sheet.
+ */
+export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number, colWidths: number[]): GoogleAppsScript.Sheets.Schema.Request[] {
+    interface WidthRange {
+        width: number;
+        start: number;
+        end: number;
+    }
+
+    const widthRanges: WidthRange[] = [];
+
+    for (let i = 0; i < colWidths.length; i++) {
+        const width = colWidths[i];
+        if (width == null) break;
+
+        const last = widthRanges[widthRanges.length - 1];
+        if (last && last.width === width) {
+            last.end = i + 1;
+        } else {
+            widthRanges.push({ width, start: i, end: i + 1 });
+        }
+    }
+
+    const result: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    for (const widthRange of widthRanges) {
+        result.push({
+            updateDimensionProperties: {
+                properties: { pixelSize: widthRange.width },
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DimensionProperties>("pixelSize"),
+                range: {
+                    sheetId,
+                    dimension: Dimension.COLUMNS,
+                    startIndex: startCol + widthRange.start,
+                    endIndex: startCol + widthRange.end,
+                },
+            },
+        });
+    }
+
+    return result;
+}
+
+/**
+ * Generates batch update `repeatCell` to set the background color.
+ */
+export function buildSetBackgroundRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>, hexColor: string): GoogleAppsScript.Sheets.Schema.Request {
+    const rgbColor = hexToColor(hexColor) ?? undefined;
+    return {
+        repeatCell: {
+            range,
+            cell: {
+                userEnteredFormat: { backgroundColorStyle: { rgbColor } },
+            },
+            fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.backgroundColorStyle.rgbColor"),
+        },
+    };
+}
+
+/**
  * Builds a `repeatCell` request that applies `cell` data across `destination`, updating only the fields selected by `fields`.
  */
 export function buildRepeatCellRequest({ range, cell, fields }: RepeatCellRequestParams): GoogleAppsScript.Sheets.Schema.Request {
@@ -393,6 +167,152 @@ export function buildRepeatCellRequest({ range, cell, fields }: RepeatCellReques
             range,
             cell,
             fields,
+        },
+    };
+}
+
+interface BaseAddNamedRangeParams<T extends NestedSheetSchema> {
+    readonly parsedData: ParsedSpreadsheet<T>;
+    readonly sheetTitle: ExtractSheetNames<T>;
+    readonly gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
+}
+
+interface AddStaticNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
+    readonly staticRangeKey: ExtractRangeNames<T>;
+    readonly rangeName?: never;
+    readonly dynamicRangeKey?: never;
+}
+
+interface AddDynamicNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
+    readonly staticRangeKey?: never;
+    readonly rangeName: string;
+    readonly dynamicRangeKey: ExtractDynamicRangeNames<T>;
+}
+
+type AddNamedRangeParams<T extends NestedSheetSchema> = AddStaticNamedRangeParams<T> | AddDynamicNamedRangeParams<T>;
+
+/**
+ * Adds a new named range, both to the spreadsheet, and to memory.
+ */
+export function addNewNamedRange<T extends NestedSheetSchema>({
+    parsedData,
+    sheetTitle,
+    gridRange,
+    staticRangeKey,
+    rangeName,
+    dynamicRangeKey,
+}: AddNamedRangeParams<T>): GoogleAppsScript.Sheets.Schema.Request {
+    const getSheet = createRequiredGetter(parsedData.mappedSheets, "Adding range name to sheet");
+    const sheet = getSheet(sheetTitle);
+
+    gridRange.sheetId = sheet.properties?.sheetId;
+
+    const finalRangeName = rangeName ?? staticRangeKey;
+
+    const newStricNamedRange: StrictNameRange = {
+        namedRangeId: Utilities.getUuid(),
+        name: finalRangeName,
+        range: gridRange,
+    };
+
+    const newMappedNamedRange: MappedNamedRange = {
+        namedRange: newStricNamedRange,
+        sheet: sheet,
+    };
+
+    if (!parsedData.mappedSheetNamedRanges[sheetTitle]) {
+        parsedData.mappedSheetNamedRanges[sheetTitle] = [];
+    }
+    parsedData.mappedSheetNamedRanges[sheetTitle].push(newStricNamedRange);
+
+    if (staticRangeKey) {
+        const key = staticRangeKey as ExtractRangeNames<T>;
+        parsedData.mappedRanges[key] = newMappedNamedRange;
+    } else {
+        const key = dynamicRangeKey as ExtractDynamicRangeNames<T>;
+        if (!parsedData.dynamicMappedRanges[key]) {
+            parsedData.dynamicMappedRanges[key] = [];
+        }
+        parsedData.dynamicMappedRanges[key].push(newMappedNamedRange);
+    }
+
+    return { addNamedRange: { namedRange: newStricNamedRange } };
+}
+
+/**
+ * Generates batch update `copyPaste` request to copy data from `origin` into `destination` ranges.
+ */
+export function buildCopyPasteRequest(
+    source: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    destination: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    pasteType: PasteType,
+): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        copyPaste: {
+            source,
+            destination,
+            pasteType,
+            pasteOrientation: PasteOrientation.NORMAL,
+        },
+    };
+}
+
+/**
+ * Generates batch upate `mergeCells` request.
+ */
+export function buildMergeCellsRequest({ range, mergeType = MergeType.MERGE_ALL }: MergeCellsRequestParams): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        mergeCells: {
+            range,
+            mergeType,
+        },
+    };
+}
+
+/**
+ * Generates batch update `unmergeCells` request.
+ */
+export function buildUnmergeCellsRequest(range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        unmergeCells: {
+            range,
+        },
+    };
+}
+
+/**
+ * Generates batch update `updateBorders` request.
+ */
+export function buildBorderRequest(
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    hexColor: string,
+    sides: BorderSide | BorderSide[],
+): GoogleAppsScript.Sheets.Schema.Request {
+    const black: GoogleAppsScript.Sheets.Schema.Color = { red: 0, green: 0, blue: 0, alpha: 1 };
+    const rgbColor = hexToColor(hexColor) ?? black;
+
+    // Define the border style once
+    const borderStyle: GoogleAppsScript.Sheets.Schema.Border = {
+        style: Style.SOLID,
+        colorStyle: { rgbColor },
+    };
+
+    // Normalize the input to always be an array
+    const sidesArray = Array.isArray(sides) ? sides : [sides];
+
+    // Dynamically build the sides configuration
+    const borderConfig = sidesArray.reduce(
+        (acc, side) => {
+            acc[side] = borderStyle;
+            return acc;
+        },
+        {} as Partial<GoogleAppsScript.Sheets.Schema.UpdateBordersRequest>,
+    );
+
+    return {
+        updateBorders: {
+            range,
+            ...borderConfig,
         },
     };
 }
@@ -431,61 +351,6 @@ export function buildUpdateCellsRequest({ destination, data, fields }: UpdateCel
             rows: finalRowData,
             fields: fields,
         },
-    };
-}
-
-interface BuildTransferRequestParams {
-    readonly destination: MappedNamedRange;
-    readonly data: GoogleAppsScript.Sheets.Schema.CellData[][];
-    readonly fields: string;
-    readonly rowBehavior?: RangeBehavior;
-    readonly colBehavior?: RangeBehavior;
-    readonly rowOffset?: number;
-    readonly colOffset?: number;
-}
-
-/**
- * Creates batch requests to resize `destination` according to the row and column behaviors and offsets,
- * then writes `data` into the destination range.
- */
-export function buildTransferRequests({
-    destination,
-    data,
-    fields,
-    rowBehavior = RangeBehavior.IGNORE,
-    colBehavior = RangeBehavior.IGNORE,
-    rowOffset = 0,
-    colOffset = 0,
-}: BuildTransferRequestParams): RangeOperationResult {
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
-
-    const dataRows = data.length;
-    const dataCols = dataRows > 0 ? Math.max(...data.map((row) => row.length)) : 0;
-
-    const resizeResult = resizeMappedRange({
-        target: destination,
-        targetRows: dataRows,
-        targetCols: dataCols,
-        rowOffset,
-        colOffset,
-        rowBehavior,
-        colBehavior,
-    });
-
-    requests.push(...resizeResult.requests);
-
-    const updateRequest = buildUpdateCellsRequest({
-        destination: destination.namedRange.range,
-        data,
-        fields,
-    });
-
-    if (updateRequest) requests.push(updateRequest);
-
-    return {
-        requests,
-        rowOffset: resizeResult.rowOffset,
-        colOffset: resizeResult.colOffset,
     };
 }
 
@@ -591,70 +456,176 @@ export function addNewSheet<T extends NestedSheetSchema>({
     return { requests, newSheetIds };
 }
 
-interface BaseAddNamedRangeParams<T extends NestedSheetSchema> {
-    readonly parsedData: ParsedSpreadsheet<T>;
-    readonly sheetTitle: ExtractSheetNames<T>;
-    readonly gridRange: GoogleAppsScript.Sheets.Schema.GridRange;
+/**
+ * Generates a batch update request to add a conditional formatting rule to the given ranges.
+ * The rule is inserted at index 0, giving it the highest priority.
+ */
+export function buildAddConditionalFormatRuleRequest({ ranges, condition, format }: ConditionalFormatRuleParams): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        addConditionalFormatRule: {
+            index: 0,
+            rule: {
+                ranges,
+                booleanRule: {
+                    condition,
+                    format,
+                },
+            },
+        },
+    };
 }
-
-interface AddStaticNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
-    readonly staticRangeKey: ExtractRangeNames<T>;
-    readonly rangeName?: never;
-    readonly dynamicRangeKey?: never;
-}
-
-interface AddDynamicNamedRangeParams<T extends NestedSheetSchema> extends BaseAddNamedRangeParams<T> {
-    readonly staticRangeKey?: never;
-    readonly rangeName: string;
-    readonly dynamicRangeKey: ExtractDynamicRangeNames<T>;
-}
-
-type AddNamedRangeParams<T extends NestedSheetSchema> = AddStaticNamedRangeParams<T> | AddDynamicNamedRangeParams<T>;
 
 /**
- * Adds a new named range, both to the spreadsheet, and to memory.
+ * Generates batch updates to either modify or create a protectedRange.
  */
-export function addNewNamedRange<T extends NestedSheetSchema>({
-    parsedData,
-    sheetTitle,
-    gridRange,
-    staticRangeKey,
-    rangeName,
-    dynamicRangeKey,
-}: AddNamedRangeParams<T>): GoogleAppsScript.Sheets.Schema.Request {
-    const getSheet = createRequiredGetter(parsedData.mappedSheets, "Adding range name to sheet");
-    const sheet = getSheet(sheetTitle);
+export function buildProtectSheetRequest<T extends NestedSheetSchema>(
+    parsedData: ParsedSpreadsheet<T>,
+    sheetName: ExtractSheetNames<T>,
+    owner: string,
+    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
+): GoogleAppsScript.Sheets.Schema.Request {
+    const getSheet = createRequiredGetter(parsedData.mappedSheets, "hoja para proteger");
+    const sheet = getSheet(sheetName);
 
-    gridRange.sheetId = sheet.properties?.sheetId;
+    return buildSingleSheetProtectRequest(sheet, parsedData.usedIds, owner, unprotectedRanges);
+}
 
-    const finalRangeName = rangeName ?? staticRangeKey;
+/**
+ * Generates batch updates to add or modify protectedRanges of a series of sheets.
+ */
+export function buildProtectExtraSheetRequests<T extends NestedSheetSchema>(
+    parsedData: ParsedSpreadsheet<T>,
+    owner: string,
+    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
+): GoogleAppsScript.Sheets.Schema.Request[] {
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
-    const newStricNamedRange: StrictNameRange = {
-        namedRangeId: Utilities.getUuid(),
-        name: finalRangeName,
-        range: gridRange,
-    };
-
-    const newMappedNamedRange: MappedNamedRange = {
-        namedRange: newStricNamedRange,
-        sheet: sheet,
-    };
-
-    if (!parsedData.mappedSheetNamedRanges[sheetTitle]) {
-        parsedData.mappedSheetNamedRanges[sheetTitle] = [];
+    for (const sheet of parsedData.extraSheets) {
+        const sheetId = sheet.properties?.sheetId ?? 0;
+        const sheetUnprotectedRanges = unprotectedRanges?.map((range) => offsetGridRange({ origin: range, sheetId }));
+        requests.push(buildSingleSheetProtectRequest(sheet, parsedData.usedIds, owner, sheetUnprotectedRanges));
     }
-    parsedData.mappedSheetNamedRanges[sheetTitle].push(newStricNamedRange);
 
-    if (staticRangeKey) {
-        const key = staticRangeKey as ExtractRangeNames<T>;
-        parsedData.mappedRanges[key] = newMappedNamedRange;
+    return requests;
+}
+
+/**
+ * Helper function to generate a protect request for a single sheet.
+ * Mutates the sheet.protectedRanges property in place.
+ */
+function buildSingleSheetProtectRequest(
+    sheet: GoogleAppsScript.Sheets.Schema.Sheet,
+    usedIds: Set<number>,
+    owner: string,
+    unprotectedRanges?: GoogleAppsScript.Sheets.Schema.GridRange[],
+): GoogleAppsScript.Sheets.Schema.Request {
+    const sheetId = sheet.properties?.sheetId;
+    const sheetName = sheet.properties?.title;
+    const protectedRanges = sheet.protectedRanges;
+
+    const newProtectedRange: GoogleAppsScript.Sheets.Schema.ProtectedRange = {
+        range: { sheetId },
+        description: sheetName,
+        warningOnly: false,
+        unprotectedRanges,
+        editors: {
+            users: [owner],
+            groups: [],
+            domainUsersCanEdit: false,
+        },
+    };
+
+    let request: GoogleAppsScript.Sheets.Schema.Request;
+
+    if (!protectedRanges || protectedRanges.length === 0) {
+        newProtectedRange.protectedRangeId = getRandomId(usedIds);
+        request = { addProtectedRange: { protectedRange: newProtectedRange } };
+    } else if (protectedRanges.length !== 1) {
+        throw new Error("Demasiados rangos protegidos en la hoja.");
     } else {
-        const key = dynamicRangeKey as ExtractDynamicRangeNames<T>;
-        if (!parsedData.dynamicMappedRanges[key]) {
-            parsedData.dynamicMappedRanges[key] = [];
-        }
-        parsedData.dynamicMappedRanges[key].push(newMappedNamedRange);
+        newProtectedRange.protectedRangeId = protectedRanges[0]?.protectedRangeId;
+        request = {
+            updateProtectedRange: {
+                protectedRange: newProtectedRange,
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.ProtectedRange>("range", "description", "warningOnly", "unprotectedRanges"),
+            },
+        };
     }
 
-    return { addNamedRange: { namedRange: newStricNamedRange } };
+    // Update the sheet object
+    sheet.protectedRanges = [newProtectedRange];
+
+    return request;
+}
+
+/**
+ * Generate batch update `addBanding` request.
+ */
+export function buildAddBandingRequest(
+    range: Readonly<GoogleAppsScript.Sheets.Schema.GridRange>,
+    bandingProperties: Readonly<GoogleAppsScript.Sheets.Schema.BandingProperties>,
+): GoogleAppsScript.Sheets.Schema.Request {
+    return {
+        addBanding: {
+            bandedRange: {
+                range,
+                rowProperties: bandingProperties,
+            },
+        },
+    };
+}
+
+interface BuildTransferRequestParams {
+    readonly destination: MappedNamedRange;
+    readonly data: GoogleAppsScript.Sheets.Schema.CellData[][];
+    readonly fields: string;
+    readonly rowBehavior?: RangeBehavior;
+    readonly colBehavior?: RangeBehavior;
+    readonly rowOffset?: number;
+    readonly colOffset?: number;
+}
+
+/**
+ * Creates batch requests to resize `destination` according to the row and column behaviors and offsets,
+ * then writes `data` into the destination range.
+ */
+export function buildTransferRequests({
+    destination,
+    data,
+    fields,
+    rowBehavior = RangeBehavior.IGNORE,
+    colBehavior = RangeBehavior.IGNORE,
+    rowOffset = 0,
+    colOffset = 0,
+}: BuildTransferRequestParams): RangeOperationResult {
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+
+    const dataRows = data.length;
+    const dataCols = dataRows > 0 ? Math.max(...data.map((row) => row.length)) : 0;
+
+    const resizeResult = resizeMappedRange({
+        target: destination,
+        targetRows: dataRows,
+        targetCols: dataCols,
+        rowOffset,
+        colOffset,
+        rowBehavior,
+        colBehavior,
+    });
+
+    requests.push(...resizeResult.requests);
+
+    const updateRequest = buildUpdateCellsRequest({
+        destination: destination.namedRange.range,
+        data,
+        fields,
+    });
+
+    if (updateRequest) requests.push(updateRequest);
+
+    return {
+        requests,
+        rowOffset: resizeResult.rowOffset,
+        colOffset: resizeResult.colOffset,
+    };
 }
