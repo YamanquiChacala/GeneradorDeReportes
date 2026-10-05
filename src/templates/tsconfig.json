@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "composite": true,
+    "declaration": true
+  },
+  "include": ["**/*.tsx", "**/*.ts"]
+}
