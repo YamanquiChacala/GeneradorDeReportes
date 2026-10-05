@@ -49,27 +49,13 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
 
     const datesSection = CardService.newCardSection().setHeader("Calendario Escolar");
 
-    datesSection.addWidget(
-        CardService.newDatePicker().setValueInMsSinceEpoch(1787961600000).setFieldName(CreateSetupFileInputs.fieldName("dateStart")).setTitle("Primer dia de clases"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateStart")).setTitle("Primer dia de clases"));
 
-    datesSection.addWidget(
-        CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1793491200000)
-            .setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester1"))
-            .setTitle("Último día del primer trimestre"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester1")).setTitle("Último día del primer trimestre"));
 
-    datesSection.addWidget(
-        CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1797292800000)
-            .setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester2"))
-            .setTitle("Último día del segundo trimestre"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester2")).setTitle("Último día del segundo trimestre"));
 
-    datesSection.addWidget(
-        CardService.newDatePicker().setValueInMsSinceEpoch(1812326400000).setFieldName(CreateSetupFileInputs.fieldName("dateEnd")).setTitle("Último día de clases"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateEnd")).setTitle("Último día de clases"));
 
     const createAction = CardService.newAction()
         .setFunctionName(onCreateSetupFile.name)

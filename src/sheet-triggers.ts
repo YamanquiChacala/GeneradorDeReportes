@@ -21,7 +21,7 @@ export function buildSheetsCard(e: GoogleAppsScript.Addons.EventObject): GoogleA
         case FileType.SETUP:
             return buildEditSetupFileCard(sheetId);
         case FileType.REPORT:
-            return buildReportOptionsMainCard(sheetId);
+            return buildReportOptionsMainCard();
     }
 
     return buildWrongSelectionCard();

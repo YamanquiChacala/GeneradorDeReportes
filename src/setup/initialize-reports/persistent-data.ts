@@ -1,6 +1,7 @@
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
+    buildAddPersistentMetadata,
     buildFieldsMask,
     buildTransferRequests,
     buildUpdateSheetPropertiesRequest,
@@ -61,9 +62,6 @@ export function fillPersistentData(
         index: 0,
     });
 
-    // Build response
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...subjectRequests, ...studentRequests, ...calendarDaysRequests, propertiesRequest];
-
     // Build memory version of the persistent data, for use without calling get again.
     const persistentData: ReportPersistentData = {
         protectedSections: {
@@ -79,6 +77,17 @@ export function fillPersistentData(
     };
 
     // Add persistentData to report metadata
+    const persistentMetadataRequest = buildAddPersistentMetadata(persistentData);
+
+    // Build response
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [
+        ...configRequests,
+        ...subjectRequests,
+        ...studentRequests,
+        ...calendarDaysRequests,
+        propertiesRequest,
+        persistentMetadataRequest,
+    ];
 
     return { persistentData, requests };
 }

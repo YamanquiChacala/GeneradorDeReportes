@@ -77,7 +77,7 @@ export function getInputs<T extends Record<string, InputType>>(formInputs: GASFo
     const result: Record<string, unknown> = {};
 
     for (const [key, expectedType] of Object.entries(schema)) {
-        const rawField = formInputs[key];
+        const rawField = formInputs?.[key];
 
         // Boolean (Checkboxe, Switch). Anything except "false" or and empty string is true
         if (expectedType === InputType.BOOLEAN) {
