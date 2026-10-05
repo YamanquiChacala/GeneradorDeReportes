@@ -6,6 +6,7 @@
     "@biomejs/biome": "^2.5.14",
     "@gas-plugin/unplugin": "^0.2.2",
     "@google/clasp": "^3.4.1",
+    "@kitajs/html": "^4.2.13",
     "@swc/core": "^1.16.2",
     "@swc/jest": "^0.2.39",
     "@types/google-apps-script": "^2.0.13",
@@ -14,8 +15,6 @@
     "cross-env": "^10.1.0",
     "esbuild": "^0.28.2",
     "jest": "^30.5.2",
-    "preact": "^11.0.0",
-    "preact-render-to-string": "^6.8.0",
     "typescript": "^7.0.2"
   },
   "scripts": {

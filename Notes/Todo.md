@@ -123,8 +123,9 @@
                 - 🛠️ [`createStudentSheets`](../src/setup/initialize-reports/student-sheets.ts) - Create copies of the student template for each student.
                 - 🛠️ [`prepareStatusSheet`](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
                 - 🛠️ [`prepareSummarySheet`](../src/setup/initialize-reports/summary.ts) - Prepare the Summary to see the data of each student.
-
     - 📄 [`buildReportOptionsMainCard`](../src/report/cards.ts) - Main 📊 Report Admin Menu
+        - 📄 [`buildReportCreateReportsCard`](../src/report/cards.ts) - Menu to create student reports
+            - ⚡ [`onGenerateIndividualReport`](../src/report/callbacks.ts) - Saves a PDF report of the selected student
 
 
 

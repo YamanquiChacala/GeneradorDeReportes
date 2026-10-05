@@ -1,85 +1,59 @@
-import { renderToString } from "preact-render-to-string";
-
-export function generatePdfFromSpreadsheetData(data: ReportProps): GoogleAppsScript.HTML.HtmlOutput {
-    // 1. Render TSX component directly to an HTML string at runtime
-    const htmlString = renderToString(ReportTemplate(data));
-
-    // 2. Convert HTML string to PDF Blob
-    return HtmlService.createHtmlOutput(htmlString);
-
+// src/templates/reportTemplate.tsx
+interface Grade {
+    subject: string;
+    score: number;
+}
+export interface ReportData {
+    studentName: string;
+    fontBase64: string;
+    photoBase64?: string;
+    grades: Grade[];
+    comments?: string;
 }
 
-interface LineItem {
-    description: string;
-    quantity: number;
-    unitPrice: number;
-}
+const GradesTable = ({ grades }: { grades: Grade[] }) => (
+    <table>
+        <tbody>
+            {grades.map((g) => (
+                <tr>
+                    <td safe>{g.subject}</td>
+                    <td>{g.score}</td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+);
 
-interface ReportProps {
-    title: string;
-    clientName: string;
-    items: LineItem[];
-    notes?: string;
-}
+const Report = ({ data }: { data: ReportData }) => (
+    <html lang="es">
+        <head>
+            <style>
+                {`
+        @font-face {
+            font-family: 'Montserrat';
+            font-style: normal;
+            font-weight: 400;
+            src: url('${data.fontBase64}') format('truetype');
+        }
+        
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-size: .6rem;
+            color: #333;
+        }`}
+            </style>
+        </head>
+        <body>
+            <h1 safe>{data.studentName}</h1>
+            {data.photoBase64 && <img src={`${data.photoBase64}`} alt="nada" />}
+            <GradesTable grades={data.grades} />
+            {data.comments && <p safe>{data.comments}</p>}
+        </body>
+    </html>
+);
 
-export function ReportTemplate({ title, clientName, items, notes }: ReportProps) {
-    const total = items.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
-
-    return (
-        <html>
-            <head>
-                <style>{`
-          @page { size: A4; margin: 20mm; }
-          body { font-family: Arial, sans-serif; color: #333; line-height: 1.4; }
-          .header { display: flex; justify-content: space-between; align-items: center; }
-          .logo { height: 50px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-          th { background-color: #f4f4f4; }
-          .total { text-align: right; font-weight: bold; margin-top: 15px; }
-        `}</style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>{title}</h1>
-                    {/* <img src={logoUrl} class="logo" alt="Logo" /> */}
-                </div>
-
-                <p>
-                    <strong>Prepared for:</strong> {clientName}
-                </p>
-
-                {/* Dynamic Table: Rows adapt cleanly depending on input data */}
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {items.map((item, idx) => (
-                            <tr key={idx}>
-                                <td>{item.description}</td>
-                                <td>{item.quantity}</td>
-                                <td>${item.unitPrice.toFixed(2)}</td>
-                                <td>${(item.quantity * item.unitPrice).toFixed(2)}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                <div class="total">Total Amount: ${total.toFixed(2)}</div>
-
-                {/* Conditionally rendered section */}
-                {notes && (
-                    <div style={{ marginTop: "30px", padding: "10px", background: "#f9f9f9" }}>
-                        <strong>Notes:</strong> {notes}
-                    </div>
-                )}
-            </body>
-        </html>
-    );
+export function renderReport(data: ReportData): string {
+    const out = <Report data={data} />;
+    if (typeof out !== "string") throw new Error("Async components aren't supported");
+    return out;
 }

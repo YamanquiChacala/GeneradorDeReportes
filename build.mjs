@@ -8,16 +8,7 @@ build({
     format: "esm",
     target: "es2019", // TODO: Try 2020, but it could break things.
     jsx: "automatic",
-    jsxImportSource: "preact",
-    loader: {
-        ".png": "dataurl",
-        ".jpg": "dataurl",
-        ".jpeg": "dataurl",
-        ".svg": "dataurl",
-        ".woff": "dataurl",
-        ".woff2": "dataurl",
-        ".ttf": "dataurl",
-    },
+    jsxImportSource: "@kitajs/html",
     plugins: [
         gasPlugin({
             manifest: "src/appsscript.json",

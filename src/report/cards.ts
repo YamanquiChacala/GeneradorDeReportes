@@ -81,7 +81,7 @@ export function buildReportOptionsMainCard(): GoogleAppsScript.Card_Service.Card
 /**
  * Report creation card
  */
-export function reportCreateReportsCard(persistentData: ReportPersistentData): GoogleAppsScript.Card_Service.Card {
+export function buildReportCreateReportsCard(persistentData: ReportPersistentData): GoogleAppsScript.Card_Service.Card {
     const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Generación de Reportes", iconName: Icon.PAGE }));
 
     // Generate all reports
