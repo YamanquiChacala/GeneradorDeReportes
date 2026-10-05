@@ -5,7 +5,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!!**/dist", "!!src/templates/**/*", "!!**/*base64*"]
+    "includes": ["**", "!!**/dist", "!!**/*base64*", "!!images/**/*"]
   },
   "formatter": {
     "enabled": true,
