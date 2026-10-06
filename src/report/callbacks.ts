@@ -1,5 +1,5 @@
 import { getInputs } from "../common/gas-utils";
-import { Base64Fonts, Base64Images } from "../common/utils/base64-constants";
+import { Base64Images } from "../common/utils/base64-constants";
 import { type ReportData, renderReport } from "../templates/reportTemplate";
 import { buildReportCreateReportsCard, StudentReportInputs } from "./cards";
 import { loadReportPersistentData } from "./load";
@@ -39,7 +39,6 @@ export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObjec
 
     const data: ReportData = {
         studentName: "Yamanqui",
-        fontBase64: Base64Fonts.MONTSERRAT_REGULAR,
         photoBase64: Base64Images.SCHOOL,
         grades: [
             { subject: "Español", score: 9 },

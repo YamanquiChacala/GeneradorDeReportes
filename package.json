@@ -22,6 +22,7 @@
     "test": "jest",
     "test:all": "npm run typecheck && jest",
     "test:coverage": "npm run typecheck && jest --coverage && node append-theme.cjs",
+    "prebuild": "node generate-css.mjs",
     "build": "npm run test && node build.mjs",
     "push": "npm run build && clasp push",
     "lint": "biome check .",

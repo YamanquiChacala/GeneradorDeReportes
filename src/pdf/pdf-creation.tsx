@@ -1,6 +1,9 @@
 import { Colors } from "../common/gas-utils";
+import type { AcademicField } from "../common/report-utils";
 import { Base64Fonts, Base64Images } from "../common/utils/base64-constants";
 import { Templates } from "./types";
+
+type Grades = [number | null, number | null, number | null, number | null];
 
 interface StudentData {
     start_year: string;
@@ -13,46 +16,48 @@ interface StudentData {
     grade: string;
     level: string;
     absences?: number;
-    p1_average?: number;
-    p2_average?: number;
-    p3_average?: number;
-    pf_average?: number;
-    groups: CourseGroup[];
-    courses: CourseComment[];
-    images: {
-        sep: string;
-        school: string;
-        signature: string;
-    };
-    fonts: {
-        regular: string;
-        bold: string;
-        italic: string;
-    };
+    averages: Grades;
+    academicFields: AcademicField[];
+    subjects: subjectGrades[];
+    comments: CourseComment[];
 }
 
-interface CourseGroup {
+interface subjectGrades {
     name: string;
-    color: string;
-    courses: CourseGrades[];
-}
-
-interface CourseGrades {
-    name: string;
-    p1?: number;
-    p2?: number;
-    p3?: number;
-    final?: number;
-    h1: string;
-    h2: string;
-    h3: string;
-    h4: string;
+    grades: Grades;
+    habilities: [string | null, string | null, string | null];
 }
 
 interface CourseComment {
     name: string;
     absences?: number;
     comment: string;
+}
+
+export function getHTMLreport(data: StudentData): string {
+    const out = (
+        <html lang="es">
+            <body>
+                <Table grade={[1, 2, 3, 4]} />
+            </body>
+        </html>
+    );
+    if (typeof out !== "string") throw new Error("Async components aren't supported");
+    return out;
+}
+
+function Table({ grade }: { grade: Grades }): JSX.Element {
+    return (
+        <table>
+            <tbody>
+                {grade.map((g) => (
+                    <tr>
+                        <td safe>{g}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
 }
 
 interface MyTemplate extends GoogleAppsScript.HTML.HtmlTemplate {

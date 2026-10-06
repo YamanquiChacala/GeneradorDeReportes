@@ -1,11 +1,11 @@
-// src/templates/reportTemplate.tsx
+import { REPORT_CSS_STYLE } from "./report.css";
+
 interface Grade {
     subject: string;
     score: number;
 }
 export interface ReportData {
     studentName: string;
-    fontBase64: string;
     photoBase64?: string;
     grades: Grade[];
     comments?: string;
@@ -27,21 +27,7 @@ const GradesTable = ({ grades }: { grades: Grade[] }) => (
 const Report = ({ data }: { data: ReportData }) => (
     <html lang="es">
         <head>
-            <style>
-                {`
-        @font-face {
-            font-family: 'Montserrat';
-            font-style: normal;
-            font-weight: 400;
-            src: url('${data.fontBase64}') format('truetype');
-        }
-        
-        body {
-            font-family: 'Montserrat', Arial, sans-serif;
-            font-size: .6rem;
-            color: #333;
-        }`}
-            </style>
+            <style>{REPORT_CSS_STYLE}</style>
         </head>
         <body>
             <h1 safe>{data.studentName}</h1>
