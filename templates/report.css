@@ -201,6 +201,14 @@ th.no-padding {
     padding: 0;
 }
 
+td p:first-child {
+    margin-top: 0;
+}
+
+td p:last-child {
+    margin-bottom: 0;
+}
+
 /* 6. Page 2+ Pagination Rules */
 .page-break {
     break-before: always;

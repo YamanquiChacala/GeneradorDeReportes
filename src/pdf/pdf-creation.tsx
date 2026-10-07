@@ -54,7 +54,7 @@ export function getHTMLreport(data: StudentData): string {
         </html>
     );
     if (typeof out !== "string") throw new Error("Async components aren't supported");
-    return out;
+    return `<!DOCTYPE html>${out}`;
 }
 
 function DocHead(): JSX.Element {
@@ -146,9 +146,7 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
                         <th style="width: 8%;">2º</th>
                         <th style="width: 8%;">3º</th>
                         <th style="width: 8%;" class="average">
-                            Media
-                            <br />
-                            final
+                            Final
                         </th>
                     </tr>
                 </thead>
@@ -157,16 +155,20 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
                         field.subjects.map((subject, index) => (
                             <tr>
                                 {index === 0 && (
-                                    <th rowspan={field.subjects.length} style={{ backgroundColor: field.color }}>
+                                    <th rowspan={field.subjects.length} style={{ backgroundColor: field.color }} safe>
                                         {field.name}
                                     </th>
                                 )}
-                                <td class="course">{subject.name}</td>
-                                {subject.grades.map((grade) => (
-                                    <td class={grade != null && grade <= 5 ? "failed" : ""}>{grade}</td>
+                                <td class="course" safe>
+                                    {subject.name}
+                                </td>
+                                {subject.grades.map((grade, gradeIndex) => (
+                                    <td class={`${grade !== null && grade <= 5 ? "failed" : ""} ${gradeIndex === 3 ? "average" : ""}`}>{grade}</td>
                                 ))}
                                 {subject.habilities.map((mark) => (
-                                    <td class={mark === "R" ? "failed" : ""}>{mark}</td>
+                                    <td class={mark === "R" ? "failed" : ""} safe>
+                                        {mark}
+                                    </td>
                                 ))}
                             </tr>
                         )),
@@ -226,7 +228,7 @@ function NoticeRight(): JSX.Element {
                 <tfoot>
                     <tr>
                         <td class="yellow">
-                            <b>E</b>=Excelente -<b>B</b>=Bueno -<b>S</b>=Suficiente -<b>R</b>=Requiere apoyo
+                            <b>E</b>=Excelente - <b>B</b>=Bueno - <b>S</b>=Suficiente - <b>R</b>=Requiere apoyo
                         </td>
                     </tr>
                 </tfoot>
@@ -240,7 +242,7 @@ function NoticeRight(): JSX.Element {
                 </thead>
                 <tbody>
                     <tr>
-                        <td class="text-left" style="width: 90%;">
+                        <td class="text-left" style={{ width: "90%" }}>
                             Indica <b>dominio sobresaliente</b> de los aprendizajes esperados. La/el estudiante ha demostrado los conocimientos, habilidades, actitudes y
                             valores requeridos con un alto grado de efectividad.
                         </td>
@@ -318,28 +320,31 @@ function Comments(props: { start: number; end: number; date: string; period: str
                         <th colspan="3" class="seaparation no-padding">
                             <div class="header">
                                 <div class="header-images">
-                                    <img src="<?!= data.images.sep ?>" alt="Secretaría de Educación" />
-                                    <img src="<?!= data.images.school ?>" alt="Montessori Chacala" />
+                                    <img src={Base64Images.SEP} alt="Secretaría de Educación" />
+                                    <img src={Base64Images.SCHOOL} alt="Montessori Chacala" />
                                 </div>
                                 <div class="header-title">
                                     Reporte de evaluación
                                     <br />
                                     <div class="header-dates">
-                                        Ciclo escolar
-                                        {props.start}-{props.end}
+                                        Ciclo escolar {props.start} - {props.end}
                                     </div>
                                 </div>
                             </div>
                         </th>
                     </tr>
                     <tr>
-                        <th style={{ minWidth: "7em" }}>{props.period}</th>
+                        <th style={{ minWidth: "7em" }} safe>
+                            {props.period}
+                        </th>
                         {props.absences == null ? (
-                            <th colspan="2">{props.date}</th>
+                            <th colspan="2" safe>
+                                {props.date}
+                            </th>
                         ) : (
                             <>
-                                <th style="min-width: 4.4em;">Faltas: {props.absences}</th>
-                                <th>{props.date}</th>
+                                <th style={{ minWidth: "4.4em" }}>Faltas: {props.absences}</th>
+                                <th safe>{props.date}</th>
                             </>
                         )}
                     </tr>
@@ -349,11 +354,11 @@ function Comments(props: { start: number; end: number; date: string; period: str
                     <tr>
                         {props.absences == null ? (
                             <>
-                                <th style="width: 20%;">Asignatura</th>
-                                <th style="width: 5%;">Faltas</th>
+                                <th style={{ width: "20%" }}>Asignatura</th>
+                                <th style={{ width: "5%" }}>Faltas</th>
                             </>
                         ) : (
-                            <th colspan="2" style="width: 20%;">
+                            <th colspan="2" style={{ width: "20%" }}>
                                 Asignatura
                             </th>
                         )}
@@ -364,21 +369,28 @@ function Comments(props: { start: number; end: number; date: string; period: str
                 <tbody>
                     {props.comments.map((comm) => (
                         <tr>
-                            {props.absences == null ? (
+                            {comm.absences == null ? (
                                 <td colspan="2">
-                                    <b>{comm.name}</b>
+                                    <b safe>{comm.name}</b>
                                 </td>
                             ) : (
                                 <>
                                     <td>
-                                        <b>{comm.name}</b>
+                                        <b safe>{comm.name}</b>
                                     </td>
                                     <td>
                                         <b>{comm.absences}</b>
                                     </td>
                                 </>
                             )}
-                            <td class="text-left">{comm.comment}</td>
+                            <td class="text-left">
+                                {comm.comment
+                                    .split("\n")
+                                    .filter((line) => line.trim() !== "")
+                                    .map((line) => (
+                                        <p safe>{line}</p>
+                                    ))}
+                            </td>
                         </tr>
                     ))}
                 </tbody>
