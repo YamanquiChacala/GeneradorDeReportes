@@ -131,8 +131,7 @@ body {
     flex: 40%;
     display: flex;
     flex-direction: column;
-    justify-content: baseline;
-    gap: 20px;
+    justify-content: space-between;
 }
 
 /* 4. Table Styling */
@@ -144,14 +143,14 @@ table {
 
 th,
 td {
-    border: 1px solid #000;
-    padding: 0.5em;
+    border: 0.1ex solid #888;
+    padding: 0.3em;
     text-align: center;
 }
 
 th {
     background-color: #f2f2f2;
-    padding: 1em;
+    padding: 0.5em;
     font-size: 0.7rem;
     font-weight: bold;
 }
@@ -171,11 +170,20 @@ tbody > tr:nth-of-type(even) {
 
 .text-vertical {
     writing-mode: sideways-lr;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
 }
 
 .black {
     background-color: #333;
     color: #fff;
+    padding-top: 1em;
+    padding-bottom: 1em;
+}
+
+.table-title {
+    padding-top: 1em;
+    padding-bottom: 1em;
 }
 
 .yellow {

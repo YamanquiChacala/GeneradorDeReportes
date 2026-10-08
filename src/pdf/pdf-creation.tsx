@@ -113,39 +113,39 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
             <table>
                 <thead>
                     <tr>
-                        <th colspan="6" class="black" style="height: 2rem;">
+                        <th colspan="6" class="black" style={{ height: "1rem" }}>
                             Programa académico
                         </th>
-                        <th rowspan="2" class="text-vertical" style="width: 8%;">
+                        <th rowspan="2" class="text-vertical" style={{ width: "8%" }}>
                             Actitud
                         </th>
-                        <th rowspan="2" class="text-vertical" style="width: 8%;">
+                        <th rowspan="2" class="text-vertical" style={{ width: "8%" }}>
                             Hábitos de
                             <br />
-                            estudio / trabajo
+                            estudio
                         </th>
-                        <th rowspan="2" class="text-vertical" style="width: 8%;">
+                        <th rowspan="2" class="text-vertical" style={{ width: "8%" }}>
                             Pensamiento
                             <br />
                             crítico
                         </th>
-                        <th rowspan="2" class="text-vertical" style="width: 8%;">
+                        <th rowspan="2" class="text-vertical" style={{ width: "8%" }}>
                             Desarrollo
                             <br />
-                            socioemocional
+                            emocional
                         </th>
                     </tr>
                     <tr>
-                        <th style="width: 16%;">
+                        <th style={{ width: "16%" }}>
                             Campos
                             <br />
                             formativos
                         </th>
-                        <th style="width: 16%;">Período</th>
-                        <th style="width: 8%;">1º</th>
-                        <th style="width: 8%;">2º</th>
-                        <th style="width: 8%;">3º</th>
-                        <th style="width: 8%;" class="average">
+                        <th style={{ width: "16%" }}>Período</th>
+                        <th style={{ width: "8%" }}>1º</th>
+                        <th style={{ width: "8%" }}>2º</th>
+                        <th style={{ width: "8%" }}>3º</th>
+                        <th style={{ width: "8%" }} class="average">
                             Final
                         </th>
                     </tr>
@@ -163,7 +163,7 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
                                     {subject.name}
                                 </td>
                                 {subject.grades.map((grade, gradeIndex) => (
-                                    <td class={`${grade !== null && grade <= 5 ? "failed" : ""} ${gradeIndex === 3 ? "average" : ""}`}>{grade}</td>
+                                    <td class={`${grade !== null && grade < 6 ? "failed" : ""} ${gradeIndex === 3 ? "average" : ""}`}>{grade}</td>
                                 ))}
                                 {subject.habilities.map((mark) => (
                                     <td class={mark === "R" ? "failed" : ""} safe>
@@ -180,7 +180,7 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
                             Promedio del periodo
                         </th>
                         {props.averages.map((grade) => (
-                            <th class={grade != null && grade <= 5 ? "failed" : ""}>{grade}</th>
+                            <th class={`${grade !== null && grade <= 5 ? "failed " : ""}average`}>{grade}</th>
                         ))}
                     </tr>
                 </tfoot>
@@ -227,7 +227,7 @@ function NoticeRight(): JSX.Element {
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td class="yellow">
+                        <td class="yellow table-title">
                             <b>E</b>=Excelente - <b>B</b>=Bueno - <b>S</b>=Suficiente - <b>R</b>=Requiere apoyo
                         </td>
                     </tr>
@@ -237,7 +237,9 @@ function NoticeRight(): JSX.Element {
             <table>
                 <thead>
                     <tr>
-                        <th colspan="2">Criterio de calificación</th>
+                        <th class="table-title" colspan="2">
+                            Criterio de calificación
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -334,7 +336,7 @@ function Comments(props: { start: number; end: number; date: string; period: str
                         </th>
                     </tr>
                     <tr>
-                        <th style={{ minWidth: "7em" }} safe>
+                        <th class="table-title" style={{ minWidth: "7em" }} safe>
                             {props.period}
                         </th>
                         {props.absences == null ? (

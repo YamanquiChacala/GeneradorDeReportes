@@ -1,6 +1,88 @@
 import { Colors } from "../common/gas-utils";
+import { pickRandom, randomInt } from "../common/utils";
 import { GasTestRunner } from "../testing/gas-test-runner";
 import { getHTMLreport, type StudentData } from "./pdf-creation";
+
+const LOREM_SENTENCES = [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "Proin quis eros malesuada, fermentum ante sit amet, pretium nulla.",
+    "Pellentesque fermentum risus eu velit vehicula, a posuere urna tincidunt.",
+    "Nulla cursus, tellus eu varius ornare, neque dui ullamcorper mi, nec pharetra odio dolor non nisl.",
+    "Aliquam eu congue leo.",
+    "Nulla non ipsum vitae ligula posuere feugiat.",
+    "Ut dignissim nunc nec luctus commodo.",
+    "Phasellus bibendum mauris aliquet magna pellentesque, et ultrices sem interdum.",
+    "Maecenas et condimentum dui, vel feugiat ligula.",
+    "Suspendisse ut ipsum id dolor ullamcorper porttitor.",
+    "Phasellus ultricies, metus ut aliquam lobortis, dui enim dictum felis, eget consectetur leo ante at neque.",
+    "Donec vitae sapien ut libero venenatis faucibus.",
+    "Curabitur ligula sapien, tincidunt non, euismod vitae, posuere imperdiet, leo.",
+    "Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.",
+    "Mauris placerat eleifend leo.",
+    "Quisque sit amet est et sapien ullamcorper pharetra.",
+    "Sed lectus.",
+    "Etiam rhoncus, maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero.",
+];
+
+function randomComment(maxSentences = 12, newlineChance = 0.25): string {
+    const count = randomInt(0, maxSentences);
+    let result = "";
+
+    for (let i = 0; i < count; i++) {
+        result += pickRandom(LOREM_SENTENCES, 1);
+
+        let usingNewLine = false;
+        let rand = Math.random();
+
+        while (rand < newlineChance) {
+            usingNewLine = true;
+            result += "\n";
+            rand = Math.random();
+        }
+        if (!usingNewLine) {
+            result += " ";
+        }
+    }
+    return result;
+}
+
+function createComment(name: string) {
+    return {
+        name,
+        absences: randomInt(0, 20),
+        comment: randomComment(),
+    };
+}
+
+type Grades = [number, number, number, number];
+
+function createGrades(decimalPlaces: number): Grades {
+    if (!Number.isInteger(decimalPlaces) || decimalPlaces < 0) {
+        throw new RangeError("decimalPlaces must be a non-negative integer");
+    }
+
+    const scale = 10 ** decimalPlaces;
+    const avgScale = scale * 10; // one extra decimal place
+
+    // Integers in [0, 10 * scale], so 0 and 10 are both possible
+    const a = randomInt(0, 10 * scale);
+    const b = randomInt(0, 10 * scale);
+    const c = randomInt(0, 10 * scale);
+
+    // Average expressed in units of 1/avgScale, rounded to a whole unit
+    const scaledAvg = Math.round(((a + b + c) * 10) / 3);
+
+    return [a / scale, b / scale, c / scale, scaledAvg / avgScale];
+}
+
+function createSubject(name: string) {
+    const habilityOptions = ["E", "B", "S", "R"];
+    return {
+        name,
+        grades: createGrades(0),
+        habilities: pickRandom(habilityOptions, 4) as [string, string, string, string],
+    };
+}
 
 export function testPDFReportGeneration() {
     const runner = new GasTestRunner();
@@ -33,69 +115,60 @@ export function testPDFReportGeneration() {
             const expectedFileName = `${prefix}_${timestamp}`;
 
             const data: StudentData = {
-                start_year: 2025,
-                end_year: 2026,
-                period: "3er trimestre",
-                date: "Del 18 de abril del 2026 al 30 de Julio del 2026",
-                first_names: "Yamanqui",
-                last_names: "García Rosales",
-                id: "GARY801114MDFRG09",
-                grade: "3º",
+                start_year: 2000,
+                end_year: 2134,
+                period: "N-ésimo periodo",
+                date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
+                first_names: "Alejandrino Güillermina",
+                last_names: "de las Heras y Ponce de León del Olmo y Fernández de Córdoba",
+                id: "HEOA001231HNYRLL37",
+                grade: "4Xº",
                 level: "Secundaria",
                 // absences: 4,
-                averages: [9.3, 4.5, 7.8, 5.23],
+                averages: createGrades(1),
                 subjectSections: [
                     {
                         name: "Lenguajes",
                         color: Colors.LANGUAGE,
-                        subjects: [
-                            { name: "Español", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                            { name: "Inglés", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                            { name: "Arte", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                        ],
+                        subjects: [createSubject("Español"), createSubject("Inglés"), createSubject("Arte y Creatividad")],
                     },
                     {
-                        name: "Pensamiento científico",
+                        name: "Saberes y Pensamiento Científico",
                         color: Colors.SCIENCE,
                         subjects: [
-                            { name: "Matemáticas", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                            { name: "Física", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                            { name: "Tecnología", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
+                            createSubject("Matemáticas"),
+                            createSubject("Ciencias Naturales"),
+                            createSubject("Física"),
+                            createSubject("Biología"),
+                            createSubject("Tecnología"),
                         ],
                     },
                     {
-                        name: "Ética, naturaleza y sociedad",
+                        name: "Ética, Naturaleza y Sociedad",
                         color: Colors.NATURE,
-                        subjects: [
-                            { name: "Historia", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                            { name: "Desarrollo Socioemocional", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                        ],
+                        subjects: [createSubject("Historia"), createSubject("Geografía"), createSubject("Ética")],
                     },
                     {
-                        name: "Humano y Comunitario",
+                        name: "De lo Humano y Comunitario",
                         color: Colors.HUMANITIES,
-                        subjects: [
-                            { name: "Proyecto comunitario", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                            { name: "Deportes", grades: [10, 8, 5, 8], habilities: ["E", "B", "S", "R"] },
-                        ],
+                        subjects: [createSubject("Educación Socioemocional"), createSubject("Desarrollo Personal"), createSubject("Deportes")],
                     },
                 ],
                 comments: [
-                    {
-                        name: "Español",
-                        absences: 0,
-                        comment:
-                            "Proin quis eros malesuada, fermentum ante sit amet, pretium nulla.\n\nPellentesque fermentum risus eu velit vehicula, a posuere urna tincidunt.\nNulla cursus, tellus eu varius ornare, neque dui ullamcorper mi, nec pharetra odio dolor non nisl. Aliquam eu congue leo. Nulla non ipsum vitae ligula posuere feugiat. Ut dignissim nunc nec luctus commodo. Phasellus bibendum mauris aliquet magna pellentesque, et ultrices sem interdum. Maecenas et condimentum dui, vel feugiat ligula. Suspendisse ut ipsum id dolor ullamcorper porttitor. Phasellus ultricies, metus ut aliquam lobortis, dui enim dictum felis, eget consectetur leo ante at neque.",
-                    },
-                    { name: "Inglés", absences: 1, comment: "Muy buen alumno" },
-                    { name: "Arte", absences: 2, comment: "Muy buen alumno" },
-                    { name: "Matemáticas", absences: 0, comment: "Muy buen alumno" },
-                    { name: "Física", absences: 3, comment: "Muy buen alumno" },
-                    { name: "Tecnología", absences: 0, comment: "Muy buen alumno" },
-                    { name: "Historia", absences: 4, comment: "Muy buen alumno" },
-                    { name: "Desarrollo Socioemocional", absences: 0, comment: "Muy buen alumno" },
-                    { name: "Proyecto comunitario", absences: 0, comment: "Muy buen alumno" },
-                    { name: "Deportes", absences: 5, comment: "Muy buen alumno" },
+                    createComment("Español"),
+                    createComment("Inglés"),
+                    createComment("Arte y Creatividad"),
+                    createComment("Matemáticas"),
+                    createComment("Ciencias Naturales"),
+                    createComment("Física"),
+                    createComment("Biología"),
+                    createComment("Tecnología"),
+                    createComment("Historia"),
+                    createComment("Geografía"),
+                    createComment("Ética"),
+                    createComment("Educación Socioemocional"),
+                    createComment("Desarrollo Personal"),
+                    createComment("Deportes"),
                 ],
             };
 
