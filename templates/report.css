@@ -164,6 +164,10 @@ tbody > tr:nth-of-type(even) {
     background-color: #eee;
 }
 
+.right-column td {
+    padding: 0.6em;
+}
+
 .text-left {
     text-align: left;
 }

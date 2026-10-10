@@ -76,7 +76,7 @@ export const ReportSheetSchema = {
                 subjectGradingWeights: "pers_Calif_Pesos",
                 protectSkills: "pers_ProtHabilidades",
                 protectComments: "pers_ProtObservaciones",
-                protectPeriods: "pers_ProtPeriods",
+                protectPeriods: "pers_ProtPeriodos",
                 dates: "pers_Fechas",
                 fields: "pers_CamposFormativos",
                 subjects: "pers_Asignaturas",

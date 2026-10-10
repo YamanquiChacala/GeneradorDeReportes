@@ -46,12 +46,21 @@ function randomComment(maxSentences = 12, newlineChance = 0.25): string {
     return result;
 }
 
-function createComment(name: string) {
-    return {
+interface Comment {
+    name: string;
+    absences?: number;
+    comment: string;
+}
+
+function createComment(name: string, absences: boolean) {
+    const result: Comment = {
         name,
-        absences: randomInt(0, 20),
         comment: randomComment(),
     };
+    if (absences) {
+        result.absences = randomInt(0, 20);
+    }
+    return result;
 }
 
 type Grades = [number, number, number, number];
@@ -109,7 +118,7 @@ export function testPDFReportGeneration() {
         });
 
         test("Big group, individual assistance", () => {
-            const prefix = "sec_big";
+            const prefix = "secundaria";
             const tiemzone = Session.getScriptTimeZone();
             const timestamp = Utilities.formatDate(new Date(), tiemzone, "yyyyMMdd_HHmmss");
             const expectedFileName = `${prefix}_${timestamp}`;
@@ -137,8 +146,8 @@ export function testPDFReportGeneration() {
                         color: Colors.SCIENCE,
                         subjects: [
                             createSubject("Matemáticas"),
-                            createSubject("Ciencias Naturales"),
                             createSubject("Física"),
+                            createSubject("Química"),
                             createSubject("Biología"),
                             createSubject("Tecnología"),
                         ],
@@ -155,30 +164,95 @@ export function testPDFReportGeneration() {
                     },
                 ],
                 comments: [
-                    createComment("Español"),
-                    createComment("Inglés"),
-                    createComment("Arte y Creatividad"),
-                    createComment("Matemáticas"),
-                    createComment("Ciencias Naturales"),
-                    createComment("Física"),
-                    createComment("Biología"),
-                    createComment("Tecnología"),
-                    createComment("Historia"),
-                    createComment("Geografía"),
-                    createComment("Ética"),
-                    createComment("Educación Socioemocional"),
-                    createComment("Desarrollo Personal"),
-                    createComment("Deportes"),
+                    createComment("Español", true),
+                    createComment("Inglés", true),
+                    createComment("Arte y Creatividad", true),
+                    createComment("Matemáticas", true),
+                    createComment("Física", true),
+                    createComment("Química", true),
+                    createComment("Biología", true),
+                    createComment("Tecnología", true),
+                    createComment("Historia", true),
+                    createComment("Geografía", true),
+                    createComment("Ética", true),
+                    createComment("Educación Socioemocional", true),
+                    createComment("Desarrollo Personal", true),
+                    createComment("Deportes", true),
                 ],
             };
 
             const htmlString = getHTMLreport(data);
-            const savedHtmlFile = testFolder.createFile(`${expectedFileName}.html`, htmlString, MimeType.HTML);
+            // const savedHtmlFile = testFolder.createFile(`${expectedFileName}.html`, htmlString, MimeType.HTML);
 
             const pdfBlob = HtmlService.createHtmlOutput(htmlString).getAs(MimeType.PDF);
             const savedFile = testFolder.createFile(pdfBlob.setName(`${expectedFileName}.pdf`));
 
-            expect(savedHtmlFile).toBeTruthy();
+            // expect(savedHtmlFile).toBeTruthy();
+
+            expect(savedFile).toBeTruthy();
+            expect(savedFile.getName()).toBe(`${expectedFileName}.pdf`);
+            expect(savedFile.getMimeType()).toBe(MimeType.PDF);
+            if (savedFile.getSize() === 0) throw new Error("Generated PDF is empty");
+        });
+
+        test("Small group, shared assistance", () => {
+            const prefix = "primaria";
+            const tiemzone = Session.getScriptTimeZone();
+            const timestamp = Utilities.formatDate(new Date(), tiemzone, "yyyyMMdd_HHmmss");
+            const expectedFileName = `${prefix}_${timestamp}`;
+
+            const data: StudentData = {
+                start_year: 2000,
+                end_year: 2134,
+                period: "N-ésimo periodo",
+                date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
+                first_names: "Anoñio",
+                last_names: "d'or 田中",
+                id: "שֵׁם מִשׁפָּחָה",
+                grade: "IXª",
+                level: "Primaria",
+                absences: 4,
+                averages: createGrades(1),
+                subjectSections: [
+                    {
+                        name: "Lenguajes",
+                        color: Colors.LANGUAGE,
+                        subjects: [createSubject("Español"), createSubject("Inglés"), createSubject("Arte y Creatividad")],
+                    },
+                    {
+                        name: "Saberes y Pensamiento Científico",
+                        color: Colors.SCIENCE,
+                        subjects: [createSubject("Matemáticas"), createSubject("Ciencias Naturales")],
+                    },
+                    {
+                        name: "Ética, Naturaleza y Sociedad",
+                        color: Colors.NATURE,
+                        subjects: [createSubject("Historia y Geografía")],
+                    },
+                    {
+                        name: "De lo Humano y Comunitario",
+                        color: Colors.HUMANITIES,
+                        subjects: [createSubject("Deportes")],
+                    },
+                ],
+                comments: [
+                    createComment("Español", false),
+                    createComment("Inglés", false),
+                    createComment("Arte y Creatividad", false),
+                    createComment("Matemáticas", false),
+                    createComment("Ciencias Naturales", false),
+                    createComment("Historia y Geografía", false),
+                    createComment("Deportes", false),
+                ],
+            };
+
+            const htmlString = getHTMLreport(data);
+            // const savedHtmlFile = testFolder.createFile(`${expectedFileName}.html`, htmlString, MimeType.HTML);
+
+            const pdfBlob = HtmlService.createHtmlOutput(htmlString).getAs(MimeType.PDF);
+            const savedFile = testFolder.createFile(pdfBlob.setName(`${expectedFileName}.pdf`));
+
+            // expect(savedHtmlFile).toBeTruthy();
 
             expect(savedFile).toBeTruthy();
             expect(savedFile.getName()).toBe(`${expectedFileName}.pdf`);
