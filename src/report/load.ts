@@ -2,6 +2,9 @@ import { ReportSheetSchema } from "../common/gas-parts";
 import { buildFieldsMask, type ParsedSpreadsheet, PERSISTENT_DATA_KEY, parseSpreadsheet } from "../common/gas-utils";
 import type { ReportPersistentData } from "../common/report-utils";
 
+/**
+ * Load the full report spreadsheet into memory. Includes all the values of the cells, so it can be big and slow.
+ */
 export function loadReport(reportFileId: string): { parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>; persistentData: ReportPersistentData } {
     const reportFieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>(
         "sheets.properties.sheetId",
@@ -24,6 +27,9 @@ export function loadReport(reportFileId: string): { parsedReport: ParsedSpreadsh
     return { parsedReport, persistentData };
 }
 
+/**
+ * Load only the metadata PersistentData of the report. Fast, but no actual report data.
+ */
 export function loadReportPersistentData(reportFileId: string): ReportPersistentData {
     const reportFieldsMask = buildFieldsMask<GoogleAppsScript.Sheets.Schema.Spreadsheet>("developerMetadata");
 

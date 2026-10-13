@@ -19,6 +19,9 @@ export function onPushReportMenuCard(e: GoogleAppsScript.Addons.EventObject): Go
         .build();
 }
 
+/**
+ *
+ */
 export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando reporte individual: ";
 
@@ -26,7 +29,7 @@ export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObjec
 
     if (inputs.studentIndex == null) {
         return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Falta seleccionar alumno`))
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Ningún alumno seleccionado`))
             .build();
     }
 
