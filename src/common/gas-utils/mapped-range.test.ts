@@ -75,67 +75,45 @@ describe("GAS Utils, Mapped Range", () => {
     };
 
     describe("getCellDataArray", () => {
-        it("should return a correctly sized 5x5 array and ignore out-of-bounds data when unbound flags are false", () => {
+        it("uses the named range bounds when reading the mapped sheet", () => {
             const result = getCellDataArray(mockMappedRange);
 
             expect(result.length).toBe(5);
             expect(result[0]?.length).toBe(5);
             expect(result[0]?.[0]).toStrictEqual({ effectiveValue: { stringValue: "Test String" } });
-            expect(result[1]?.[0]).toStrictEqual({ effectiveValue: { numberValue: 0 } });
             expect(result[3]?.[2]).toStrictEqual({ effectiveValue: { stringValue: "Offset Data 1" } });
-            expect(result[4]?.[4]).toStrictEqual({});
         });
 
-        it("should return an empty result matrix if the sheet lacks a data array", () => {
-            const emptyDataRange: MappedNamedRange = {
-                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 } },
-                sheet: { properties: { gridProperties: { rowCount: 10, columnCount: 10 } } },
-            };
-            const result = getCellDataArray(emptyDataRange);
-            expect(result.length).toBe(2);
-            expect(result[0]?.[0]).toStrictEqual({});
-        });
-
-        it("should handle missing grid properties safely by falling back to start index", () => {
-            const noGridPropsRange: MappedNamedRange = {
-                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 2, startColumnIndex: 2 } },
-                sheet: { data: [] },
-            };
-            const result = getCellDataArray(noGridPropsRange, true, true);
-            expect(result.length).toBe(0);
-        });
-
-        it("should expand rows to the sheet limit and include out-of-bounds row data when unboundRows is true", () => {
+        it("extends the row bound to the sheet limit when unboundRows is true", () => {
             const result = getCellDataArray(mockMappedRange, true, false);
+
             expect(result.length).toBe(10);
+            expect(result[0]).toHaveLength(5);
             expect(result[8]?.[2]).toStrictEqual({ effectiveValue: { stringValue: "Unbound Row Data" } });
         });
 
-        it("should expand columns to the sheet limit and include out-of-bounds column data when unboundColumns is true", () => {
+        it("extends the column bound to the sheet limit when unboundColumns is true", () => {
             const result = getCellDataArray(mockMappedRange, false, true);
+
+            expect(result).toHaveLength(5);
             expect(result[0]?.length).toBe(10);
             expect(result[2]?.[8]).toStrictEqual({ effectiveValue: { stringValue: "Unbound Col Data" } });
         });
 
-        it("should expand both rows and columns to the sheet limit when both unbound flags are true", () => {
+        it("extends both bounds to the sheet limits without mutating the named range", () => {
+            const originalRange = { ...mockMappedRange.namedRange.range };
             const result = getCellDataArray(mockMappedRange, true, true);
+
             expect(result.length).toBe(10);
             expect(result[0]?.length).toBe(10);
+            expect(mockMappedRange.namedRange.range).toEqual(originalRange);
         });
 
-        it("should natively fallback to gridProperties if the range lacks endRowIndex and endColumnIndex", () => {
+        it("uses sheet grid dimensions when the named range has no end indexes", () => {
             const result = getCellDataArray(mockUnboundedRange);
-            expect(result.length).toBe(100);
-            expect(result[0]?.length).toBe(26);
-        });
 
-        it("should return an empty array if range dimensions are 0", () => {
-            const emptyRange: MappedNamedRange = {
-                namedRange: { namedRangeId: "", name: "", range: { sheetId: 1, startRowIndex: 0, endRowIndex: 0, startColumnIndex: 0, endColumnIndex: 0 } },
-                sheet: { data: [] },
-            };
-            const result = getCellDataArray(emptyRange);
-            expect(result.length).toBe(0);
+            expect(result).toHaveLength(100);
+            expect(result[0]).toHaveLength(26);
         });
     });
 

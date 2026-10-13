@@ -1,6 +1,6 @@
 import { Dimension } from "./api-types";
 import { buildFieldsMask } from "./helpers";
-import { offsetGridRange } from "./range";
+import { getRangeData, offsetGridRange } from "./range";
 import { getEpochDate } from "./time";
 import { type MappedNamedRange, RangeBehavior, type RangeOperationResult, type ResizeRangeParams } from "./types";
 
@@ -12,49 +12,13 @@ interface GetCellParams {
 
 export function getCellDataArray(mappedRange: MappedNamedRange, unboundRows = false, unboundColumns = false): GoogleAppsScript.Sheets.Schema.CellData[][] {
     const { namedRange, sheet } = mappedRange;
+    const range = {
+        ...namedRange.range,
+        endRowIndex: unboundRows ? undefined : namedRange.range.endRowIndex,
+        endColumnIndex: unboundColumns ? undefined : namedRange.range.endColumnIndex,
+    };
 
-    const startRow = namedRange.range.startRowIndex ?? 0;
-    const startCol = namedRange.range.startColumnIndex ?? 0;
-    const endRow = (unboundRows ? undefined : namedRange.range.endRowIndex) ?? sheet.properties?.gridProperties?.rowCount ?? startRow;
-    const endCol = (unboundColumns ? undefined : namedRange.range.endColumnIndex) ?? sheet.properties?.gridProperties?.columnCount ?? startCol;
-
-    const numRows = Math.max(0, endRow - startRow);
-    const numCols = Math.max(0, endCol - startCol);
-
-    const result = Array.from({ length: numRows }, () => Array<GoogleAppsScript.Sheets.Schema.CellData>(numCols).fill({}));
-
-    if (!sheet.data || numRows === 0 || numCols === 0) return result;
-
-    for (const gridData of sheet.data) {
-        const gridStartRow = gridData.startRow ?? 0;
-        const gridStartCol = gridData.startColumn ?? 0;
-        const rowDataArray = gridData.rowData ?? [];
-
-        for (let r = 0; r < rowDataArray.length; r++) {
-            const absoluteRow = gridStartRow + r;
-
-            // Skip if this row is outside the named range bounds.
-            if (absoluteRow < startRow || absoluteRow >= endRow) continue;
-
-            const values = rowDataArray[r]?.values ?? [];
-            // biome-ignore lint/style/noNonNullAssertion: Math proves this must exist.
-            const targetRow = result[absoluteRow - startRow]!;
-
-            for (let c = 0; c < values.length; c++) {
-                const absoluteCol = gridStartCol + c;
-
-                // Skip is this colum is outside the named range bounds.
-                if (absoluteCol < startCol || absoluteCol >= endCol) continue;
-
-                const resultColIndex = absoluteCol - startCol; // Where in the result this will end.
-                // biome-ignore lint/style/noNonNullAssertion: `c` iterates on the lenght of values.
-                const cellData = values[c]!;
-
-                targetRow[resultColIndex] = cellData;
-            }
-        }
-    }
-    return result;
+    return getRangeData(sheet, range);
 }
 
 export function getCellData({ mappedRange, rowOffset, columnOffset }: GetCellParams): GoogleAppsScript.Sheets.Schema.CellData {
