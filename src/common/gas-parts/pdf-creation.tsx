@@ -1,5 +1,5 @@
-import { Base64Images } from "../common/utils/base64-constants";
-import { REPORT_CSS_STYLE } from "../templates/report.css";
+import { REPORT_CSS_STYLE } from "../../templates/report.css";
+import { Base64Images } from "../utils/base64-constants";
 
 type Grades = [number | null, number | null, number | null, number | null];
 

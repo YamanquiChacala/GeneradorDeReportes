@@ -1,6 +1,6 @@
-import { Colors } from "../common/gas-utils";
-import { pickRandom, randomInt } from "../common/utils";
-import { GasTestRunner } from "../testing/gas-test-runner";
+import { GasTestRunner } from "../../testing/gas-test-runner";
+import { Colors } from "../gas-utils";
+import { pickRandom, randomInt } from "../utils";
 import { getHTMLreport, type StudentData } from "./pdf-creation";
 
 const LOREM_SENTENCES = [
