@@ -1,9 +1,12 @@
-import { ConditionType, Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
+import { type ReportPersistentData, StudentRowType } from "../report-utils";
+import { ConditionType, DeveloperMetadataVisibility, Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
+import { PERSISTENT_DATA_KEY } from "./constants";
 import {
     addNewNamedRange,
     addNewSheet,
     buildAddBandingRequest,
     buildAddConditionalFormatRuleRequest,
+    buildAddPersistentMetadata,
     buildBorderRequest,
     buildCopyPasteRequest,
     buildMergeCellsRequest,
@@ -15,6 +18,7 @@ import {
     buildUnmergeCellsRequest,
     buildUpdateCellsRequest,
     buildUpdateColumnWidthRequests,
+    buildUpdatePersistenMetadata,
     buildUpdateSheetPropertiesRequest,
 } from "./request";
 import { BorderSide, type MappedNamedRange, type ParsedSpreadsheet, RangeBehavior } from "./types";
@@ -955,6 +959,89 @@ describe("GAS Util, Requests", () => {
                         rowProperties: mockBandingProperties,
                     },
                 },
+            });
+        });
+    });
+
+    describe("PersistentMetadata", () => {
+        const mockPersistenData: ReportPersistentData = {
+            configData: { attendancePerClass: false, averagePerField: true, dates: [12, 22, 35, 129], subjectGradingWeights: [30, 60, 90] },
+            academicFields: [
+                { color: "black", name: "Primero", subjects: 1 },
+                { color: "white", name: "Segundo", subjects: 2 },
+            ],
+            calendar: [0, 1, 2, 3, 4, 5],
+            protectedSections: { habilities: true, comments: false, trimesters: [false, true, false] },
+            students: [
+                {
+                    type: StudentRowType.STUDENT,
+                    id: 1,
+                    curp: "ASDF12434",
+                    firstName: "Primer Nombre",
+                    lastName: "Apellido",
+                    sex: "masculino",
+                    grade: "4to",
+                    level: "Primaria",
+                    sheetName: "pimer_apellido",
+                },
+                { type: StudentRowType.SEPARATOR },
+                {
+                    type: StudentRowType.STUDENT,
+                    id: 2,
+                    curp: "JKIL97823",
+                    firstName: "Ermenejilda",
+                    lastName: "de la T4",
+                    sex: "femenion",
+                    grade: "1ro",
+                    level: "Secundaria",
+                    sheetName: "hermenejilda",
+                },
+            ],
+            subjects: [
+                { subject: "Español", weight: 1 },
+                { subject: "Mate", weight: 0.8 },
+                { subject: "Compu", weight: 0.2 },
+            ],
+        };
+
+        const mockJson = JSON.stringify(mockPersistenData);
+
+        describe("buildAddPersistentMetadata", () => {
+            it("constructs a valid request", () => {
+                const result = buildAddPersistentMetadata(mockPersistenData);
+
+                expect(result).toEqual({
+                    createDeveloperMetadata: {
+                        developerMetadata: {
+                            metadataKey: PERSISTENT_DATA_KEY,
+                            location: { spreadsheet: true },
+                            visibility: DeveloperMetadataVisibility.DOCUMENT,
+                            metadataValue: mockJson,
+                        },
+                    },
+                });
+            });
+        });
+
+        describe("buildUpdatePersistenMetadata", () => {
+            it("constructs a valid request", () => {
+                const result = buildUpdatePersistenMetadata(mockPersistenData);
+
+                expect(result).toEqual({
+                    updateDeveloperMetadata: {
+                        dataFilters: [
+                            {
+                                developerMetadataLookup: {
+                                    metadataKey: PERSISTENT_DATA_KEY,
+                                },
+                            },
+                        ],
+                        developerMetadata: {
+                            metadataValue: mockJson,
+                        },
+                        fields: "metadataValue",
+                    },
+                });
             });
         });
     });
