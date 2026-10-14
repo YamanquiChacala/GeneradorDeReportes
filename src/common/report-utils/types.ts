@@ -4,13 +4,13 @@ export interface ReportPersistentData {
     academicFields: AcademicField[];
     subjects: WeightedSubject[];
     students: StudentRow[];
-    calendar: number[];
+    calendar: number[]; // Dates in Unix epoch
 }
 
 export interface ConfigData {
     attendancePerClass: boolean;
     averagePerField: boolean;
-    dates: [number, number, number, number];
+    dates: [number, number, number, number]; // Dates in Unix epoch
     subjectGradingWeights: [number, number, number];
 }
 
