@@ -1,4 +1,4 @@
-import { createRange, createSingleCellRange, getRangeData, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from "./range";
+import { createRange, createSingleCellRange, getRangeData, getRangeHeight, getRangeWidth, getStringRangeData, offsetGridRange, shrinkRangeWidth } from "./range";
 
 describe("GAS Utils, Range", () => {
     describe("createRange", () => {
@@ -338,6 +338,30 @@ describe("GAS Utils, Range", () => {
             };
 
             expect(getRangeData(sheet, range)).toStrictEqual([]);
+        });
+    });
+
+    describe("getStringRangeData", () => {
+        it("returns effective string values and uses empty strings for other or missing values", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = {
+                data: [
+                    {
+                        rowData: [{ values: [{ formattedValue: "Text" }, { formattedValue: "12" }] }, { values: [{ formattedValue: "" }] }],
+                    },
+                ],
+            };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 0,
+                endRowIndex: 2,
+                startColumnIndex: 0,
+                endColumnIndex: 2,
+            };
+
+            expect(getStringRangeData(sheet, range)).toStrictEqual([
+                ["Text", "12"],
+                ["", ""],
+            ]);
         });
     });
 });

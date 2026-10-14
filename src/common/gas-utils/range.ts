@@ -125,8 +125,13 @@ export function getRangeData(sheet: GoogleAppsScript.Sheets.Schema.Sheet, range:
     return result;
 }
 
+/**
+ * Returns effective string values from a range, using an empty string for cells without one.
+ */
 export function getStringRangeData(sheet: GoogleAppsScript.Sheets.Schema.Sheet, range: GoogleAppsScript.Sheets.Schema.GridRange): string[][] {
-    const cellData = getRangeData(sheet, range);
+    const cellsData = getRangeData(sheet, range);
 
-    const result = Array.from({ length: cellData.length }, () => Array<string>(cellData[0]?.length ?? 0).fill(""));
+    if (!cellsData) return [];
+
+    return cellsData.map((row) => row.map((cell) => cell.formattedValue ?? ""));
 }
