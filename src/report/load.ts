@@ -12,7 +12,7 @@ export function loadReport(reportFileId: string): { parsedReport: ParsedSpreadsh
         "sheets.properties.gridProperties.rowCount",
         "sheets.properties.gridProperties.columnCount",
         "sheets.protectedRanges.protectedRangeId",
-        "sheets.data.rowData.values.effectiveValue",
+        "sheets.data.rowData.values.formattedValue",
         "namedRanges",
         "developerMetadata",
     );

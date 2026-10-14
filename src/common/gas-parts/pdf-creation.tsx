@@ -1,11 +1,11 @@
 import { REPORT_CSS_STYLE } from "../../templates/report.css";
 import { Base64Images } from "../utils/base64-constants";
 
-type Grades = [number | null, number | null, number | null, number | null];
+type Grades = [string, string, string, string];
 
 export interface StudentData {
-    start_year: number;
-    end_year: number;
+    start_year: string;
+    end_year: string;
     period: string;
     date: string;
     first_names: string;
@@ -13,7 +13,7 @@ export interface StudentData {
     id: string;
     grade: string;
     level: string;
-    absences?: number;
+    absences?: string;
     averages: Grades;
     subjectSections: SubjectSection[];
     comments: SubjectComment[];
@@ -28,12 +28,12 @@ interface SubjectSection {
 interface SubjectGrades {
     name: string;
     grades: Grades;
-    habilities: [string | null, string | null, string | null, string | null];
+    habilities: [string, string, string, string];
 }
 
 interface SubjectComment {
     name: string;
-    absences?: number;
+    absences?: string;
     comment: string;
 }
 
@@ -48,7 +48,7 @@ export function getHTMLreport(data: StudentData): string {
                     <GradesLeft averages={data.averages} sections={data.subjectSections} />
                     <NoticeRight />
                 </div>
-                <Footer />
+                <Footer level={data.level} />
                 <Comments absences={data.absences} comments={data.comments} date={data.date} start={data.start_year} end={data.end_year} period={data.period} />
             </body>
         </html>
@@ -67,7 +67,7 @@ function DocHead(): JSX.Element {
     );
 }
 
-function Header(prop: { start: number; end: number }): JSX.Element {
+function Header(props: { start: string; end: string }): JSX.Element {
     return (
         <div class="header">
             <div class="header-images">
@@ -78,7 +78,7 @@ function Header(prop: { start: number; end: number }): JSX.Element {
                 Reporte de evaluación
                 <br />
                 <div class="header-dates">
-                    Ciclo escolar {prop.start} - {prop.end}
+                    Ciclo escolar {props.start} - {props.end}
                 </div>
             </div>
         </div>
@@ -163,7 +163,7 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
                                     {subject.name}
                                 </td>
                                 {subject.grades.map((grade, gradeIndex) => (
-                                    <td class={`${grade !== null && grade < 6 ? "failed" : ""} ${gradeIndex === 3 ? "average" : ""}`}>{grade}</td>
+                                    <td class={`${Number(grade) <= 5 ? "failed" : ""} ${gradeIndex === 3 ? "average" : ""}`}>{grade}</td>
                                 ))}
                                 {subject.habilities.map((mark) => (
                                     <td class={mark === "R" ? "failed" : ""} safe>
@@ -180,7 +180,7 @@ function GradesLeft(props: { sections: SubjectSection[]; averages: Grades }): JS
                             Promedio del periodo
                         </th>
                         {props.averages.map((grade) => (
-                            <th class={`${grade !== null && grade <= 5 ? "failed " : ""}average`}>{grade}</th>
+                            <th class={`${Number(grade) <= 5 ? "failed " : ""}average`}>{grade}</th>
                         ))}
                     </tr>
                 </tfoot>
@@ -285,16 +285,32 @@ function NoticeRight(): JSX.Element {
     );
 }
 
-function Footer(): JSX.Element {
+function Footer(props: { level: string }): JSX.Element {
+    const CCT: Record<string, string> = {
+        Preescolar: "18PJN0157K",
+        Primaria: "18PPR0093G",
+        Secundaria: "18PES0053Z",
+    };
+
+    const code = CCT[props.level];
+
     return (
         <div class="footer big">
             <div class="address">
                 <b>Montessori Chacala</b>
-                C.C.T. Preescolar: 18PJN0157K
-                <br />
-                C.C.T. Primaria: 18PPR0093G
-                <br />
-                C.C.T. Secundaria: 18PES0053Z
+                {code ? (
+                    <>
+                        C.C.T. {props.level}: {code}
+                    </>
+                ) : (
+                    <>
+                        C.C.T. Preescolar: 18PJN0157K
+                        <br />
+                        C.C.T. Primaria: 18PPR0093G
+                        <br />
+                        C.C.T. Secundaria: 18PES0053Z
+                    </>
+                )}
                 <br />
                 T: (327) 219-4011 / info@chacala.school
             </div>
@@ -313,7 +329,7 @@ function Footer(): JSX.Element {
     );
 }
 
-function Comments(props: { start: number; end: number; date: string; period: string; absences?: number; comments: SubjectComment[] }): JSX.Element {
+function Comments(props: { start: string; end: string; date: string; period: string; absences?: string; comments: SubjectComment[] }): JSX.Element {
     return (
         <div class="page-break">
             <table>

@@ -48,7 +48,7 @@ function randomComment(maxSentences = 12, newlineChance = 0.25): string {
 
 interface Comment {
     name: string;
-    absences?: number;
+    absences?: string;
     comment: string;
 }
 
@@ -58,37 +58,41 @@ function createComment(name: string, absences: boolean) {
         comment: randomComment(),
     };
     if (absences) {
-        result.absences = randomInt(0, 20);
+        result.absences = randomInt(0, 20).toFixed(0);
     }
     return result;
 }
 
-type Grades = [number, number, number, number];
+type Grades = [string, string, string, string];
 
-function createGrades(decimalPlaces: number): Grades {
+function createGrades(decimalPlaces: number, period: 0 | 1 | 2): Grades {
     if (!Number.isInteger(decimalPlaces) || decimalPlaces < 0) {
         throw new RangeError("decimalPlaces must be a non-negative integer");
     }
 
     const scale = 10 ** decimalPlaces;
-    const avgScale = scale * 10; // one extra decimal place
 
     // Integers in [0, 10 * scale], so 0 and 10 are both possible
-    const a = randomInt(0, 10 * scale);
-    const b = randomInt(0, 10 * scale);
-    const c = randomInt(0, 10 * scale);
+    const a = randomInt(5 * scale, 10 * scale) / scale;
+    const b = randomInt(5 * scale, 10 * scale) / scale;
+    const c = randomInt(5 * scale, 10 * scale) / scale;
 
     // Average expressed in units of 1/avgScale, rounded to a whole unit
-    const scaledAvg = Math.round(((a + b + c) * 10) / 3);
+    const average = (a + b + c) / 3;
 
-    return [a / scale, b / scale, c / scale, scaledAvg / avgScale];
+    return [
+        a.toFixed(decimalPlaces),
+        period >= 1 ? b.toFixed(decimalPlaces) : "",
+        period >= 2 ? c.toFixed(decimalPlaces) : "",
+        period >= 2 ? average.toFixed(decimalPlaces + 1) : "",
+    ];
 }
 
-function createSubject(name: string) {
+function createSubject(name: string, period: 0 | 1 | 2) {
     const habilityOptions = ["E", "B", "S", "R"];
     return {
         name,
-        grades: createGrades(0),
+        grades: createGrades(0, period),
         habilities: pickRandom(habilityOptions, 4) as [string, string, string, string],
     };
 }
@@ -124,8 +128,8 @@ export function testPDFReportGeneration() {
             const expectedFileName = `${prefix}_${timestamp}`;
 
             const data: StudentData = {
-                start_year: 2000,
-                end_year: 2134,
+                start_year: "2000",
+                end_year: "2134",
                 period: "N-ésimo periodo",
                 date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
                 first_names: "Alejandrino Güillermina",
@@ -134,33 +138,33 @@ export function testPDFReportGeneration() {
                 grade: "4Xº",
                 level: "Secundaria",
                 // absences: 4,
-                averages: createGrades(1),
+                averages: createGrades(1, 2),
                 subjectSections: [
                     {
                         name: "Lenguajes",
                         color: Colors.LANGUAGE,
-                        subjects: [createSubject("Español"), createSubject("Inglés"), createSubject("Arte y Creatividad")],
+                        subjects: [createSubject("Español", 2), createSubject("Inglés", 2), createSubject("Arte y Creatividad", 2)],
                     },
                     {
                         name: "Saberes y Pensamiento Científico",
                         color: Colors.SCIENCE,
                         subjects: [
-                            createSubject("Matemáticas"),
-                            createSubject("Física"),
-                            createSubject("Química"),
-                            createSubject("Biología"),
-                            createSubject("Tecnología"),
+                            createSubject("Matemáticas", 2),
+                            createSubject("Física", 2),
+                            createSubject("Química", 2),
+                            createSubject("Biología", 2),
+                            createSubject("Tecnología", 2),
                         ],
                     },
                     {
                         name: "Ética, Naturaleza y Sociedad",
                         color: Colors.NATURE,
-                        subjects: [createSubject("Historia"), createSubject("Geografía"), createSubject("Ética")],
+                        subjects: [createSubject("Historia", 2), createSubject("Geografía", 2), createSubject("Ética", 2)],
                     },
                     {
                         name: "De lo Humano y Comunitario",
                         color: Colors.HUMANITIES,
-                        subjects: [createSubject("Educación Socioemocional"), createSubject("Desarrollo Personal"), createSubject("Deportes")],
+                        subjects: [createSubject("Educación Socioemocional", 2), createSubject("Desarrollo Personal", 2), createSubject("Deportes", 2)],
                     },
                 ],
                 comments: [
@@ -202,8 +206,8 @@ export function testPDFReportGeneration() {
             const expectedFileName = `${prefix}_${timestamp}`;
 
             const data: StudentData = {
-                start_year: 2000,
-                end_year: 2134,
+                start_year: "2000",
+                end_year: "2134",
                 period: "N-ésimo periodo",
                 date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
                 first_names: "Anoñio",
@@ -211,28 +215,28 @@ export function testPDFReportGeneration() {
                 id: "שֵׁם מִשׁפָּחָה",
                 grade: "IXª",
                 level: "Primaria",
-                absences: 4,
-                averages: createGrades(1),
+                absences: "4",
+                averages: createGrades(1, 1),
                 subjectSections: [
                     {
                         name: "Lenguajes",
                         color: Colors.LANGUAGE,
-                        subjects: [createSubject("Español"), createSubject("Inglés"), createSubject("Arte y Creatividad")],
+                        subjects: [createSubject("Español", 1), createSubject("Inglés", 1), createSubject("Arte y Creatividad", 1)],
                     },
                     {
                         name: "Saberes y Pensamiento Científico",
                         color: Colors.SCIENCE,
-                        subjects: [createSubject("Matemáticas"), createSubject("Ciencias Naturales")],
+                        subjects: [createSubject("Matemáticas", 1), createSubject("Ciencias Naturales", 1)],
                     },
                     {
                         name: "Ética, Naturaleza y Sociedad",
                         color: Colors.NATURE,
-                        subjects: [createSubject("Historia y Geografía")],
+                        subjects: [createSubject("Historia y Geografía", 1)],
                     },
                     {
                         name: "De lo Humano y Comunitario",
                         color: Colors.HUMANITIES,
-                        subjects: [createSubject("Deportes")],
+                        subjects: [createSubject("Deportes", 1)],
                     },
                 ],
                 comments: [
@@ -242,6 +246,70 @@ export function testPDFReportGeneration() {
                     createComment("Matemáticas", false),
                     createComment("Ciencias Naturales", false),
                     createComment("Historia y Geografía", false),
+                    createComment("Deportes", false),
+                ],
+            };
+
+            const htmlString = getHTMLreport(data);
+            // const savedHtmlFile = testFolder.createFile(`${expectedFileName}.html`, htmlString, MimeType.HTML);
+
+            const pdfBlob = HtmlService.createHtmlOutput(htmlString).getAs(MimeType.PDF);
+            const savedFile = testFolder.createFile(pdfBlob.setName(`${expectedFileName}.pdf`));
+
+            // expect(savedHtmlFile).toBeTruthy();
+
+            expect(savedFile).toBeTruthy();
+            expect(savedFile.getName()).toBe(`${expectedFileName}.pdf`);
+            expect(savedFile.getMimeType()).toBe(MimeType.PDF);
+            if (savedFile.getSize() === 0) throw new Error("Generated PDF is empty");
+        });
+
+        test("Small group, first period", () => {
+            const prefix = "preescolar";
+            const tiemzone = Session.getScriptTimeZone();
+            const timestamp = Utilities.formatDate(new Date(), tiemzone, "yyyyMMdd_HHmmss");
+            const expectedFileName = `${prefix}_${timestamp}`;
+
+            const data: StudentData = {
+                start_year: "2000",
+                end_year: "2134",
+                period: "N-ésimo periodo",
+                date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
+                first_names: "Úngüla",
+                last_names: '"La destructora" Hernández',
+                id: "C0NN4N",
+                grade: "五十六",
+                level: "Preescolar",
+                absences: "25",
+                averages: createGrades(1, 0),
+                subjectSections: [
+                    {
+                        name: "Lenguajes",
+                        color: Colors.LANGUAGE,
+                        subjects: [createSubject("Español", 0), createSubject("Inglés", 0), createSubject("Arte y Creatividad", 0)],
+                    },
+                    {
+                        name: "Saberes y Pensamiento Científico",
+                        color: Colors.SCIENCE,
+                        subjects: [createSubject("Matemáticas", 0)],
+                    },
+                    {
+                        name: "Ética, Naturaleza y Sociedad",
+                        color: Colors.NATURE,
+                        subjects: [createSubject("Historia", 0)],
+                    },
+                    {
+                        name: "De lo Humano y Comunitario",
+                        color: Colors.HUMANITIES,
+                        subjects: [createSubject("Deportes", 0)],
+                    },
+                ],
+                comments: [
+                    createComment("Español", false),
+                    createComment("Inglés", false),
+                    createComment("Arte y Creatividad", false),
+                    createComment("Matemáticas", false),
+                    createComment("Historia", false),
                     createComment("Deportes", false),
                 ],
             };
