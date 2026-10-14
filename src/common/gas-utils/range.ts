@@ -124,3 +124,9 @@ export function getRangeData(sheet: GoogleAppsScript.Sheets.Schema.Sheet, range:
     }
     return result;
 }
+
+export function getStringRangeData(sheet: GoogleAppsScript.Sheets.Schema.Sheet, range: GoogleAppsScript.Sheets.Schema.GridRange): string[][] {
+    const cellData = getRangeData(sheet, range);
+
+    const result = Array.from({ length: cellData.length }, () => Array<string>(cellData[0]?.length ?? 0).fill(""));
+}
