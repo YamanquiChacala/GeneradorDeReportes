@@ -25,4 +25,6 @@ export function generateSingleReport(parsedReport: ParsedSpreadsheet<typeof Repo
         sheetId: sheet.properties?.sheetId,
     });
     const generalInfo = getStringRangeData(sheet, generalInfoRange);
+
+    const id = generalInfo[0]?.[0] ?? "";
 }

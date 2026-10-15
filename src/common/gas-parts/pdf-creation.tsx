@@ -6,11 +6,11 @@ type Grades = [string, string, string, string];
 export interface StudentData {
     start_year: string;
     end_year: string;
+    first_name: string;
+    last_name: string;
+    id: string;
     period: string;
     date: string;
-    first_names: string;
-    last_names: string;
-    id: string;
     grade: string;
     level: string;
     absences?: string;
@@ -43,7 +43,7 @@ export function getHTMLreport(data: StudentData): string {
             <DocHead />
             <body>
                 <Header start={data.start_year} end={data.end_year} />
-                <StudentInfo firstName={data.first_names} lastName={data.last_names} id={data.id} grade={data.grade} level={data.level} />
+                <StudentInfo firstName={data.first_name} lastName={data.last_name} id={data.id} grade={data.grade} level={data.level} />
                 <div class="grades-body">
                     <GradesLeft averages={data.averages} sections={data.subjectSections} />
                     <NoticeRight />
