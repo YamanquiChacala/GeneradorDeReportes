@@ -95,6 +95,31 @@ export function createStudentGeneralAttendanceFormula(
 }
 
 /**
+ * Build a formula that looks up a student's absences for periods 1-3 and joins
+ * the non-empty results with " / ".
+ */
+export function createStudentGeneralAttendanceSummaryFormula(
+    firstNameMappedRange: MappedNamedRange,
+    lastNameMappedRange: MappedNamedRange,
+    attendanceSheetName: string,
+): string {
+    const firstNameA1 = getA1Notation({ mappedRange: firstNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const lastNameA1 = getA1Notation({ mappedRange: lastNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+
+    // Columns E, G, and I hold the absences for periods 1, 2, and 3 respectively.
+    return `=LET(
+    first_names, '${attendanceSheetName}'!B:B,
+    last_names, '${attendanceSheetName}'!C:C,
+    search_key, ${firstNameA1}&${lastNameA1},
+    search_range, ARRAYFORMULA(first_names&last_names),
+    abs1, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!E:E, ""),
+    abs2, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!G:G, ""),
+    abs3, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!I:I, ""),
+    TEXTJOIN(" / ", TRUE, abs1, abs2, abs3)
+)`;
+}
+
+/**
  * Generate the student forumala to grab the absences per subject in the Student Template Sheet.
  */
 export function createStudentPerSubjectAttendanceFormula(

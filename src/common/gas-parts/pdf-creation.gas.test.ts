@@ -1,7 +1,7 @@
 import { GasTestRunner } from "../../testing/gas-test-runner";
 import { Colors } from "../gas-utils";
 import { pickRandom, randomInt } from "../utils";
-import { getHTMLreport, type StudentData } from "./pdf-creation";
+import { type Grades, getHTMLreport, type StudentData } from "./pdf-creation";
 
 const LOREM_SENTENCES = [
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
@@ -62,8 +62,6 @@ function createComment(name: string, absences: boolean) {
     }
     return result;
 }
-
-type Grades = [string, string, string, string];
 
 function createGrades(decimalPlaces: number, period: 0 | 1 | 2): Grades {
     if (!Number.isInteger(decimalPlaces) || decimalPlaces < 0) {
@@ -128,12 +126,12 @@ export function testPDFReportGeneration() {
             const expectedFileName = `${prefix}_${timestamp}`;
 
             const data: StudentData = {
-                start_year: "2000",
-                end_year: "2134",
+                startYear: "2000",
+                endYear: "2134",
                 period: "N-ésimo periodo",
                 date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
-                first_name: "Alejandrino Güillermina",
-                last_name: "de las Heras y Ponce de León del Olmo y Fernández de Córdoba",
+                firstName: "Alejandrino Güillermina",
+                lastName: "de las Heras y Ponce de León del Olmo y Fernández de Córdoba",
                 id: "HEOA001231HNYRLL37",
                 grade: "4Xº",
                 level: "Secundaria",
@@ -206,12 +204,12 @@ export function testPDFReportGeneration() {
             const expectedFileName = `${prefix}_${timestamp}`;
 
             const data: StudentData = {
-                start_year: "2000",
-                end_year: "2134",
+                startYear: "2000",
+                endYear: "2134",
                 period: "N-ésimo periodo",
                 date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
-                first_name: "Anoñio",
-                last_name: "d'or 田中",
+                firstName: "Anoñio",
+                lastName: "d'or 田中",
                 id: "שֵׁם מִשׁפָּחָה",
                 grade: "IXª",
                 level: "Primaria",
@@ -271,12 +269,12 @@ export function testPDFReportGeneration() {
             const expectedFileName = `${prefix}_${timestamp}`;
 
             const data: StudentData = {
-                start_year: "2000",
-                end_year: "2134",
+                startYear: "2000",
+                endYear: "2134",
                 period: "N-ésimo periodo",
                 date: "Del 35 de martius del 2000 al 42 de quintilis del 2134",
-                first_name: "Úngüla",
-                last_name: '"La destructora" Hernández',
+                firstName: "Úngüla",
+                lastName: '"La destructora" Hernández',
                 id: "C0NN4N",
                 grade: "五十六",
                 level: "Preescolar",

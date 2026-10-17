@@ -14,6 +14,7 @@ import {
     createSetupSepCommentLenghtValidationFormula,
     createSetupTextValidationFormula,
     createStudentGeneralAttendanceFormula,
+    createStudentGeneralAttendanceSummaryFormula,
     createStudentPerSubjectAttendanceFormula,
     getCharacterCountFormula,
     getSepCommentFormula,
@@ -145,6 +146,34 @@ describe("Report Utils. Formula Generators", () => {
             expect(getColumnLetter).toHaveBeenCalledWith(3);
             expect(formula).toContain("return_data, 'Attendance'!C:C");
             expect(formula).toContain("ROUND(raw_result * { 10 }");
+        });
+    });
+
+    describe("createStudentGeneralAttendanceSummaryFormula", () => {
+        it("should look up the student's absences for all periods and join non-empty results", () => {
+            (getA1Notation as jest.Mock).mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
+
+            const formula = createStudentGeneralAttendanceSummaryFormula(mockRange, mockRange, "Attendance");
+
+            expect(getA1Notation).toHaveBeenNthCalledWith(1, {
+                mappedRange: mockRange,
+                width: 1,
+                height: 1,
+                lockRows: true,
+                lockColumns: true,
+            });
+            expect(getA1Notation).toHaveBeenNthCalledWith(2, {
+                mappedRange: mockRange,
+                width: 1,
+                height: 1,
+                lockRows: true,
+                lockColumns: true,
+            });
+            expect(formula).toContain("search_key, $A$1&$B$1");
+            expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!E:E, \"\")");
+            expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!G:G, \"\")");
+            expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!I:I, \"\")");
+            expect(formula).toContain('TEXTJOIN(" / ", TRUE, abs1, abs2, abs3)');
         });
     });
 

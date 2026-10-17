@@ -1,8 +1,8 @@
 import { getInputs } from "../common/gas-utils";
-import { Base64Images } from "../common/utils/base64-constants";
-import { type ReportData, renderReport } from "../templates/reportTemplate";
+import { StudentRowType } from "../common/report-utils";
 import { buildReportCreateReportsCard, StudentReportInputs } from "./cards";
-import { loadReportPersistentData } from "./load";
+import { generateSingleReport } from "./generateReports";
+import { loadReport, loadReportPersistentData } from "./load";
 
 /**
  * Builds and pushes on the stack the Report Menu Card
@@ -25,9 +25,9 @@ export function onPushReportMenuCard(e: GoogleAppsScript.Addons.EventObject): Go
 export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando reporte individual: ";
 
-    const inputs = getInputs(e.commonEventObject.formInputs, StudentReportInputs.schema);
+    const { studentIndex, fileName } = getInputs(e.commonEventObject.formInputs, StudentReportInputs.schema);
 
-    if (inputs.studentIndex == null) {
+    if (studentIndex == null) {
         return CardService.newActionResponseBuilder()
             .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Ningún alumno seleccionado`))
             .build();
@@ -38,25 +38,25 @@ export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObjec
 
     const parent = DriveApp.getFileById(reportFileId).getParents().next();
 
-    const fileName = inputs.fileName ? inputs.fileName : "Nombre del estudiante";
+    const { parsedReport, persistentData } = loadReport(reportFileId);
 
-    const data: ReportData = {
-        studentName: "Yamanqui",
-        photoBase64: Base64Images.SCHOOL,
-        grades: [
-            { subject: "Español", score: 9 },
-            { subject: "Matemáticas", score: 5 },
-        ],
-    };
+    const student = persistentData.students[studentIndex];
+    if (student == null || student.type === StudentRowType.SEPARATOR) {
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Selección inválida`))
+            .build();
+    }
 
-    const htmlString = renderReport(data);
+    const pdfName = fileName ?? student.sheetName;
+
+    const htmlString = generateSingleReport(parsedReport, persistentData, studentIndex);
 
     const pdfBlob = HtmlService.createHtmlOutput(htmlString).getAs(MimeType.PDF);
 
-    parent.createFile(`Reporte_${data.studentName}.html`, htmlString, MimeType.HTML);
-    parent.createFile(pdfBlob.setName(`Reporte_${data.studentName}.pdf`));
+    // parent.createFile(`Reporte_${data.studentName}.html`, htmlString, MimeType.HTML);
+    parent.createFile(pdfBlob.setName(`${pdfName}.pdf`));
 
     return CardService.newActionResponseBuilder()
-        .setNotification(CardService.newNotification().setText(`Index: ${inputs.studentIndex}: ${fileName}`))
+        .setNotification(CardService.newNotification().setText(`Reporte "${pdfName}" creado`))
         .build();
 }

@@ -27,6 +27,7 @@ import {
     createFinalSubjectAverageFormula,
     createIndividualSubjectAverageFormula,
     createStudentGeneralAttendanceFormula,
+    createStudentGeneralAttendanceSummaryFormula,
     createStudentPerSubjectAttendanceFormula,
     generatePeriodString,
     Period,
@@ -252,7 +253,8 @@ function prepareInfo(mappedRanges: Partial<Record<RangeName, MappedNamedRange>>,
         infoData.push([
             {
                 userEnteredValue: {
-                    formulaValue: createStudentGeneralAttendanceFormula(period, firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName, true),
+                    // formulaValue: createStudentGeneralAttendanceFormula(period, firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName, true),
+                    formulaValue: createStudentGeneralAttendanceSummaryFormula(firstNameRange, lastNameRange, ReportSheetSchema.sheets.attendance.sheetName),
                 },
             },
         ]);

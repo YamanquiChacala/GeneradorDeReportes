@@ -1,37 +1,37 @@
 import { REPORT_CSS_STYLE } from "../../templates/report.css";
 import { Base64Images } from "../utils/base64-constants";
 
-type Grades = [string, string, string, string];
+export type Grades = [string, string, string, string];
 
 export interface StudentData {
-    start_year: string;
-    end_year: string;
-    first_name: string;
-    last_name: string;
+    startYear: string;
+    endYear: string;
+    firstName: string;
+    lastName: string;
     id: string;
-    period: string;
-    date: string;
     grade: string;
     level: string;
+    period: string;
+    date: string;
     absences?: string;
     averages: Grades;
     subjectSections: SubjectSection[];
     comments: SubjectComment[];
 }
 
-interface SubjectSection {
+export interface SubjectSection {
     name: string;
     color: string;
     subjects: SubjectGrades[];
 }
 
-interface SubjectGrades {
+export interface SubjectGrades {
     name: string;
     grades: Grades;
-    habilities: [string, string, string, string];
+    habilities: Grades;
 }
 
-interface SubjectComment {
+export interface SubjectComment {
     name: string;
     absences?: string;
     comment: string;
@@ -42,14 +42,14 @@ export function getHTMLreport(data: StudentData): string {
         <html lang="es">
             <DocHead />
             <body>
-                <Header start={data.start_year} end={data.end_year} />
-                <StudentInfo firstName={data.first_name} lastName={data.last_name} id={data.id} grade={data.grade} level={data.level} />
+                <Header start={data.startYear} end={data.endYear} />
+                <StudentInfo firstName={data.firstName} lastName={data.lastName} id={data.id} grade={data.grade} level={data.level} />
                 <div class="grades-body">
                     <GradesLeft averages={data.averages} sections={data.subjectSections} />
                     <NoticeRight />
                 </div>
                 <Footer level={data.level} />
-                <Comments absences={data.absences} comments={data.comments} date={data.date} start={data.start_year} end={data.end_year} period={data.period} />
+                <Comments absences={data.absences} comments={data.comments} date={data.date} start={data.startYear} end={data.endYear} period={data.period} />
             </body>
         </html>
     );
