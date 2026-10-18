@@ -100,23 +100,6 @@ describe("Setup Utils. Parse", () => {
     });
 
     describe("parseStudentList", () => {
-        it("assigns unique sheet names to students with duplicate names", () => {
-            const studentSetupData: readonly CellData[][] = [
-                [str("Ana"), str("Ruiz")],
-                [str("Ana"), str("Ruiz")],
-                [str("Ana"), str("Ruiz")],
-            ];
-
-            const { students, studentReportData } = parseStudentList(studentSetupData);
-
-            expect(students.map((student) => (student.type === StudentRowType.STUDENT ? student.sheetName : undefined))).toEqual([
-                "Ana Ruiz",
-                "Ana Ruiz 2",
-                "Ana Ruiz 3",
-            ]);
-            expect(studentReportData.map((row) => row[3]?.userEnteredValue?.stringValue)).toEqual(["Ana Ruiz", "Ana Ruiz 2", "Ana Ruiz 3"]);
-        });
-
         it("groups students, restarts IDs per group, handles gaps, and assigns optional fields", () => {
             const studentSetupData: readonly CellData[][] = [
                 /* 0 */ [empty(), empty(), empty(), empty(), empty()],

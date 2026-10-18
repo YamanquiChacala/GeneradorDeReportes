@@ -112,10 +112,10 @@ export function createStudentGeneralAttendanceSummaryFormula(
     last_names, '${attendanceSheetName}'!C:C,
     search_key, ${firstNameA1}&${lastNameA1},
     search_range, ARRAYFORMULA(first_names&last_names),
-    abs1, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!E:E, ""),
-    abs2, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!G:G, ""),
-    abs3, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!I:I, ""),
-    TEXTJOIN(" / ", TRUE, abs1, abs2, abs3)
+    abs_1, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!E:E, ""),
+    abs_2, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!G:G, ""),
+    abs_3, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!I:I, ""),
+    TEXTJOIN(" / ", TRUE, abs_1, abs_2, abs_3)
 )`;
 }
 

@@ -5,6 +5,7 @@ import {
     type ExtractRangeNames,
     FILE_VALIDATION_KEY,
     FileType,
+    getCellDataArray,
     getCellText,
     type MappedNamedRange,
     parseSpreadsheet,
@@ -108,6 +109,24 @@ function createReportFile(parentId: string, setupMappedRanges: Partial<Record<Ra
     const groupName = getCellText({ mappedRange: groupMappedRange });
 
     if (groupName === "") throw new Error("Falta nombre del grupo.");
+
+    // Checking for duplicated students
+    const seen = new Set<string>();
+    const studentData = getCellDataArray(getRange(SetupSheetSchema.sheets.groupData.ranges.students), true);
+    for (const studentRow of studentData) {
+        const firstName = studentRow[0]?.effectiveValue?.stringValue?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
+        const lastName = studentRow[1]?.effectiveValue?.stringValue?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
+
+        if (!firstName && !lastName) continue;
+
+        const fullName = `${firstName}\0${lastName}`;
+
+        if (seen.has(fullName)) {
+            throw new Error("Alumno duplicado");
+        }
+
+        seen.add(fullName);
+    }
 
     const fileName = sanitizeFileName(groupName);
 

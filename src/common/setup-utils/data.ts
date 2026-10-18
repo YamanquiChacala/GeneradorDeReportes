@@ -979,6 +979,10 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
         },
     };
 
+    const boldCell: GoogleAppsScript.Sheets.Schema.CellData = {
+        userEnteredFormat: { textFormat: { bold: true, fontSize: 10 } },
+    };
+
     const allFields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>(
         "userEnteredFormat.borders.right",
         "userEnteredFormat.padding.left",
@@ -990,11 +994,14 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
 
     const justBorderFields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.borders.right");
 
+    const justBoldFields = buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredFormat.textFormat.bold");
+
     // Ranges to return
     const condFormatRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
     const mergeRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
     const justBorderRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
     const fullFormatRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+    const boldFormatRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
 
     // Fields, when present, have "Cal" | "SEP"
     if (attendancePerClass && averagePerField) {
@@ -1015,6 +1022,9 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
             mergeRanges.push(getMergeAverages(fieldsColOffset + 2 * fieldIndex, 2));
             fullFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fieldIndex + 1));
         }
+
+        // Final Average
+        boldFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fields));
     } else if (attendancePerClass && !averagePerField) {
         // Subjects have "Fal" | "Cal" | "SEP"
         const subjectsColOffset = 3;
@@ -1024,6 +1034,9 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
             mergeRanges.push(getMergeAverages(subjectsColOffset + 3 * subjectIndex, 3));
             fullFormatRanges.push(getSingleCol(subjectsColOffset + 3 * subjectIndex + 2));
         }
+
+        // Final Average
+        boldFormatRanges.push(getSingleCol(subjectsColOffset + 3 * subjects));
     } else if (!attendancePerClass && averagePerField) {
         // Subjects have only "Cal"
         const subjectsColOffset = 3;
@@ -1043,6 +1056,9 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
             mergeRanges.push(getMergeAverages(fieldsColOffset + 2 * fieldIndex, 2));
             fullFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fieldIndex + 1));
         }
+
+        // Final Average
+        boldFormatRanges.push(getSingleCol(fieldsColOffset + 2 * fields));
     } else {
         // Subjects have "Cal" | "SEP"
         const subjectsColOffset = 4;
@@ -1055,7 +1071,11 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
             mergeRanges.push(getMergeAverages(subjectsColOffset + 2 * subjectIndex, 2));
             fullFormatRanges.push(getSingleCol(subjectsColOffset + 2 * subjectIndex + 1));
         }
+
+        // Final Average
+        boldFormatRanges.push(getSingleCol(subjectsColOffset + 2 * subjects));
     }
+
     // Average row
     condFormatRanges.push(
         offsetGridRange({
@@ -1090,6 +1110,9 @@ export function buildSummaryPeriodFormat({ mappedRange, attendancePerClass, aver
     }
     for (const updateRange of fullFormatRanges) {
         updateCells.push({ cell: formatCell, fields: allFields, range: updateRange });
+    }
+    for (const updateRange of boldFormatRanges) {
+        updateCells.push({ cell: boldCell, fields: justBoldFields, range: updateRange });
     }
 
     return { conditionalFormat, merges, updateCells };

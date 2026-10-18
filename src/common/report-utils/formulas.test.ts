@@ -173,7 +173,7 @@ describe("Report Utils. Formula Generators", () => {
             expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!E:E, \"\")");
             expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!G:G, \"\")");
             expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!I:I, \"\")");
-            expect(formula).toContain('TEXTJOIN(" / ", TRUE, abs1, abs2, abs3)');
+            expect(formula).toContain('TEXTJOIN(" / ", TRUE, abs_1, abs_2, abs_3)');
         });
     });
 
