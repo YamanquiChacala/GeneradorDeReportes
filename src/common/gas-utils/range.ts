@@ -131,7 +131,5 @@ export function getRangeData(sheet: GoogleAppsScript.Sheets.Schema.Sheet, range:
 export function getStringRangeData(sheet: GoogleAppsScript.Sheets.Schema.Sheet, range: GoogleAppsScript.Sheets.Schema.GridRange): string[][] {
     const cellsData = getRangeData(sheet, range);
 
-    if (!cellsData) return [];
-
     return cellsData.map((row) => row.map((cell) => cell.formattedValue ?? ""));
 }

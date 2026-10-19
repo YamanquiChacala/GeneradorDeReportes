@@ -9,7 +9,7 @@ import {
     offsetGridRange,
     type ParsedSpreadsheet,
 } from "../common/gas-utils";
-import { type ReportPersistentData, StudentRowType } from "../common/report-utils";
+import { DEFAULT_COMMENT, type ReportPersistentData, StudentRowType } from "../common/report-utils";
 
 export function generateSingleReport(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistenData: ReportPersistentData, studentRowIndex: number): string {
     const student = persistenData.students[studentRowIndex];
@@ -113,14 +113,18 @@ function getStudentDataForPDF(
 
     const commentsRaw = getRangeData(ReportSheetSchema.sheets.studentTemplate.ranges.comments, { colOffset: 1, width: 1 });
 
+    const cleanComment = (raw: string): string => {
+        const trimmed = raw.trim();
+        return DEFAULT_COMMENT.startsWith(trimmed) ? "" : raw;
+    };
+
     const comments: SubjectComment[] = [];
 
     persistenData.subjects.forEach((subject, index) => {
         comments.push({
             name: subject.subject,
             absences: subjectAbsences[index],
-            // biome-ignore lint/style/noNonNullAssertion: Subjects must have all the subjects.
-            comment: commentsRaw[index]![0]!,
+            comment: cleanComment(commentsRaw[index]?.[0] ?? ""),
         });
     });
 
