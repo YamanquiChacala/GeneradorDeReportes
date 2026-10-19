@@ -7,27 +7,39 @@ import {
     type MappedNamedRange,
     type OffsetGridRangeProperties,
     offsetGridRange,
-    type ParsedSpreadsheet,
 } from "../common/gas-utils";
 import { DEFAULT_COMMENT, type ReportPersistentData, StudentRowType } from "../common/report-utils";
+import { type LoadedStudentData, loadReport, loadStudentData, type StudentRangeKey } from "./load";
 
-export function generateSingleReport(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistenData: ReportPersistentData, studentRowIndex: number): string {
-    const student = persistenData.students[studentRowIndex];
+export function generateSingleReport(reportFileId: string, studentRowIndex: number): string {
+    const { parsedReport, persistentData } = loadReport(reportFileId);
+
+    const student = persistentData.students[studentRowIndex];
 
     if (student == null || student.type === StudentRowType.SEPARATOR) throw new Error("Alumno no válido.");
 
     const sheetName = student.sheetName;
 
-    const sheet = parsedReport.extraSheets.find((sheet) => sheet.properties?.title === sheetName);
+    const studentData = loadStudentData(reportFileId, parsedReport, new Set([sheetName]))[0];
 
-    if (sheet == null) throw new Error("No existe hoja del alumno.");
+    if (studentData == null) throw new Error("Fallo al extraer detalles de alumno.");
 
-    const pdfParams = getStudentDataForPDF(parsedReport.mappedRanges, sheet, persistenData);
+    const pdfParams = getStudentDataForPdf(persistentData, studentData.ranges);
 
     return getHTMLreport(pdfParams);
 }
 
-function getStudentDataForPDF(
+function getStudentDataForPdf(persistenData: ReportPersistentData, rawData: Record<StudentRangeKey, string[][]>): StudentData {
+    const startDate = persistenData.configData.dates[0];
+    const endDate = persistenData.configData.dates[3];
+
+    const startYear = new Date(startDate).getUTCFullYear().toString();
+    const endYear = new Date(endDate).getUTCFullYear().toString();
+
+    const firstName = rawData.firstName[];
+}
+
+function getStudentDataForPDF2(
     mappedRanges: Partial<Record<ExtractRangeNames<typeof ReportSheetSchema>, MappedNamedRange>>,
     studentSheet: GoogleAppsScript.Sheets.Schema.Sheet,
     persistenData: ReportPersistentData,

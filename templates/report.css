@@ -82,6 +82,8 @@ body {
     display: flex;
     justify-content: space-between;
     margin-right: 3rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .address {

@@ -1,4 +1,4 @@
-import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import { getColumnLetter, getMappedRangeA1Notation, type MappedNamedRange } from "../gas-utils";
 import { DEFAULT_COMMENT } from "./constants";
 import {
     createAllSubjectsAverageFormula,
@@ -24,7 +24,7 @@ import { type AcademicField, Period } from "./types";
 
 // Mock the dependencies
 jest.mock("../gas-utils", () => ({
-    getA1Notation: jest.fn(),
+    getMappedRangeA1Notation: jest.fn(),
     getColumnLetter: jest.fn(),
 }));
 
@@ -107,7 +107,7 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createStudentGeneralAttendanceFormula", () => {
         it("should generate attendance formula and calculate correct column offsets for Period FIRST with false absences multiplier", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
             (getColumnLetter as jest.Mock).mockReturnValue("C");
 
             const formula = createStudentGeneralAttendanceFormula(Period.FIRST, mockRange, mockRange, "Attendance", false);
@@ -119,7 +119,7 @@ describe("Report Utils. Formula Generators", () => {
         });
 
         it("should shift the return column by 1 and change multiplier if absences is true", () => {
-            (getA1Notation as jest.Mock).mockReturnValue("$A$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("D");
 
             const formula = createStudentGeneralAttendanceFormula(Period.FIRST, mockRange, mockRange, "Attendance", true);
@@ -130,7 +130,7 @@ describe("Report Utils. Formula Generators", () => {
         });
 
         it("should shift the return column by 2 for each period", () => {
-            (getA1Notation as jest.Mock).mockReturnValue("$A$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("G");
 
             createStudentGeneralAttendanceFormula(Period.THIRD, mockRange, mockRange, "Attendance", false);
@@ -139,7 +139,7 @@ describe("Report Utils. Formula Generators", () => {
         });
 
         it("should default absences to false if omitted, calculating the correct column offset and multiplier", () => {
-            (getA1Notation as jest.Mock).mockReturnValue("$A$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValue("$A$1");
             (getColumnLetter as jest.Mock).mockReturnValue("C");
 
             const formula = createStudentGeneralAttendanceFormula(Period.FIRST, mockRange, mockRange, "Attendance");
@@ -152,18 +152,18 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createStudentGeneralAttendanceSummaryFormula", () => {
         it("should look up the student's absences for all periods and join non-empty results", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
 
             const formula = createStudentGeneralAttendanceSummaryFormula(mockRange, mockRange, "Attendance");
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(1, {
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(1, {
                 mappedRange: mockRange,
                 width: 1,
                 height: 1,
                 lockRows: true,
                 lockColumns: true,
             });
-            expect(getA1Notation).toHaveBeenNthCalledWith(2, {
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(2, {
                 mappedRange: mockRange,
                 width: 1,
                 height: 1,
@@ -190,11 +190,11 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createIndividualSubjectAverageFormula", () => {
         it("should format the weighted average formula and pass correct constraints to A1 utility", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("B2:D2").mockReturnValueOnce("'Weights'!$B$1:$D$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("B2:D2").mockReturnValueOnce("'Weights'!$B$1:$D$1");
 
             const formula = createIndividualSubjectAverageFormula(mockRange, 2, mockRange);
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(1, {
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(1, {
                 mappedRange: mockRange,
                 rowOffset: 2,
                 colOffset: 1,
@@ -203,7 +203,7 @@ describe("Report Utils. Formula Generators", () => {
                 lockColumns: true,
             });
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(2, {
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(2, {
                 mappedRange: mockRange,
                 includeSheetName: true,
                 lockRows: true,
@@ -217,24 +217,24 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createFinalSubjectAverageFormula", () => {
         it("should extract endColumnIndex for colOffset and construct the COUNT/AVERAGE formula", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("E2").mockReturnValueOnce("F2").mockReturnValueOnce("G2");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("E2").mockReturnValueOnce("F2").mockReturnValueOnce("G2");
 
             const formula = createFinalSubjectAverageFormula(mockRange, mockRange, mockRange, 1);
 
-            expect(getA1Notation).toHaveBeenCalledWith(expect.objectContaining({ colOffset: 2 }));
+            expect(getMappedRangeA1Notation).toHaveBeenCalledWith(expect.objectContaining({ colOffset: 2 }));
             expect(formula).toContain("COUNT(E2, F2, G2)=3");
             expect(formula).toContain("ROUND(AVERAGE(E2, F2, G2),1)");
         });
 
         it("should fallback to 0 if trim3 is missing endColumnIndex", () => {
             createFinalSubjectAverageFormula(mockRange, mockRange, mockRangeOpen, 1);
-            expect(getA1Notation).toHaveBeenCalledWith(expect.objectContaining({ colOffset: -2 }));
+            expect(getMappedRangeA1Notation).toHaveBeenCalledWith(expect.objectContaining({ colOffset: -2 }));
         });
     });
 
     describe("createStudentPerSubjectAttendanceFormula", () => {
         it("should calculate correct return column based on period and build complex LET formula", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("$A$5").mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("$A$5").mockReturnValueOnce("$A$1").mockReturnValueOnce("$B$1");
             (getColumnLetter as jest.Mock).mockReturnValue("E");
 
             const formula = createStudentPerSubjectAttendanceFormula(Period.SECOND, mockRange, 2, mockRange, mockRange, "AttData");
@@ -250,11 +250,11 @@ describe("Report Utils. Formula Generators", () => {
         it("should request correct dimensions based on field.subjects and build the formula", () => {
             const mockField: AcademicField = { name: "Science", color: "#FFF", subjects: 4 };
 
-            (getA1Notation as jest.Mock).mockReturnValueOnce("C2:C5").mockReturnValueOnce("'Weights'!$D$2:$D$5");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("C2:C5").mockReturnValueOnce("'Weights'!$D$2:$D$5");
 
             const formula = createFieldFormula(mockField, 2, 1, mockRange, mockRange);
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(
                 1,
                 expect.objectContaining({
                     colOffset: 2,
@@ -264,7 +264,7 @@ describe("Report Utils. Formula Generators", () => {
                 }),
             );
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(
                 2,
                 expect.objectContaining({
                     includeSheetName: true,
@@ -282,11 +282,11 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createFieldAverageFormula", () => {
         it("should request correct constraints from A1 utility and build the rounded average formula", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("C$2:C$5");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("C$2:C$5");
 
             const formula = createFieldAverageFormula(mockRange, 3, 2);
 
-            expect(getA1Notation).toHaveBeenCalledWith({
+            expect(getMappedRangeA1Notation).toHaveBeenCalledWith({
                 mappedRange: mockRange,
                 colOffset: 3,
                 width: 1,
@@ -299,18 +299,18 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createAllSubjectsAverageFormula", () => {
         it("should request values and weights from A1 utility and build the weighted average formula", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("E$2:E$10").mockReturnValueOnce("'Weights'!F$2:F$10");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("E$2:E$10").mockReturnValueOnce("'Weights'!F$2:F$10");
 
             const formula = createAllSubjectsAverageFormula(mockRange, mockRange, 4, 1);
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(1, {
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(1, {
                 mappedRange: mockRange,
                 colOffset: 4,
                 width: 1,
                 lockRows: true,
             });
 
-            expect(getA1Notation).toHaveBeenNthCalledWith(2, {
+            expect(getMappedRangeA1Notation).toHaveBeenNthCalledWith(2, {
                 mappedRange: mockRange,
                 colOffset: 1,
                 width: 1,
@@ -325,11 +325,11 @@ describe("Report Utils. Formula Generators", () => {
 
     describe("createSetupRowValidFormula", () => {
         it("should use the given values in the formula", () => {
-            (getA1Notation as jest.Mock).mockReturnValueOnce("E2:2");
+            (getMappedRangeA1Notation as jest.Mock).mockReturnValueOnce("E2:2");
 
             const formula = createSetupRowValidFormula(mockRange, 1, 4);
 
-            expect(getA1Notation).toHaveBeenCalledWith({
+            expect(getMappedRangeA1Notation).toHaveBeenCalledWith({
                 mappedRange: mockRange,
                 rowOffset: 1,
                 colOffset: 4,

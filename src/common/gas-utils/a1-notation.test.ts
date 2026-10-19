@@ -1,9 +1,9 @@
-import { getA1Notation, getColumnLetter } from "./a1-notation";
+import { getA1Notation, getColumnLetter, getMappedRangeA1Notation } from "./a1-notation";
 import type { MappedNamedRange } from "./types";
 
 describe("Gas Utils, A1 Notation", () => {
     describe("getA1Notation", () => {
-        type InferredA1Params = Parameters<typeof getA1Notation>[0];
+        type InferredA1Params = Parameters<typeof getMappedRangeA1Notation>[0];
 
         // Provides sensible defaults while allowing overrides
         const createMockSheet = (title = "Sheet1", rowCount: number | undefined = 1000, columnCount: number | undefined = 26) =>
@@ -22,15 +22,23 @@ describe("Gas Utils, A1 Notation", () => {
             ...overrides,
         });
 
+        it("should format a GridRange using an optional Sheet", () => {
+            expect(getA1Notation({ range: {}, sheet: createMockSheet("Custom", 50, 5) })).toBe("A1:E50");
+        });
+
+        it("should use fallback dimensions when the optional Sheet is omitted", () => {
+            expect(getA1Notation({ range: {} })).toBe("A1:ALL1000");
+        });
+
         describe("Standard Bounded Ranges", () => {
             it("should format a single cell (A1)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 });
-                expect(getA1Notation(params)).toBe("A1");
+                expect(getMappedRangeA1Notation(params)).toBe("A1");
             });
 
             it("should format a standard multi-cell range (A1:B2)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 });
-                expect(getA1Notation(params)).toBe("A1:B2");
+                expect(getMappedRangeA1Notation(params)).toBe("A1:B2");
             });
 
             it("should handle missing grid properties (fallbacks to 1000x1000)", () => {
@@ -39,7 +47,7 @@ describe("Gas Utils, A1 Notation", () => {
                     sheet: { properties: { title: "Sheet1" } }, // gridProperties entirely missing
                 };
                 // Starts at F6, ends at fallback bounds (1000 cols = ALL, 1000 rows)
-                expect(getA1Notation({ mappedRange: mockMappedRange })).toBe("F6:ALL1000");
+                expect(getMappedRangeA1Notation({ mappedRange: mockMappedRange })).toBe("F6:ALL1000");
             });
         });
 
@@ -50,13 +58,13 @@ describe("Gas Utils, A1 Notation", () => {
             it("should shift a single cell by row and column offsets", () => {
                 // Origin: A1. Offset by 1 row, 2 cols -> C2
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 }, { rowOffset: 1, colOffset: 2 });
-                expect(getA1Notation(params)).toBe("C2");
+                expect(getMappedRangeA1Notation(params)).toBe("C2");
             });
 
             it("should expand a single cell into a range using height and width", () => {
                 // Origin: A1. Resize to 3 rows high, 2 cols wide -> A1:B3
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 }, { height: 3, width: 2 });
-                expect(getA1Notation(params)).toBe("A1:B3");
+                expect(getMappedRangeA1Notation(params)).toBe("A1:B3");
             });
 
             it("should combine offsets and resizing simultaneously", () => {
@@ -65,53 +73,53 @@ describe("Gas Utils, A1 Notation", () => {
                     { startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 },
                     { rowOffset: 1, colOffset: 1, height: 2, width: 2 },
                 );
-                expect(getA1Notation(params)).toBe("B2:C3");
+                expect(getMappedRangeA1Notation(params)).toBe("B2:C3");
             });
         });
 
         describe("Unbounded Dimensions (Columns & Rows)", () => {
             it("should format a single entire column (A:A)", () => {
                 const params = createParams({ startColumnIndex: 0, endColumnIndex: 1 });
-                expect(getA1Notation(params)).toBe("A:A");
+                expect(getMappedRangeA1Notation(params)).toBe("A:A");
             });
 
             it("should format multiple entire columns (A:C)", () => {
                 const params = createParams({ startColumnIndex: 0, endColumnIndex: 3 });
-                expect(getA1Notation(params)).toBe("A:C");
+                expect(getMappedRangeA1Notation(params)).toBe("A:C");
             });
 
             it("should format a single entire row (1:1)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1 });
-                expect(getA1Notation(params)).toBe("1:1");
+                expect(getMappedRangeA1Notation(params)).toBe("1:1");
             });
 
             it("should format multiple entire rows (1:5)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 5 });
-                expect(getA1Notation(params)).toBe("1:5");
+                expect(getMappedRangeA1Notation(params)).toBe("1:5");
             });
         });
 
         describe("Partially Unbounded (The 'To Edge' Cases)", () => {
             it("should format a fully open-ended range falling back to sheet dimensions (C4:Z1000)", () => {
                 const params = createParams({ startRowIndex: 3, startColumnIndex: 2 });
-                expect(getA1Notation(params)).toBe("C4:Z1000");
+                expect(getMappedRangeA1Notation(params)).toBe("C4:Z1000");
             });
 
             it("should format an open-ended range spanning to the last column, bounded by rows (C4:10)", () => {
                 const params = createParams({ startRowIndex: 3, endRowIndex: 10, startColumnIndex: 2 });
-                expect(getA1Notation(params)).toBe("C4:10");
+                expect(getMappedRangeA1Notation(params)).toBe("C4:10");
             });
 
             it("should format an open-ended range spanning to the last row, bounded by columns (C4:E)", () => {
                 const params = createParams({ startRowIndex: 3, startColumnIndex: 2, endColumnIndex: 5 });
-                expect(getA1Notation(params)).toBe("C4:E");
+                expect(getMappedRangeA1Notation(params)).toBe("C4:E");
             });
         });
 
         describe("Fully Unbounded (Entire Sheet)", () => {
             it("should format a completely empty GridRange to cover the whole sheet bounds", () => {
                 const params = createParams({});
-                expect(getA1Notation(params)).toBe("A1:Z1000");
+                expect(getMappedRangeA1Notation(params)).toBe("A1:Z1000");
             });
 
             it("should adapt entirely unbounded fallback to custom grid dimensions", () => {
@@ -125,34 +133,34 @@ describe("Gas Utils, A1 Notation", () => {
                         },
                     },
                 );
-                expect(getA1Notation(params)).toBe("A1:E50");
+                expect(getMappedRangeA1Notation(params)).toBe("A1:E50");
             });
         });
 
         describe("Locking References (Absolute vs Relative)", () => {
             it("should lock rows and columns when both are true ($A$1:$B$2)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 }, { lockRows: true, lockColumns: true });
-                expect(getA1Notation(params)).toBe("$A$1:$B$2");
+                expect(getMappedRangeA1Notation(params)).toBe("$A$1:$B$2");
             });
 
             it("should lock only rows (A$1:B$2)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 }, { lockRows: true });
-                expect(getA1Notation(params)).toBe("A$1:B$2");
+                expect(getMappedRangeA1Notation(params)).toBe("A$1:B$2");
             });
 
             it("should lock only columns ($A1:$B2)", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 2 }, { lockColumns: true });
-                expect(getA1Notation(params)).toBe("$A1:$B2");
+                expect(getMappedRangeA1Notation(params)).toBe("$A1:$B2");
             });
 
             it("should lock completely unbounded rows/columns correctly ($A:$C)", () => {
                 const params = createParams({ startColumnIndex: 0, endColumnIndex: 3 }, { lockColumns: true });
-                expect(getA1Notation(params)).toBe("$A:$C");
+                expect(getMappedRangeA1Notation(params)).toBe("$A:$C");
             });
 
             it("should apply locks correctly on open-ended ranges ($C$4:$Z$1000)", () => {
                 const params = createParams({ startRowIndex: 3, startColumnIndex: 2 }, { lockRows: true, lockColumns: true });
-                expect(getA1Notation(params)).toBe("$C$4:$Z$1000");
+                expect(getMappedRangeA1Notation(params)).toBe("$C$4:$Z$1000");
             });
         });
 
@@ -160,14 +168,14 @@ describe("Gas Utils, A1 Notation", () => {
             it("should prepend sheet name without quotes if standard", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 }, { includeSheetName: true });
                 // As implemented, it always wraps in single quotes for safety
-                expect(getA1Notation(params)).toBe("'Sheet1'!A1");
+                expect(getMappedRangeA1Notation(params)).toBe("'Sheet1'!A1");
             });
 
             it("should escape single quotes inside the sheet name", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 }, { includeSheetName: true });
                 // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
                 params.mappedRange.sheet.properties!.title = "John's Data";
-                expect(getA1Notation(params)).toBe("'John''s Data'!A1");
+                expect(getMappedRangeA1Notation(params)).toBe("'John''s Data'!A1");
             });
 
             it("should use custom sheet name when specified", () => {
@@ -177,7 +185,7 @@ describe("Gas Utils, A1 Notation", () => {
                 );
                 // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
                 params.mappedRange.sheet.properties!.title = "UnusedName";
-                expect(getA1Notation(params)).toBe("'mySheet'!A1");
+                expect(getMappedRangeA1Notation(params)).toBe("'mySheet'!A1");
             });
 
             it("should fallback to sheet name if custom name is empty string", () => {
@@ -187,14 +195,14 @@ describe("Gas Utils, A1 Notation", () => {
                 );
                 // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
                 params.mappedRange.sheet.properties!.title = "usedName";
-                expect(getA1Notation(params)).toBe("'usedName'!A1");
+                expect(getMappedRangeA1Notation(params)).toBe("'usedName'!A1");
             });
 
             it("should handle empty string sheet names gracefully", () => {
                 const params = createParams({ startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 1 }, { includeSheetName: true });
                 // biome-ignore lint/style/noNonNullAssertion: Setup in mock builder
                 params.mappedRange.sheet.properties!.title = "";
-                expect(getA1Notation(params)).toBe("A1");
+                expect(getMappedRangeA1Notation(params)).toBe("A1");
             });
         });
     });
