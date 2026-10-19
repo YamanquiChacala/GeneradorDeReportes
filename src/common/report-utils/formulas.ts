@@ -300,12 +300,11 @@ export function createSetupSepCommentLenghtValidationFormula(a1Cell: string) {
 export function createSummaryGeneralAbsencesFormula(assitanceSheetName: string, firstName: string, lastName: string, period: 0 | 1 | 2): string {
     const targetColumns: [string, string, string] = ["E", "G", "I"];
     const returnColumn = targetColumns[period];
-
-    // Wrap sheet name in single quotes and safely escape any existing single quotes
-    const safeSheetName = `'${assitanceSheetName.replace(/'/g, "''")}'`;
+    const safeFirstName = firstName.replace(/"/g, '""');
+    const safeLastName = lastName.replace(/"/g, '""');
 
     // Construct the final formula string
-    return `=FILTER(${safeSheetName}!$${returnColumn}$4:$${returnColumn}, ${safeSheetName}!$B$4:$B = "${firstName}", ${safeSheetName}!$C$4:$C = "${lastName}")`;
+    return `=FILTER('${assitanceSheetName}'!$${returnColumn}$4:$${returnColumn}, '${assitanceSheetName}'!$B$4:$B = "${safeFirstName}", '${assitanceSheetName}'!$C$4:$C = "${safeLastName}")`;
 }
 
 /**

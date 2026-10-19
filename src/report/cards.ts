@@ -105,7 +105,7 @@ export function buildReportCreateReportsCard(persistentData: ReportPersistentDat
 
     const studentDropdown = CardService.newSelectionInput()
         .setType(CardService.SelectionInputType.DROPDOWN)
-        .setTitle("🎓 Selecciona un alumno (Requerido)")
+        .setTitle("🎓 Selecciona un Alumno")
         .setFieldName(StudentReportInputs.fieldName("studentIndex"));
 
     persistentData.students.forEach((studentRow, index) => {

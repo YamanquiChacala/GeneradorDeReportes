@@ -16,6 +16,7 @@ import {
     createStudentGeneralAttendanceFormula,
     createStudentGeneralAttendanceSummaryFormula,
     createStudentPerSubjectAttendanceFormula,
+    createSummaryGeneralAbsencesFormula,
     getCharacterCountFormula,
     getSepCommentFormula,
 } from "./formulas";
@@ -174,6 +175,16 @@ describe("Report Utils. Formula Generators", () => {
             expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!G:G, \"\")");
             expect(formula).toContain("XLOOKUP(search_key, search_range, 'Attendance'!I:I, \"\")");
             expect(formula).toContain('TEXTJOIN(" / ", TRUE, abs_1, abs_2, abs_3)');
+        });
+    });
+
+    describe("createSummaryGeneralAbsencesFormula", () => {
+        it("escapes quotes in student names while preserving other valid characters", () => {
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing user input
+            const formula = createSummaryGeneralAbsencesFormula("Attendance", 'El Paso" ${variable}', 'O"Neil $ {student}', 0);
+
+            // biome-ignore lint/suspicious/noTemplateCurlyInString: Testing user input
+            expect(formula).toBe('=FILTER(\'Attendance\'!$E$4:$E, \'Attendance\'!$B$4:$B = "El Paso"" ${variable}", \'Attendance\'!$C$4:$C = "O""Neil $ {student}")');
         });
     });
 
