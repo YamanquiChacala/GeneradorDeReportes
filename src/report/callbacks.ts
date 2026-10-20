@@ -18,8 +18,21 @@ export function onPushReportMenuCard(e: GoogleAppsScript.Addons.EventObject): Go
         .build();
 }
 
+export function onGenerateAllReports(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const mainErrorMessage = "❌ Error creando reportes: ";
+
+    const reportFileId = e?.sheets?.id;
+    if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
+
+    const parent = DriveApp.getFileById(reportFileId).getParents().next();
+
+    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText(`Reportes creados`)).build();
+}
+
 /**
- *
+ * Generates a PDF report for the selected student and saves it in the spreadsheet's parent folder.
+ * Uses the optional custom file name when provided, otherwise the generated report name.
+ * Returns a notification if no student is selected or after the report is created.
  */
 export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando reporte individual: ";
@@ -37,10 +50,20 @@ export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObjec
 
     const parent = DriveApp.getFileById(reportFileId).getParents().next();
 
-    const { html, name } = generateSingleReport(reportFileId, studentIndex);
+    let html: string, name: string;
+
+    try {
+        const result = generateSingleReport(reportFileId, studentIndex);
+        html = result.html;
+        name = result.name;
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${errorMessage}`))
+            .build();
+    }
 
     const pdfName = fileName ?? name;
-
     const pdfBlob = HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
 
     // parent.createFile(`Reporte_${data.studentName}.html`, htmlString, MimeType.HTML);
