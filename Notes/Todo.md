@@ -126,6 +126,7 @@
     - 📄 [`buildReportOptionsMainCard`](../src/report/cards.ts) - Main 📊 Report Admin Menu
         - 📄 [`buildReportCreateReportsCard`](../src/report/cards.ts) - Menu to create student reports
             - ⚡ [`onGenerateIndividualReport`](../src/report/callbacks.ts) - Saves a PDF report of the selected student
+                - 🛠️ [`generateSingleReport`] (../src/report/generateReports.ts) - Creates the HTML of a single report 📈
 
 
 

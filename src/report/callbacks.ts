@@ -1,8 +1,7 @@
 import { getInputs } from "../common/gas-utils";
-import { StudentRowType } from "../common/report-utils";
 import { buildReportCreateReportsCard, StudentReportInputs } from "./cards";
 import { generateSingleReport } from "./generateReports";
-import { loadReport, loadReportPersistentData } from "./load";
+import { loadReportPersistentData } from "./load";
 
 /**
  * Builds and pushes on the stack the Report Menu Card
@@ -38,20 +37,11 @@ export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObjec
 
     const parent = DriveApp.getFileById(reportFileId).getParents().next();
 
-    const { parsedReport, persistentData } = loadReport(reportFileId);
+    const { html, name } = generateSingleReport(reportFileId, studentIndex);
 
-    const student = persistentData.students[studentIndex];
-    if (student == null || student.type === StudentRowType.SEPARATOR) {
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Selección inválida`))
-            .build();
-    }
+    const pdfName = fileName ?? name;
 
-    const pdfName = fileName ?? student.sheetName;
-
-    const htmlString = generateSingleReport(parsedReport, persistentData, studentIndex);
-
-    const pdfBlob = HtmlService.createHtmlOutput(htmlString).getAs(MimeType.PDF);
+    const pdfBlob = HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
 
     // parent.createFile(`Reporte_${data.studentName}.html`, htmlString, MimeType.HTML);
     parent.createFile(pdfBlob.setName(`${pdfName}.pdf`));

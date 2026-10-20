@@ -1,5 +1,14 @@
 import { ReportSheetSchema } from "../common/gas-parts";
-import { buildFieldsMask, createRequiredGetter, getA1Notation, type ParsedSpreadsheet, PERSISTENT_DATA_KEY, parseSpreadsheet } from "../common/gas-utils";
+import {
+    buildFieldsMask,
+    createRequiredGetter,
+    type ExtractRangeNames,
+    getA1Notation,
+    offsetGridRange,
+    type ParsedSpreadsheet,
+    PERSISTENT_DATA_KEY,
+    parseSpreadsheet,
+} from "../common/gas-utils";
 import type { ReportPersistentData } from "../common/report-utils";
 
 type GridRange = GoogleAppsScript.Sheets.Schema.GridRange;
@@ -42,18 +51,7 @@ export function loadReportPersistentData(reportFileId: string): ReportPersistent
     return persistentData;
 }
 
-export type StudentRangeKey =
-    | "firstName"
-    | "lastName"
-    | "generalInfo"
-    | "trim1"
-    | "trim1Totals"
-    | "trim2"
-    | "trim2Totals"
-    | "trim3"
-    | "trim3Totals"
-    | "abilities"
-    | "comments";
+export type StudentRangeKey = "generalInfo" | "trim1" | "trim1Totals" | "trim2" | "trim2Totals" | "trim3" | "trim3Totals" | "abilities" | "comments";
 
 export type LoadedStudentData = {
     sheetId: number;
@@ -66,20 +64,23 @@ const BATCH_SIZE = 50;
 export function loadStudentData(reportFileId: string, parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, sheetNames: Set<string>): LoadedStudentData[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
 
+    const getLastColumsRange = (rangeName: ExtractRangeNames<typeof ReportSheetSchema>, width: number) => {
+        const origin = getMappedRange(rangeName).namedRange.range;
+        return offsetGridRange({ origin, colOffset: (origin.endColumnIndex ?? 0) - (origin.startColumnIndex ?? 0) - width, width });
+    };
+
     const template = ReportSheetSchema.sheets.studentTemplate.ranges;
 
     const originalRanges: Record<StudentRangeKey, GridRange> = {
-        firstName: getMappedRange(template.firstName).namedRange.range,
-        lastName: getMappedRange(template.lastName).namedRange.range,
         generalInfo: getMappedRange(template.generalInfo).namedRange.range,
-        trim1: getMappedRange(template.trim1Subjects).namedRange.range,
-        trim1Totals: getMappedRange(template.trim1Totals).namedRange.range,
-        trim2: getMappedRange(template.trim2Subjects).namedRange.range,
-        trim2Totals: getMappedRange(template.trim2Totals).namedRange.range,
-        trim3: getMappedRange(template.trim3Subjects).namedRange.range,
-        trim3Totals: getMappedRange(template.trim3Totals).namedRange.range,
-        abilities: getMappedRange(template.abilities).namedRange.range,
-        comments: getMappedRange(template.comments).namedRange.range,
+        trim1: getLastColumsRange(template.trim1Subjects, 2),
+        trim1Totals: getLastColumsRange(template.trim1Totals, 1),
+        trim2: getLastColumsRange(template.trim2Subjects, 2),
+        trim2Totals: getLastColumsRange(template.trim2Totals, 1),
+        trim3: getLastColumsRange(template.trim3Subjects, 3),
+        trim3Totals: getLastColumsRange(template.trim3Totals, 2),
+        abilities: offsetGridRange({ origin: getMappedRange(template.abilities).namedRange.range, colOffset: 1, width: 4 }),
+        comments: offsetGridRange({ origin: getMappedRange(template.comments).namedRange.range, colOffset: 1, width: 1 }),
     };
 
     const rangeKeys = Object.keys(originalRanges) as StudentRangeKey[];
