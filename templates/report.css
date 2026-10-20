@@ -86,11 +86,6 @@ body {
     page-break-inside: avoid;
 }
 
-.footer + .next-section {
-    margin-block-start: 1rem;
-    margin-break: discard;
-}
-
 .address {
     display: flex;
     flex-direction: column;
@@ -231,6 +226,7 @@ td p:last-child {
 /* 6. Page 2+ Pagination Rules */
 .page-break {
     break-before: always;
+    margin-top: 1.5rem;
 }
 
 /* Trick to repeat headers on multipage tables */
