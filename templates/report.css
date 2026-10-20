@@ -86,6 +86,11 @@ body {
     page-break-inside: avoid;
 }
 
+.footer + .next-section {
+    margin-block-start: 1rem;
+    margin-break: discard;
+}
+
 .address {
     display: flex;
     flex-direction: column;
