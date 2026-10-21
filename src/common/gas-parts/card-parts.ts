@@ -142,3 +142,10 @@ export function decoratedTextWithCallback({
     }
     return decoratedText({ text, topText, bottomText, startIcon, endIcon, action });
 }
+
+/**
+ * Creates an action response that displays a notification with the supplied text.
+ */
+export function notify(text: string): GoogleAppsScript.Card_Service.ActionResponse {
+    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText(text)).build();
+}

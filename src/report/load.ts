@@ -9,7 +9,7 @@ import {
     PERSISTENT_DATA_KEY,
     parseSpreadsheet,
 } from "../common/gas-utils";
-import type { ReportPersistentData } from "../common/report-utils";
+import type { ReportPersistentData, Student } from "../common/report-utils";
 
 type GridRange = GoogleAppsScript.Sheets.Schema.GridRange;
 
@@ -54,14 +54,13 @@ export function loadReportPersistentData(reportFileId: string): ReportPersistent
 export type StudentRangeKey = "generalInfo" | "trim1" | "trim1Totals" | "trim2" | "trim2Totals" | "trim3" | "trim3Totals" | "abilities" | "comments";
 
 export type LoadedStudentData = {
-    sheetId: number;
-    sheetName: string;
+    student: Student;
     ranges: Record<StudentRangeKey, string[][]>;
 };
 
 const BATCH_SIZE = 50;
 
-export function loadStudentData(reportFileId: string, parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, sheetNames: Set<string>): LoadedStudentData[] {
+export function loadStudentData(reportFileId: string, parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, students: Student[]): LoadedStudentData[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
 
     const getLastColumsRange = (rangeName: ExtractRangeNames<typeof ReportSheetSchema>, width: number) => {
@@ -85,17 +84,22 @@ export function loadStudentData(reportFileId: string, parsedReport: ParsedSpread
 
     const rangeKeys = Object.keys(originalRanges) as StudentRangeKey[];
 
-    const studentSheets = parsedReport.extraSheets.filter((sheet) => sheet.properties?.title && sheetNames.has(sheet.properties?.title));
+    const studentsBySheet = new Map(students.map((s) => [s.sheetName, s]));
 
-    type Request = { studentIndex: number; key: StudentRangeKey; a1: string };
-    const requests: Request[] = [];
-
-    studentSheets.forEach((sheet, studentIndex) => {
-        for (const key of rangeKeys) {
-            const a1 = getA1Notation({ range: originalRanges[key], customSheetName: sheet.properties?.title, includeSheetName: true });
-            requests.push({ studentIndex, key, a1 });
-        }
+    const targets = parsedReport.extraSheets.flatMap((sheet) => {
+        const sheetName = sheet.properties?.title;
+        const student = sheetName ? studentsBySheet.get(sheetName) : undefined;
+        if (!sheetName || !student) return [];
+        return [{ student, sheetName, ranges: {} as Record<StudentRangeKey, string[][]> }];
     });
+
+    const requests = targets.flatMap((target) =>
+        rangeKeys.map((key) => ({
+            target,
+            key,
+            a1: getA1Notation({ range: originalRanges[key], customSheetName: target.sheetName, includeSheetName: true }),
+        })),
+    );
 
     const fetched: (string[][] | undefined)[] = [];
     for (let i = 0; i < requests.length; i += BATCH_SIZE) {
@@ -110,16 +114,9 @@ export function loadStudentData(reportFileId: string, parsedReport: ParsedSpread
         });
     }
 
-    const students: LoadedStudentData[] = studentSheets.map((sheet) => ({
-        sheetId: sheet.properties?.sheetId ?? 0,
-        sheetName: sheet.properties?.title ?? "",
-        ranges: {} as Record<StudentRangeKey, string[][]>,
-    }));
-
     requests.forEach((req, i) => {
-        // biome-ignore lint/style/noNonNullAssertion: Index is guaranteed to exists
-        students[req.studentIndex]!.ranges[req.key] = fetched[i] ?? [];
+        req.target.ranges[req.key] = fetched[i] ?? [];
     });
 
-    return students;
+    return targets.map(({ student, ranges }) => ({ student, ranges }));
 }

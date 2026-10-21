@@ -1,23 +1,39 @@
 import { type Grades, getHTMLreport, type StudentData, type SubjectComment, type SubjectGrades, type SubjectSection } from "../common/gas-parts/pdf-creation";
-import { DEFAULT_COMMENT, type ReportPersistentData, StudentRowType } from "../common/report-utils";
+import { DEFAULT_COMMENT, type ReportPersistentData, type Student, type StudentRow, StudentRowType } from "../common/report-utils";
 import { loadReport, loadStudentData, type StudentRangeKey } from "./load";
 
-export function generateSingleReport(reportFileId: string, studentRowIndex: number): { html: string; name: string } {
+export interface HtmlContent {
+    html: string;
+    name: string;
+}
+
+const isStudent = (row: StudentRow): row is Student => row.type === StudentRowType.STUDENT;
+
+export function generateAllReports(reportFileId: string): HtmlContent[] {
+    const { parsedReport, persistentData } = loadReport(reportFileId);
+
+    const students = persistentData.students.filter(isStudent);
+
+    return loadStudentData(reportFileId, parsedReport, students).map(({ student, ranges }) => ({
+        name: student.sheetName,
+        html: getHTMLreport(getStudentDataForPdf(persistentData, ranges, student.firstName, student.lastName)),
+    }));
+}
+
+export function generateSingleReport(reportFileId: string, studentRowIndex: number): HtmlContent {
     const { parsedReport, persistentData } = loadReport(reportFileId);
 
     const student = persistentData.students[studentRowIndex];
 
     if (student == null || student.type === StudentRowType.SEPARATOR) throw new Error("Alumno no válido.");
 
-    const sheetName = student.sheetName;
-
-    const studentData = loadStudentData(reportFileId, parsedReport, new Set([sheetName]))[0];
+    const studentData = loadStudentData(reportFileId, parsedReport, [student])[0];
 
     if (studentData == null) throw new Error("Fallo al extraer detalles de alumno.");
 
     const pdfParams = getStudentDataForPdf(persistentData, studentData.ranges, student.firstName, student.lastName);
 
-    return { html: getHTMLreport(pdfParams), name: sheetName };
+    return { html: getHTMLreport(pdfParams), name: student.sheetName };
 }
 
 function getStudentDataForPdf(persistenData: ReportPersistentData, rawData: Record<StudentRangeKey, string[][]>, firstName: string, lastName: string): StudentData {

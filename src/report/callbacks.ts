@@ -1,7 +1,24 @@
-import { getInputs } from "../common/gas-utils";
+import { buildUtilityCard, headerImage, notify, onPopCardStack, textButton } from "../common/gas-parts";
+import { Colors, getInputs } from "../common/gas-utils";
 import { buildReportCreateReportsCard, StudentReportInputs } from "./cards";
-import { generateSingleReport } from "./generateReports";
+import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
+
+const JOB_PREFIX = "reportJob:";
+const STALE_AFTER_MS = 15 * 60 * 1000;
+const BUDGET_MS = 4.5 * 60 * 1000;
+
+interface JobState {
+    fileId: string;
+    next: number;
+    updatedAt: number;
+}
+
+function pendingJobs(props: GoogleAppsScript.Properties.Properties): [string, JobState][] {
+    return Object.entries(props.getProperties())
+        .filter(([key]) => key.startsWith(JOB_PREFIX))
+        .map(([key, raw]) => [key, JSON.parse(raw) as JobState]);
+}
 
 /**
  * Builds and pushes on the stack the Report Menu Card
@@ -19,14 +36,35 @@ export function onPushReportMenuCard(e: GoogleAppsScript.Addons.EventObject): Go
 }
 
 export function onGenerateAllReports(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
-    const mainErrorMessage = "❌ Error creando reportes: ";
+    try {
+        const fileId = e?.sheets?.id;
+        if (fileId == null) throw new Error("Unexpected error, file should be defined.");
 
-    const reportFileId = e?.sheets?.id;
-    if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
+        const props = PropertiesService.getUserProperties();
+        const key = JOB_PREFIX + fileId;
+        const existing = props.getProperty(key);
+        if (existing && Date.now() - (JSON.parse(existing) as JobState).updatedAt < STALE_AFTER_MS) {
+            return notify("Ya hay una generación en curso para este archivo.");
+        }
 
-    const parent = DriveApp.getFileById(reportFileId).getParents().next();
+        props.setProperty(key, JSON.stringify({ fileId, next: 0, updatedAt: Date.now() } satisfies JobState));
+        ScriptApp.newTrigger(triggerProcessGenerateAllReports.name).timeBased().after(1000).create();
 
-    return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText(`Reportes creados`)).build();
+        const successCard = buildUtilityCard({
+            header: headerImage({ title: "Generación de Reportes", subtitle: "Montessori Chacala" }),
+            title: `<font color="${Colors.LOGO_OSCURO}"><b>✅ ¡Registro creado con éxito!</b></font>`,
+            message: `El archivo de configuración para el grupo "<b>{groupName}</b>" ya está listo.`,
+            points: ["El archivo aparecerá en la carpeta de Drive en un momento.", "Puedes seguir generando otros Registros."],
+            button: textButton({ text: "Regresar al inicio", action: CardService.newAction().setFunctionName(onPopCardStack.name) }),
+        });
+
+        return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().pushCard(successCard)).build();
+
+        // return notify("Generando reportes en segundo plano. Aparecerán en la carpeta en unos minutos.");
+    } catch (error) {
+        console.error(error);
+        return notify(`❌ Error creando reportes: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 /**
@@ -37,39 +75,70 @@ export function onGenerateAllReports(e: GoogleAppsScript.Addons.EventObject): Go
 export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
     const mainErrorMessage = "❌ Error creando reporte individual: ";
 
-    const { studentIndex, fileName } = getInputs(e.commonEventObject.formInputs, StudentReportInputs.schema);
+    try {
+        const { studentIndex, fileName } = getInputs(e.commonEventObject.formInputs, StudentReportInputs.schema);
+        if (studentIndex == null) {
+            throw new Error("Ningún alumno seleccionado");
+        }
 
-    if (studentIndex == null) {
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}Ningún alumno seleccionado`))
-            .build();
+        const reportFileId = e?.sheets?.id;
+        if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
+
+        const parent = DriveApp.getFileById(reportFileId).getParents().next();
+        const { html, name } = generateSingleReport(reportFileId, studentIndex);
+
+        const pdfName = fileName ?? name;
+        const pdfBlob = HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
+        parent.createFile(pdfBlob.setName(`${pdfName}.pdf`));
+
+        return notify(`Reporte "${pdfName}" creado`);
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return notify(`${mainErrorMessage}${errorMessage}`);
     }
+}
 
-    const reportFileId = e?.sheets?.id;
-    if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
-
-    const parent = DriveApp.getFileById(reportFileId).getParents().next();
-
-    let html: string, name: string;
+export function triggerProcessGenerateAllReports() {
+    // One worker per user at a time; if another is running, it will pick up our job when it rescans
+    const lock = LockService.getUserLock();
+    if (!lock.tryLock(0)) return;
 
     try {
-        const result = generateSingleReport(reportFileId, studentIndex);
-        html = result.html;
-        name = result.name;
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        return CardService.newActionResponseBuilder()
-            .setNotification(CardService.newNotification().setText(`${mainErrorMessage}${errorMessage}`))
-            .build();
+        for (const t of ScriptApp.getProjectTriggers()) {
+            if (t.getHandlerFunction() === triggerProcessGenerateAllReports.name) ScriptApp.deleteTrigger(t);
+        }
+
+        const props = PropertiesService.getUserProperties();
+        const start = Date.now();
+
+        for (const [key, state] of pendingJobs(props)) {
+            if (Date.now() - start >= BUDGET_MS) break;
+            try {
+                const parent = DriveApp.getFileById(state.fileId).getParents().next();
+                const reports = generateAllReports(state.fileId);
+
+                while (state.next < reports.length && Date.now() - start < BUDGET_MS) {
+                    // biome-ignore lint/style/noNonNullAssertion: Guaranteed to be in range
+                    const { html, name } = reports[state.next]!;
+                    parent.createFile(HtmlService.createHtmlOutput(html).getAs(MimeType.PDF).setName(`${name}.pdf`));
+                    state.next++;
+                    state.updatedAt = Date.now();
+                    props.setProperty(key, JSON.stringify(state)); // checkpoint
+                }
+
+                if (state.next >= reports.length) props.deleteProperty(key);
+            } catch (error) {
+                console.error(`Job ${key} failed`, error);
+                props.deleteProperty(key); // don't let a broken job block the queue
+            }
+        }
+
+        // Rescan before releasing the lock: covers unfinished jobs and ones enqueued meanwhile
+        if (pendingJobs(props).length > 0) {
+            ScriptApp.newTrigger(triggerProcessGenerateAllReports.name).timeBased().after(1000).create();
+        }
+    } finally {
+        lock.releaseLock();
     }
-
-    const pdfName = fileName ?? name;
-    const pdfBlob = HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
-
-    // parent.createFile(`Reporte_${data.studentName}.html`, htmlString, MimeType.HTML);
-    parent.createFile(pdfBlob.setName(`${pdfName}.pdf`));
-
-    return CardService.newActionResponseBuilder()
-        .setNotification(CardService.newNotification().setText(`Reporte "${pdfName}" creado`))
-        .build();
 }

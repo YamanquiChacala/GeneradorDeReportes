@@ -312,7 +312,7 @@ function Footer(props: { level: string }): JSX.Element {
                     </>
                 )}
                 <br />
-                T: (327) 219-4011 / info@chacala.school
+                T: (327) 110-2637 / info@chacala.school
             </div>
             <div class="signature">
                 <div class="sig-line">

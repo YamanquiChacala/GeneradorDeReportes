@@ -2,7 +2,7 @@ import { decoratedTextWithCallback, headerIcon, iconImage } from "../common/gas-
 import { defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
 import { type ReportPersistentData, StudentRowType } from "../common/report-utils";
 import { Icon } from "../common/utils";
-import { onGenerateIndividualReport, onPushReportMenuCard } from "./callbacks";
+import { onGenerateAllReports, onGenerateIndividualReport, onPushReportMenuCard } from "./callbacks";
 
 export const ReportFileIdParam = defineActionParameters({
     reportFileId: ParamType.STRING,
@@ -90,7 +90,7 @@ export function buildReportCreateReportsCard(persistentData: ReportPersistentDat
 
     const groupExplanation = CardService.newTextParagraph().setText("⚠️Los reportes se guardarán en la misma carpeta que el archivo actual.");
 
-    const generateAllAction = CardService.newAction().setFunctionName("");
+    const generateAllAction = CardService.newAction().setFunctionName(onGenerateAllReports.name);
     const generateAllButtonSet = CardService.newButtonSet().addButton(
         CardService.newTextButton().setText("🗂️ - Generar todos los reportes").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(generateAllAction),
     );
