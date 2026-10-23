@@ -15,7 +15,7 @@ export interface ConfigData {
     subjectGradingWeights: [number, number, number];
 }
 
-interface ProtectedSections {
+export interface ProtectedSections {
     habilities: boolean;
     comments: boolean;
     trimesters: [boolean, boolean, boolean];

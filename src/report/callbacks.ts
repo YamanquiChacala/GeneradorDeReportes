@@ -1,7 +1,7 @@
 import { buildUtilityCard, headerIcon, notify, onPopCardStack, textButton } from "../common/gas-parts";
 import { Colors, getInputs } from "../common/gas-utils";
 import { Icon } from "../common/utils";
-import { buildReportCreateReportsCard, SingleStudentReportInputs } from "./cards";
+import { type mainMenuCardName, mainMenuCards, NavParam, SingleStudentReportInputs } from "./cards";
 import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
 
@@ -22,17 +22,23 @@ function pendingJobs(props: GoogleAppsScript.Properties.Properties): [string, Jo
 }
 
 /**
- * Builds and pushes on the stack the Report Menu Card
+ * Builds and pushes on the stack the target card.
  */
-export function onPushReportMenuCard(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+export function onPushMenuCard(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const isCardName = (s: string): s is mainMenuCardName => s in mainMenuCards;
+
     const reportFileId = e?.sheets?.id;
 
     if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
 
+    const { target } = NavParam.parse(e.commonEventObject.parameters);
+
+    if (!target || !isCardName(target)) throw new Error("Wrong destination card");
+
     const persistentData = loadReportPersistentData(reportFileId);
 
     return CardService.newActionResponseBuilder()
-        .setNavigation(CardService.newNavigation().pushCard(buildReportCreateReportsCard(persistentData)))
+        .setNavigation(CardService.newNavigation().pushCard(mainMenuCards[target](persistentData)))
         .build();
 }
 

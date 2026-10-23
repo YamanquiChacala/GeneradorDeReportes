@@ -1,17 +1,24 @@
 import { coloredParagraph, decoratedTextWithCallback, headerIcon, iconImage, spaceBetweenWidgets } from "../common/gas-parts";
 import { Colors, defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
-import { Period, type ReportPersistentData, StudentRowType } from "../common/report-utils";
+import { Period, type ProtectedSections, type ReportPersistentData, StudentRowType } from "../common/report-utils";
 import { Icon } from "../common/utils";
-import { onGenerateAllReports, onGenerateIndividualReport, onPushReportMenuCard } from "./callbacks";
+import { onGenerateAllReports, onGenerateIndividualReport, onPushMenuCard } from "./callbacks";
 
-export const ReportFileIdParam = defineActionParameters({
-    reportFileId: ParamType.STRING,
-} as const);
+export const mainMenuCards = {
+    reports: buildReportCreateReportsCard,
+    periods: buildReportsPeriodsAndCalendarCard,
+};
+
+export type mainMenuCardName = keyof typeof mainMenuCards;
+
+export const NavParam = defineActionParameters({ target: ParamType.STRING } as const);
 
 /**
  * Main Card for a report admin interface
  */
 export function buildReportOptionsMainCard(): GoogleAppsScript.Card_Service.Card {
+    const navTo = (target: mainMenuCardName) => NavParam.build({ target });
+
     const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Asistencia y Reportes", subtitle: "Montessori Chacala", iconName: Icon.CHART }));
 
     const cardSection = CardService.newCardSection()
@@ -19,7 +26,8 @@ export function buildReportOptionsMainCard(): GoogleAppsScript.Card_Service.Card
         .addWidget(spaceBetweenWidgets())
         .addWidget(
             decoratedTextWithCallback({
-                callback: onPushReportMenuCard.name,
+                callback: onPushMenuCard.name,
+                parameters: navTo("reports"),
                 text: "Reportes",
                 bottomText: "Generar reportes individuales o por grupo",
                 startIcon: iconImage({ iconName: Icon.PAGE }),
@@ -29,7 +37,8 @@ export function buildReportOptionsMainCard(): GoogleAppsScript.Card_Service.Card
         .addWidget(spaceBetweenWidgets())
         .addWidget(
             decoratedTextWithCallback({
-                callback: "", // TODO: Callback to card with details
+                callback: onPushMenuCard.name,
+                parameters: navTo("periods"),
                 text: "Periodos y Calendario",
                 bottomText: "Configurar fechas, permisos y ciclo actual.",
                 startIcon: iconImage({ iconName: Icon.CALENDAR }),
@@ -139,10 +148,10 @@ export function buildReportCreateReportsCard(persistentData: ReportPersistentDat
 /**
  * Periods and Calendar Card
  */
-export function buildPeriodsAndCalendarCard(persistentData: ReportPersistentData): GoogleAppsScript.Card_Service.Card {
+export function buildReportsPeriodsAndCalendarCard(persistentData: ReportPersistentData): GoogleAppsScript.Card_Service.Card {
     const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Periodos y Calendario", iconName: Icon.CALENDAR }));
 
-    return card.addSection(buildPeriodSection(persistentData.currentPeriod)).build();
+    return card.addSection(buildPeriodSection(persistentData.currentPeriod)).addSection(buildProtectedSection(persistentData.protectedSections)).build();
 }
 
 /**
@@ -186,4 +195,32 @@ function buildPeriodSection(currentPeriod: Period): GoogleAppsScript.Card_Servic
         .addWidget(resetWarning)
         .addWidget(spaceBetweenWidgets())
         .addWidget(CardService.newButtonSet().addButton(applyButton));
+}
+
+/**
+ * Select protected sections
+ */
+function buildProtectedSection(protectedSections: ProtectedSections): GoogleAppsScript.Card_Service.CardSection {
+    const section = CardService.newCardSection().setHeader("🗝️ &nbsp; Secciones Protegidas");
+
+    const explanation = CardService.newTextParagraph().setText("🔒 Marca las casillas para <b>bloquear</b> la edición a los maestros.");
+
+    const protectionCheckboxes = CardService.newSelectionInput()
+        .setType(CardService.SelectionInputType.CHECK_BOX)
+        .setTitle("Secciones a bloquear")
+        .setFieldName("prueba")
+        .addItem("🔒 Habilidades", "abilities", protectedSections.habilities)
+        .addItem("🔒 Comentarios", "comments", protectedSections.comments)
+        .addItem("🔒 Calificaciones del 1er Periodo", "period1", protectedSections.trimesters[0])
+        .addItem("🔒 Calificaciones del 2do Periodo", "period2", protectedSections.trimesters[1])
+        .addItem("🔒 Calificaciones del 3er Periodo", "period3", protectedSections.trimesters[2]);
+
+    const applyAction = CardService.newAction().setFunctionName(""); // TODO: Create callback
+
+    const applyButton = CardService.newTextButton()
+        .setText("🔐 - Aplicar protección")
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setOnClickAction(applyAction);
+
+    return section.addWidget(explanation).addWidget(protectionCheckboxes).addWidget(spaceBetweenWidgets()).addWidget(CardService.newButtonSet().addButton(applyButton));
 }

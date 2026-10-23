@@ -141,3 +141,4 @@
 🧑‍🎓 (student)
 📚 (books)
 ⚖️ (balance-scale)
+🗝️
