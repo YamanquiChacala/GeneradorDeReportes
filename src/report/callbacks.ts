@@ -1,7 +1,7 @@
-import { buildUtilityCard, headerImage, notify, onPopCardStack, textButton } from "../common/gas-parts";
+import { buildUtilityCard, headerIcon, notify, onPopCardStack, textButton } from "../common/gas-parts";
 import { Colors, getInputs } from "../common/gas-utils";
 import { Icon } from "../common/utils";
-import { buildReportCreateReportsCard, StudentReportInputs } from "./cards";
+import { buildReportCreateReportsCard, SingleStudentReportInputs } from "./cards";
 import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
 
@@ -52,7 +52,7 @@ export function onGenerateAllReports(e: GoogleAppsScript.Addons.EventObject): Go
         ScriptApp.newTrigger(triggerProcessGenerateAllReports.name).timeBased().after(1000).create();
 
         const successCard = buildUtilityCard({
-            header: headerImage({ title: "Generación de Reportes", image: Icon.PAGE }),
+            header: headerIcon({ title: "Generación de Reportes", iconName: Icon.PAGE }),
             title: `<font color="${Colors.LOGO_OSCURO}"><b>⏳ Generando reportes en segundo plano</b></font>`,
             message: "Tus reportes se están creando. Puedes cerrar esta ventana, el proceso continuará por su cuenta.",
             points: [
@@ -81,7 +81,7 @@ export function onGenerateIndividualReport(e: GoogleAppsScript.Addons.EventObjec
     const mainErrorMessage = "❌ Error creando reporte individual: ";
 
     try {
-        const { studentIndex, fileName } = getInputs(e.commonEventObject.formInputs, StudentReportInputs.schema);
+        const { studentIndex, fileName } = getInputs(e.commonEventObject.formInputs, SingleStudentReportInputs.schema);
         if (studentIndex == null) {
             throw new Error("Ningún alumno seleccionado");
         }

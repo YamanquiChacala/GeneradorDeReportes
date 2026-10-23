@@ -132,7 +132,7 @@ function createReportFile(parentId: string, setupMappedRanges: Partial<Record<Ra
 
     const reportFile = Drive?.Files.copy(
         {
-            name: fileName,
+            name: `_${fileName}`,
             parents: [parentId],
             appProperties: {
                 [FILE_VALIDATION_KEY]: FileType.REPORT,

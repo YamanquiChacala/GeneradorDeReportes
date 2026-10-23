@@ -149,3 +149,11 @@ export function decoratedTextWithCallback({
 export function notify(text: string): GoogleAppsScript.Card_Service.ActionResponse {
     return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText(text)).build();
 }
+
+export function coloredParagraph(color: string, text: string): GoogleAppsScript.Card_Service.TextParagraph {
+    return CardService.newTextParagraph().setText(`<font color="${color}">${text}</font>`);
+}
+
+export function spaceBetweenWidgets(): GoogleAppsScript.Card_Service.TextParagraph {
+    return CardService.newTextParagraph().setText("&nbsp;");
+}
