@@ -1,4 +1,5 @@
 export interface ReportPersistentData {
+    currentPeriod: Period;
     configData: ConfigData;
     protectedSections: ProtectedSections;
     academicFields: AcademicField[];

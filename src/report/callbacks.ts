@@ -1,5 +1,6 @@
 import { buildUtilityCard, headerImage, notify, onPopCardStack, textButton } from "../common/gas-parts";
 import { Colors, getInputs } from "../common/gas-utils";
+import { Icon } from "../common/utils";
 import { buildReportCreateReportsCard, StudentReportInputs } from "./cards";
 import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
@@ -51,10 +52,14 @@ export function onGenerateAllReports(e: GoogleAppsScript.Addons.EventObject): Go
         ScriptApp.newTrigger(triggerProcessGenerateAllReports.name).timeBased().after(1000).create();
 
         const successCard = buildUtilityCard({
-            header: headerImage({ title: "Generación de Reportes", subtitle: "Montessori Chacala" }),
-            title: `<font color="${Colors.LOGO_OSCURO}"><b>✅ ¡Registro creado con éxito!</b></font>`,
-            message: `El archivo de configuración para el grupo "<b>{groupName}</b>" ya está listo.`,
-            points: ["El archivo aparecerá en la carpeta de Drive en un momento.", "Puedes seguir generando otros Registros."],
+            header: headerImage({ title: "Generación de Reportes", image: Icon.PAGE }),
+            title: `<font color="${Colors.LOGO_OSCURO}"><b>⏳ Generando reportes en segundo plano</b></font>`,
+            message: "Tus reportes se están creando. Puedes cerrar esta ventana, el proceso continuará por su cuenta.",
+            points: [
+                "Puede tardar hasta <b>10 minutos</b> en terminar.",
+                "Los reportes aparecerán como archivos PDF en la <b>misma carpeta de Drive</b> donde está este archivo.",
+                "<b>No inicies otra generación</b> hasta que todos los reportes hayan aparecido en la carpeta.",
+            ],
             button: textButton({ text: "Regresar al inicio", action: CardService.newAction().setFunctionName(onPopCardStack.name) }),
         });
 

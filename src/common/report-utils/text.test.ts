@@ -23,6 +23,7 @@ describe("Report Utils. Period Utilities", () => {
     describe("generatePeriodString", () => {
         // Build a complete mock object to satisfy strict TS without `as ReportPersistentData`
         const baseMockData: ReportPersistentData = {
+            currentPeriod: 2,
             configData: {
                 attendancePerClass: true,
                 averagePerField: true,

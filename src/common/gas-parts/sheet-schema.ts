@@ -71,6 +71,7 @@ export const ReportSheetSchema = {
         persistentData: {
             sheetName: "_Persistente",
             ranges: {
+                currentPeriod: "pers_Periodo",
                 attendancePerClass: "pers_AsistenciaPorAsignatura",
                 averagePerField: "pers_PromedioPorCampo",
                 subjectGradingWeights: "pers_Calif_Pesos",

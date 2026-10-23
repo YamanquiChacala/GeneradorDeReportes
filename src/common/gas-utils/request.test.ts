@@ -965,6 +965,7 @@ describe("GAS Util, Requests", () => {
 
     describe("PersistentMetadata", () => {
         const mockPersistenData: ReportPersistentData = {
+            currentPeriod: 0,
             configData: { attendancePerClass: false, averagePerField: true, dates: [12, 22, 35, 129], subjectGradingWeights: [30, 60, 90] },
             academicFields: [
                 { color: "black", name: "Primero", subjects: 1 },

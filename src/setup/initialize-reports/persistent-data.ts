@@ -14,7 +14,7 @@ import {
     makeUserEntered,
     RangeBehavior,
 } from "../../common/gas-utils";
-import type { AcademicField, ConfigData, ReportPersistentData, StudentRow, WeightedSubject } from "../../common/report-utils";
+import { type AcademicField, type ConfigData, Period, type ReportPersistentData, type StudentRow, type WeightedSubject } from "../../common/report-utils";
 import { normalizeSubjectWeights, normalizeTrimesterWeights, parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from "../../common/setup-utils";
 import { typedEntries } from "../../common/utils";
 
@@ -64,6 +64,7 @@ export function fillPersistentData(
 
     // Build memory version of the persistent data, for use without calling get again.
     const persistentData: ReportPersistentData = {
+        currentPeriod: Period.FIRST,
         protectedSections: {
             habilities: false,
             comments: false,

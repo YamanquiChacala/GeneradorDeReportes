@@ -9,6 +9,9 @@ export interface HtmlContent {
 
 const isStudent = (row: StudentRow): row is Student => row.type === StudentRowType.STUDENT;
 
+/**
+ * Generate HTML reports for every student row in a report spreadsheet.
+ */
 export function generateAllReports(reportFileId: string): HtmlContent[] {
     const { parsedReport, persistentData } = loadReport(reportFileId);
 
@@ -20,6 +23,9 @@ export function generateAllReports(reportFileId: string): HtmlContent[] {
     }));
 }
 
+/**
+ * Generate the HTML report for one student.
+ */
 export function generateSingleReport(reportFileId: string, studentRowIndex: number): HtmlContent {
     const { parsedReport, persistentData } = loadReport(reportFileId);
 
@@ -36,6 +42,9 @@ export function generateSingleReport(reportFileId: string, studentRowIndex: numb
     return { html: getHTMLreport(pdfParams), name: student.sheetName };
 }
 
+/**
+ * Assemble the loaded spreadsheet values and persistent settings into the data required by the PDF template.
+ */
 function getStudentDataForPdf(persistenData: ReportPersistentData, rawData: Record<StudentRangeKey, string[][]>, firstName: string, lastName: string): StudentData {
     const startDate = persistenData.configData.dates[0];
     const endDate = persistenData.configData.dates[3];
@@ -93,6 +102,7 @@ function getStudentDataForPdf(persistenData: ReportPersistentData, rawData: Reco
         };
     });
 
+    // Omit a comment when it contains only the configured default prompt.
     const cleanComment = (raw: string): string => {
         const trimmed = raw.trim();
         return DEFAULT_COMMENT.startsWith(trimmed) ? "" : raw;
