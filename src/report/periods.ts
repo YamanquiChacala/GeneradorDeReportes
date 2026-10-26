@@ -57,21 +57,38 @@ function updatePersistentData(
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
 
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
+    // --------------
+    // Mutate local variable
+
+    // Swap grade protections.
+    const trimesters = persistentData.protectedSections.trimesters;
+    [trimesters[persistentData.currentPeriod], trimesters[newPeriod]] = [trimesters[newPeriod], trimesters[persistentData.currentPeriod]];
 
     persistentData.currentPeriod = newPeriod;
 
-    requests.push(buildUpdatePersistenMetadata(persistentData));
+    // --------------
+    // Mutate metadata
+    const metadataRequest = buildUpdatePersistenMetadata(persistentData);
 
-    const data: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { numberValue: newPeriod } }]];
+    // --------------
+    // Mutate sheet
+    const currentPeriodData: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { numberValue: newPeriod } }]];
 
-    const result = buildTransferRequests({
+    const transferResult = buildTransferRequests({
         destination: getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.currentPeriod),
-        data,
+        data: currentPeriodData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
     });
 
-    return requests;
+    const protectedPeriodsData: GoogleAppsScript.Sheets.Schema.CellData[][] = [
+        [{ userEnteredValue: { boolValue: trimesters[0] } }],
+        [{ userEnteredValue: { boolValue: trimesters[1] } }],
+        [{ userEnteredValue: { boolValue: trimesters[2] } }],
+    ];
+
+    const 
+
+    return [metadataRequest, ...transferResult.requests];
 }
 
 /**
