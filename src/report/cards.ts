@@ -1,5 +1,5 @@
 import { coloredParagraph, decoratedTextWithCallback, headerIcon, iconImage, spaceBetweenWidgets } from "../common/gas-parts";
-import { Colors, defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
+import { Colors, checkboxGroup, defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
 import { Period, type ProtectedSections, type ReportPersistentData, StudentRowType } from "../common/report-utils";
 import { Icon } from "../common/utils";
 import { onGenerateAllReports, onGenerateIndividualReport, onPushMenuCard } from "./callbacks";
@@ -151,7 +151,12 @@ export function buildReportCreateReportsCard(persistentData: ReportPersistentDat
 export function buildReportsPeriodsAndCalendarCard(persistentData: ReportPersistentData): GoogleAppsScript.Card_Service.Card {
     const card = CardService.newCardBuilder().setHeader(headerIcon({ title: "Periodos y Calendario", iconName: Icon.CALENDAR }));
 
-    return card.addSection(buildPeriodSection(persistentData.currentPeriod)).addSection(buildProtectedSection(persistentData.protectedSections)).build();
+    return card
+        .addSection(buildPeriodSection(persistentData.currentPeriod))
+        .addSection(buildProtectedSection(persistentData.protectedSections))
+        .addSection(buildAddRemoveDatesSection())
+        .addSection(buildPeriodDatesSection(persistentData.configData.dates))
+        .build();
 }
 
 /**
@@ -197,6 +202,11 @@ function buildPeriodSection(currentPeriod: Period): GoogleAppsScript.Card_Servic
         .addWidget(CardService.newButtonSet().addButton(applyButton));
 }
 
+export const ProtectSectionsInputs = defineInputsSchema({
+    myNum: InputType.NUMBER,
+    protectedSections: checkboxGroup(["abilities", "comments", "period1", "period2", "period3"]),
+} as const);
+
 /**
  * Select protected sections
  */
@@ -208,12 +218,12 @@ function buildProtectedSection(protectedSections: ProtectedSections): GoogleApps
     const protectionCheckboxes = CardService.newSelectionInput()
         .setType(CardService.SelectionInputType.CHECK_BOX)
         .setTitle("Secciones a bloquear")
-        .setFieldName("prueba")
-        .addItem("🔒 Habilidades", "abilities", protectedSections.habilities)
-        .addItem("🔒 Comentarios", "comments", protectedSections.comments)
-        .addItem("🔒 Calificaciones del 1er Periodo", "period1", protectedSections.trimesters[0])
-        .addItem("🔒 Calificaciones del 2do Periodo", "period2", protectedSections.trimesters[1])
-        .addItem("🔒 Calificaciones del 3er Periodo", "period3", protectedSections.trimesters[2]);
+        .setFieldName(ProtectSectionsInputs.fieldName("protectedSections"))
+        .addItem("🔒 Habilidades", ProtectSectionsInputs.option("protectedSections", "abilities"), protectedSections.habilities)
+        .addItem("🔒 Comentarios", ProtectSectionsInputs.option("protectedSections", "comments"), protectedSections.comments)
+        .addItem("🔒 Calificaciones del 1er Periodo", ProtectSectionsInputs.option("protectedSections", "period1"), protectedSections.trimesters[0])
+        .addItem("🔒 Calificaciones del 2do Periodo", ProtectSectionsInputs.option("protectedSections", "period2"), protectedSections.trimesters[1])
+        .addItem("🔒 Calificaciones del 3er Periodo", ProtectSectionsInputs.option("protectedSections", "period3"), protectedSections.trimesters[2]);
 
     const applyAction = CardService.newAction().setFunctionName(""); // TODO: Create callback
 
@@ -223,4 +233,85 @@ function buildProtectedSection(protectedSections: ProtectedSections): GoogleApps
         .setOnClickAction(applyAction);
 
     return section.addWidget(explanation).addWidget(protectionCheckboxes).addWidget(spaceBetweenWidgets()).addWidget(CardService.newButtonSet().addButton(applyButton));
+}
+
+export const AddRemoveDatesInputs = defineInputsSchema({
+    rangeStart: InputType.DATE,
+    rangeEnd: InputType.DATE,
+} as const);
+
+/**
+ * Add or remove ranges of days
+ */
+function buildAddRemoveDatesSection(): GoogleAppsScript.Card_Service.CardSection {
+    const section = CardService.newCardSection().setHeader("🗓️ &nbsp; Agregar / Quitar Fechas").setCollapsible(true).setNumUncollapsibleWidgets(0);
+
+    const startPicker = CardService.newDatePicker().setFieldName(AddRemoveDatesInputs.fieldName("rangeStart")).setTitle("Fecha inicial");
+    const endPicker = CardService.newDatePicker().setFieldName(AddRemoveDatesInputs.fieldName("rangeEnd")).setTitle("Fecha final (opcional)");
+
+    const hint = CardService.newTextParagraph().setText("Si no eliges fecha final, solo se agregará o quitará el día inicial.");
+    const warning = coloredParagraph(Colors.ORANGE, "⚠️ &nbsp; Las asistencias registradas en las fechas que se quiten se perderán para siempre.");
+
+    const addAction = CardService.newAction()
+        .setFunctionName("") // TODO: Create callback
+        .addRequiredWidget(AddRemoveDatesInputs.fieldName("rangeStart"));
+
+    const addButton = CardService.newTextButton().setText("➕ - Agregar").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(addAction);
+
+    const removeAction = CardService.newAction()
+        .setFunctionName("") // TODO: Create callback
+        .addRequiredWidget(AddRemoveDatesInputs.fieldName("rangeStart"));
+
+    const removeButton = CardService.newTextButton()
+        .setText("🗑️ - Quitar")
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setBackgroundColor(Colors.ORANGE)
+        .setOnClickAction(removeAction);
+
+    return section
+        .addWidget(startPicker)
+        .addWidget(endPicker)
+        .addWidget(hint)
+        .addWidget(warning)
+        .addWidget(CardService.newButtonSet().addButton(addButton).addButton(removeButton));
+}
+
+export const ChangePeriodDatesInputs = defineInputsSchema({
+    start: InputType.DATE,
+    period1: InputType.DATE,
+    period2: InputType.DATE,
+    end: InputType.DATE,
+} as const);
+
+/**
+ * Modify the period dates
+ */
+function buildPeriodDatesSection(dates: [number, number, number, number]): GoogleAppsScript.Card_Service.CardSection {
+    const section = CardService.newCardSection().setHeader("🏫 &nbsp; Fechas del Ciclo Escolar").setCollapsible(true).setNumUncollapsibleWidgets(0);
+
+    const picker = (fieldName: string, title: string, value?: number) => {
+        const datePicker = CardService.newDatePicker().setFieldName(fieldName).setTitle(title);
+        if (value !== undefined) datePicker.setValueInMsSinceEpoch(value);
+        return datePicker;
+    };
+
+    const updateAction = CardService.newAction()
+        .setFunctionName("") // TODO: Create callback
+        .addRequiredWidget(ChangePeriodDatesInputs.fieldName("start"))
+        .addRequiredWidget(ChangePeriodDatesInputs.fieldName("period1"))
+        .addRequiredWidget(ChangePeriodDatesInputs.fieldName("period2"))
+        .addRequiredWidget(ChangePeriodDatesInputs.fieldName("end"));
+
+    const updateButton = CardService.newTextButton()
+        .setText("💾 - Actualizar fechas")
+        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+        .setOnClickAction(updateAction);
+
+    return section
+        .addWidget(picker(ChangePeriodDatesInputs.fieldName("start"), "Inicio del ciclo escolar", dates[0]))
+        .addWidget(picker(ChangePeriodDatesInputs.fieldName("period1"), "Fin del 1er periodo", dates[1]))
+        .addWidget(picker(ChangePeriodDatesInputs.fieldName("period2"), "Fin del 2do periodo", dates[2]))
+        .addWidget(picker(ChangePeriodDatesInputs.fieldName("end"), "Fin del ciclo escolar", dates[3]))
+        .addWidget(spaceBetweenWidgets())
+        .addWidget(CardService.newButtonSet().addButton(updateButton));
 }

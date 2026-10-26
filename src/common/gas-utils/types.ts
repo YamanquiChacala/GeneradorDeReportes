@@ -124,6 +124,11 @@ export enum InputType {
     ARRAY = "array",
 }
 
+export type CheckboxGroup<K extends string = string> = {
+    readonly kind: "checkboxGroup";
+    readonly options: readonly K[];
+};
+
 export enum ParamType {
     STRING = "string",
     NUMBER = "number",
