@@ -124,9 +124,13 @@
                 - 🛠️ [`prepareStatusSheet`](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
                 - 🛠️ [`prepareSummarySheet`](../src/setup/initialize-reports/summary.ts) - Prepare the Summary to see the data of each student.
     - 📄 [`buildReportOptionsMainCard`](../src/report/cards.ts) - Main 📊 Report Admin Menu
+        - ⚡ [`onPushMenuCard`](../src/report/callbacks.ts) - Navigate to a submenu
         - 📄 [`buildReportCreateReportsCard`](../src/report/cards.ts) - Menu to create student reports
+            - ⚡ [`onGenerateAllReports`](../src/report/callbacks.ts) - Creates the PDF reports of all students
+                - 🛠️ [`generateAllReports`](../src/report/generateReports.ts) - Creates the HTML of all reports 📈
             - ⚡ [`onGenerateIndividualReport`](../src/report/callbacks.ts) - Saves a PDF report of the selected student
-                - 🛠️ [`generateSingleReport`] (../src/report/generateReports.ts) - Creates the HTML of a single report 📈
+                - 🛠️ [`generateSingleReport`](../src/report/generateReports.ts) - Creates the HTML of a single report 📈
+        - 📄 [`buildReportsPeriodsAndCalendarCard`](../src/report/cards.ts) - Menu to control periods and calendar
 
 
 
@@ -141,4 +145,5 @@
 🧑‍🎓 (student)
 📚 (books)
 ⚖️ (balance-scale)
-🗝️
+🗝️ (old-key)
+✔️ (heavy_check_mark)

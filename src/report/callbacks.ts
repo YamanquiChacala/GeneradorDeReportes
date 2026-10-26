@@ -1,9 +1,10 @@
 import { buildUtilityCard, headerIcon, notify, onPopCardStack, textButton } from "../common/gas-parts";
 import { Colors, getInputs } from "../common/gas-utils";
 import { Icon } from "../common/utils";
-import { type mainMenuCardName, mainMenuCards, NavParam, SingleStudentReportInputs } from "./cards";
+import { type mainMenuCardName, mainMenuCards, NavParam, SingleStudentReportInputs, SwitchPeriodInputs } from "./cards";
 import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
+import { switchPeriod } from "./periods";
 
 const JOB_PREFIX = "reportJob:";
 const STALE_AFTER_MS = 15 * 60 * 1000;
@@ -151,5 +152,25 @@ export function triggerProcessGenerateAllReports() {
         }
     } finally {
         lock.releaseLock();
+    }
+}
+
+export function onSwitchPeriod(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const mainErrorMessage = "❌ Error creando reporte individual: ";
+
+    try {
+        const { period, reset } = getInputs(e.commonEventObject.formInputs, SwitchPeriodInputs.schema);
+        if (period == null) throw new Error("Ningun periodo seleccionado");
+
+        const reportFileId = e?.sheets?.id;
+        if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
+
+        switchPeriod(reportFileId, period, reset);
+
+        return notify("✔️ Periodo Cambiado con éxito.");
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return notify(`${mainErrorMessage}${errorMessage}`);
     }
 }

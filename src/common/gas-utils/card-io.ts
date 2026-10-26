@@ -28,6 +28,20 @@ type CheckboxFields<T> = { [F in keyof T]: T[F] extends CheckboxGroup ? F : neve
 
 type OptionOf<G> = G extends CheckboxGroup<infer O> ? O : never;
 
+type AlwaysPresent = InputType.BOOLEAN | CheckboxGroup;
+
+type AlwaysPresentKeys<T extends Record<string, SchemaValue>> = {
+    [K in keyof T]: T[K] extends AlwaysPresent ? K : never;
+}[keyof T];
+
+type Prettify<T> = { [K in keyof T]: T[K] } & {};
+
+type InputsResult<T extends Record<string, SchemaValue>> = Prettify<
+    { [K in AlwaysPresentKeys<T>]: MappedInput<T[K]> } & {
+        [K in Exclude<keyof T, AlwaysPresentKeys<T>>]?: MappedInput<T[K]>;
+    }
+>;
+
 /**
  * Helper function to create a input CheckboxGroup
  *
@@ -91,7 +105,7 @@ export function defineActionParameters<T extends Record<string, ParamType>>(sche
 /**
  * Extract the inputs from a Card callback. The schema should define what to expect from the inputs.
  */
-export function getInputs<T extends Record<string, SchemaValue>>(formInputs: GASFormInputs, schema: T): Partial<{ [K in keyof T]: MappedInput<T[K]> }> {
+export function getInputs<T extends Record<string, SchemaValue>>(formInputs: GASFormInputs, schema: T): InputsResult<T> {
     const result: Record<string, unknown> = {};
 
     for (const [key, expectedType] of Object.entries(schema)) {
@@ -164,5 +178,6 @@ export function getInputs<T extends Record<string, SchemaValue>>(formInputs: GAS
                 break;
         }
     }
-    return result as Partial<{ [K in keyof T]: MappedInput<T[K]> }>;
+    // return result as Partial<{ [K in keyof T]: MappedInput<T[K]> }>;
+    return result as InputsResult<T>;
 }

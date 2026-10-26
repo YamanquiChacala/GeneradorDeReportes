@@ -2,7 +2,7 @@ import { coloredParagraph, decoratedTextWithCallback, headerIcon, iconImage, spa
 import { Colors, checkboxGroup, defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
 import { Period, type ProtectedSections, type ReportPersistentData, StudentRowType } from "../common/report-utils";
 import { Icon } from "../common/utils";
-import { onGenerateAllReports, onGenerateIndividualReport, onPushMenuCard } from "./callbacks";
+import { onGenerateAllReports, onGenerateIndividualReport, onPushMenuCard, onSwitchPeriod } from "./callbacks";
 
 export const mainMenuCards = {
     reports: buildReportCreateReportsCard,
@@ -188,9 +188,7 @@ function buildPeriodSection(currentPeriod: Period): GoogleAppsScript.Card_Servic
 
     const resetWarning = coloredParagraph(Colors.ORANGE, "⚠️ &nbsp; Si marcas esta casilla, TODAS las habilidades y comentarios de los alumnos se perderán.");
 
-    const applyAction = CardService.newAction()
-        .setFunctionName("") // TODO: Create callback
-        .addRequiredWidget(SwitchPeriodInputs.fieldName("period"));
+    const applyAction = CardService.newAction().setFunctionName(onSwitchPeriod.name).addRequiredWidget(SwitchPeriodInputs.fieldName("period"));
 
     const applyButton = CardService.newTextButton().setText("✅ - Cambiar periodo").setTextButtonStyle(CardService.TextButtonStyle.FILLED).setOnClickAction(applyAction);
 
