@@ -2,6 +2,7 @@ import { ReportSheetSchema } from "../common/gas-parts";
 import {
     buildCopyPasteRequest,
     buildFieldsMask,
+    buildProtectExtraSheetRequests,
     buildTransferRequests,
     buildUpdateCellsRequest,
     buildUpdatePersistenMetadata,
@@ -34,11 +35,19 @@ export function switchPeriod(reportFileId: string, newPeriod: Period, resetComme
     // Reset abilities and comments
     const resetStudentsCommentsRequests = resetComments ? resetStudentsComments(parsedReport) : [];
 
-    // Update unprotected ranges
+    // Update unprotected ranges of students
+    const unprotectedRangesRequests = updateUnprotectedRanges(parsedReport, persistentData);
+
+    // Update unprotected ranges of assistance
 
     // Hide calendar columns
 
-    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [...updatePersistentDataRequests, ...updateStudentDataRequests, ...resetStudentsCommentsRequests];
+    const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
+        ...updatePersistentDataRequests,
+        ...updateStudentDataRequests,
+        ...resetStudentsCommentsRequests,
+        ...unprotectedRangesRequests,
+    ];
 
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
 }
@@ -74,7 +83,7 @@ function updatePersistentData(
     // Mutate sheet
     const currentPeriodData: GoogleAppsScript.Sheets.Schema.CellData[][] = [[{ userEnteredValue: { numberValue: newPeriod } }]];
 
-    const transferResult = buildTransferRequests({
+    const currentPeriodTransferResult = buildTransferRequests({
         destination: getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.currentPeriod),
         data: currentPeriodData,
         fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.numberValue"),
@@ -86,9 +95,13 @@ function updatePersistentData(
         [{ userEnteredValue: { boolValue: trimesters[2] } }],
     ];
 
-    const 
+    const protectedPeriodsTransferResult = buildTransferRequests({
+        destination: getMappedRange(ReportSheetSchema.sheets.persistentData.ranges.protectPeriods),
+        data: protectedPeriodsData,
+        fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.CellData>("userEnteredValue.boolValue"),
+    });
 
-    return [metadataRequest, ...transferResult.requests];
+    return [metadataRequest, ...currentPeriodTransferResult.requests, ...protectedPeriodsTransferResult.requests];
 }
 
 /**
@@ -103,6 +116,7 @@ function updateStudentsPeriodData(
     persistentData: ReportPersistentData,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+    const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de repporte");
 
     const requests: GoogleAppsScript.Sheets.Schema.Request[] = [];
 
@@ -118,7 +132,7 @@ function updateStudentsPeriodData(
     const origin = getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.generalInfo).namedRange.range;
     const dataRange = offsetGridRange({ origin, rowOffset: 3, height: 2, width: 1 });
 
-    for (const sheet of parsedReport.extraSheets) {
+    for (const sheet of [...parsedReport.extraSheets, getMappedSheet(ReportSheetSchema.sheets.studentTemplate.sheetName)]) {
         const sheetId = sheet.properties?.sheetId ?? 0;
         const destination = offsetGridRange({ origin: dataRange, sheetId });
         const request = buildUpdateCellsRequest({ destination, data, fields });
@@ -151,4 +165,35 @@ function resetStudentsComments(parsedReport: ParsedSpreadsheet<typeof ReportShee
     }
 
     return requests;
+}
+
+function updateUnprotectedRanges(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+): GoogleAppsScript.Sheets.Schema.Request[] {
+    const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
+
+    const unprotectedRanges: GoogleAppsScript.Sheets.Schema.GridRange[] = [];
+
+    if (!persistentData.protectedSections.habilities) {
+        unprotectedRanges.push(getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedAbilities).namedRange.range);
+    }
+    if (!persistentData.protectedSections.comments) {
+        unprotectedRanges.push(getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedComments).namedRange.range);
+    }
+    if (!persistentData.protectedSections.trimesters[0]) {
+        unprotectedRanges.push(getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim1).namedRange.range);
+    }
+    if (!persistentData.protectedSections.trimesters[1]) {
+        unprotectedRanges.push(getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim2).namedRange.range);
+    }
+    if (!persistentData.protectedSections.trimesters[2]) {
+        unprotectedRanges.push(getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim3).namedRange.range);
+    }
+
+    const userEmail = Session.getActiveUser().getEmail();
+
+    const studentProtectionRequests = buildProtectExtraSheetRequests(parsedReport, userEmail, unprotectedRanges);
+
+    return studentProtectionRequests;
 }

@@ -1,4 +1,4 @@
-import { type ReportPersistentData, StudentRowType } from "../report-utils";
+import { Period, type ReportPersistentData, StudentRowType } from "../report-utils";
 import { ConditionType, DeveloperMetadataVisibility, Dimension, MergeType, PasteOrientation, PasteType, Style } from "./api-types";
 import { PERSISTENT_DATA_KEY } from "./constants";
 import {
@@ -9,6 +9,7 @@ import {
     buildAddPersistentMetadata,
     buildBorderRequest,
     buildCopyPasteRequest,
+    buildHidePreviousPeriodsAssistanceRequests,
     buildMergeCellsRequest,
     buildProtectExtraSheetRequests,
     buildProtectSheetRequest,
@@ -261,6 +262,70 @@ describe("GAS Util, Requests", () => {
                     },
                 },
             ]);
+        });
+    });
+
+    describe("buildHidePreviousPeriodsAssistanceRequests", () => {
+        const sheetId = 12;
+        const colOffset = 5;
+        const dates: [number, number, number, number] = [10, 20, 40, 60];
+
+        const unhideRequest = {
+            updateDimensionProperties: {
+                range: { sheetId, dimension: Dimension.COLUMNS },
+                properties: { hiddenByUser: false },
+                fields: "hiddenByUser",
+            },
+        };
+
+        const hideRequest = (startIndex: number, endIndex: number) => ({
+            updateDimensionProperties: {
+                range: {
+                    sheetId,
+                    dimension: Dimension.COLUMNS,
+                    startIndex,
+                    endIndex,
+                },
+                properties: { hiddenByUser: true },
+                fields: "hiddenByUser",
+            },
+        });
+
+        it("should always unhide all columns before applying period-specific hiding", () => {
+            expect(buildHidePreviousPeriodsAssistanceRequests(sheetId, colOffset, Period.FIRST, dates, [10, 20])).toStrictEqual([unhideRequest]);
+        });
+
+        it.each([
+            {
+                period: Period.SECOND,
+                calendar: [10, 20, 21, 30],
+                hiddenEndIndex: colOffset + 2,
+            },
+            {
+                period: Period.THIRD,
+                calendar: [10, 20, 21, 40, 41],
+                hiddenEndIndex: colOffset + 4,
+            },
+        ])("should hide calendar dates through the selected period's cutoff (period $period)", ({ period, calendar, hiddenEndIndex }) => {
+            expect(buildHidePreviousPeriodsAssistanceRequests(sheetId, colOffset, period, dates, calendar)).toStrictEqual([
+                unhideRequest,
+                hideRequest(colOffset, hiddenEndIndex),
+            ]);
+        });
+
+        it("should only unhide columns when no calendar dates are at or before the cutoff", () => {
+            expect(buildHidePreviousPeriodsAssistanceRequests(sheetId, colOffset, Period.SECOND, dates, [21, 30])).toStrictEqual([unhideRequest]);
+        });
+
+        it("should hide every calendar column when all dates are at or before the cutoff", () => {
+            expect(buildHidePreviousPeriodsAssistanceRequests(sheetId, colOffset, Period.THIRD, dates, [10, 20, 40])).toStrictEqual([
+                unhideRequest,
+                hideRequest(colOffset, colOffset + 3),
+            ]);
+        });
+
+        it("should only unhide columns when the calendar is empty", () => {
+            expect(buildHidePreviousPeriodsAssistanceRequests(sheetId, colOffset, Period.THIRD, dates, [])).toStrictEqual([unhideRequest]);
         });
     });
 

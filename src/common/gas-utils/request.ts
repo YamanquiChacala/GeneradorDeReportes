@@ -1,4 +1,4 @@
-import type { ReportPersistentData } from "../report-utils";
+import { Period, type ReportPersistentData } from "../report-utils";
 import { getRandomId } from "../utils";
 import { DeveloperMetadataVisibility, Dimension, MergeType, PasteOrientation, type PasteType, Style } from "./api-types";
 import { hexToColor } from "./color";
@@ -142,6 +142,53 @@ export function buildUpdateColumnWidthRequests(sheetId: number, startCol: number
     }
 
     return result;
+}
+
+/**
+ * Generates batch update for UpdateDimensionProperties to hide/unhide the calendar for the assistance sheet.
+ */
+export function buildHidePreviousPeriodsAssistanceRequests(
+    sheetId: number,
+    colOffset: number,
+    period: Period,
+    dates: [number, number, number, number],
+    calendar: number[],
+): GoogleAppsScript.Sheets.Schema.Request[] {
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [
+        {
+            updateDimensionProperties: {
+                range: { sheetId, dimension: Dimension.COLUMNS },
+                properties: { hiddenByUser: false },
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DimensionProperties>("hiddenByUser"),
+            },
+        },
+    ];
+
+    if (period === Period.FIRST) return requests;
+
+    const cutoff = dates[period]; // dates[1] or dates[2]
+
+    // Number of leading calendar entries with date <= cutoff.
+    // Since the calendar is sorted, this is the first index whose date is > cutoff.
+    let hiddenCount = calendar.findIndex((d) => d > cutoff);
+    if (hiddenCount === -1) hiddenCount = calendar.length; // every date is <= cutoff
+
+    if (hiddenCount > 0) {
+        requests.push({
+            updateDimensionProperties: {
+                range: {
+                    sheetId,
+                    dimension: Dimension.COLUMNS,
+                    startIndex: colOffset, // inclusive
+                    endIndex: colOffset + hiddenCount, // exclusive
+                },
+                properties: { hiddenByUser: true },
+                fields: buildFieldsMask<GoogleAppsScript.Sheets.Schema.DimensionProperties>("hiddenByUser"),
+            },
+        });
+    }
+
+    return requests;
 }
 
 /**
