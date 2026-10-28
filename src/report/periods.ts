@@ -4,6 +4,7 @@ import {
     buildFieldsMask,
     buildHidePreviousPeriodsAssistanceRequests,
     buildProtectExtraSheetRequests,
+    buildProtectSheetRequest,
     buildTransferRequests,
     buildUpdateCellsRequest,
     buildUpdatePersistenMetadata,
@@ -12,7 +13,7 @@ import {
     type ParsedSpreadsheet,
     PasteType,
 } from "../common/gas-utils";
-import { generatePeriodString, type Period, type ReportPersistentData, TRIMESTER_NAMES } from "../common/report-utils";
+import { generatePeriodString, Period, type ReportPersistentData, TRIMESTER_NAMES } from "../common/report-utils";
 import { loadReport } from "./load";
 
 /**
@@ -36,20 +37,20 @@ export function switchPeriod(reportFileId: string, newPeriod: Period, resetComme
     // Reset abilities and comments
     const resetStudentsCommentsRequests = resetComments ? resetStudentsComments(parsedReport) : [];
 
+    const userEmail = Session.getActiveUser().getEmail();
+
     // Update unprotected ranges of students
-    const unprotectedRangesRequests = updateUnprotectedRanges(parsedReport, persistentData);
+    const studentUnprotectedRangesRequests = updateStudentsUnprotectedRanges(parsedReport, persistentData, userEmail);
 
-    // Update unprotected ranges of assistance
-
-    // Hide calendar columns
-    const hideCalendarColumnsRequests = hideCalendarColumns(parsedReport, persistentData);
+    // Update assistance unprotected ranges and hiden columns
+    const assitanceUpdateRequests = updateAssistance(parsedReport, persistentData, userEmail);
 
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
         ...updatePersistentDataRequests,
         ...updateStudentDataRequests,
         ...resetStudentsCommentsRequests,
-        ...unprotectedRangesRequests,
-        ...hideCalendarColumnsRequests,
+        ...studentUnprotectedRangesRequests,
+        ...assitanceUpdateRequests,
     ];
 
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
@@ -172,9 +173,10 @@ function resetStudentsComments(parsedReport: ParsedSpreadsheet<typeof ReportShee
     return requests;
 }
 
-function updateUnprotectedRanges(
+function updateStudentsUnprotectedRanges(
     parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
     persistentData: ReportPersistentData,
+    userEmail: string,
 ): GoogleAppsScript.Sheets.Schema.Request[] {
     const getMappedRange = createRequiredGetter(parsedReport.mappedRanges, "rango de reporte");
 
@@ -196,17 +198,41 @@ function updateUnprotectedRanges(
         unprotectedRanges.push(getMappedRange(ReportSheetSchema.sheets.studentTemplate.ranges.unprotectedTrim3).namedRange.range);
     }
 
-    const userEmail = Session.getActiveUser().getEmail();
-
-    const studentProtectionRequests = buildProtectExtraSheetRequests(parsedReport, userEmail, unprotectedRanges);
-
-    return studentProtectionRequests;
+    return buildProtectExtraSheetRequests(parsedReport, userEmail, unprotectedRanges);
 }
 
-function hideCalendarColumns(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+function updateAssistance(
+    parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>,
+    persistentData: ReportPersistentData,
+    userEmail: string,
+): GoogleAppsScript.Sheets.Schema.Request[] {
+    const getMappedRanges = createRequiredGetter(parsedReport.dynamicMappedRanges, "rango dinámico de reporte");
     const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
+
+    const getUnprotectedRanges = (period: Period) => {
+        switch (period) {
+            case Period.FIRST:
+                return getMappedRanges(ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim1);
+            case Period.SECOND:
+                return getMappedRanges(ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim2);
+            case Period.THIRD:
+                return getMappedRanges(ReportSheetSchema.sheets.attendance.dynamicRanges.unprotectTrim3);
+        }
+    };
+
+    const unprotectedRanges = getUnprotectedRanges(persistentData.currentPeriod).map((mappedRange) => mappedRange.namedRange.range);
+
+    const protectRequest = buildProtectSheetRequest(parsedReport, ReportSheetSchema.sheets.attendance.sheetName, userEmail, unprotectedRanges);
 
     const assistanceSheetId = getMappedSheet(ReportSheetSchema.sheets.attendance.sheetName).properties?.sheetId ?? 0;
 
-    return buildHidePreviousPeriodsAssistanceRequests(assistanceSheetId, 9, persistentData.currentPeriod, persistentData.configData.dates, persistentData.calendar);
+    const hideRequests = buildHidePreviousPeriodsAssistanceRequests(
+        assistanceSheetId,
+        9,
+        persistentData.currentPeriod,
+        persistentData.configData.dates,
+        persistentData.calendar,
+    );
+
+    return [protectRequest, ...hideRequests];
 }
