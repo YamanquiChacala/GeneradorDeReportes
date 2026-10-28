@@ -1,4 +1,4 @@
-import { defineActionParameters, defineInputsSchema, getInputs } from "./card-io";
+import { checkboxGroup, defineActionParameters, defineInputsSchema, getInputs } from "./card-io";
 import { InputType, ParamType } from "./types";
 
 describe("GAS Utils, Card IO", () => {
@@ -11,6 +11,18 @@ describe("GAS Utils, Card IO", () => {
             // Verify the identity function works as expected at runtime
             expect(result.fieldName("name")).toBe("name");
             expect(result.fieldName("age")).toBe("age");
+        });
+
+        it("should constrain checkbox options to the options declared by their group", () => {
+            const inputs = defineInputsSchema({
+                sections: checkboxGroup(["overview", "details"]),
+            });
+
+            expect(inputs.option("sections", "overview")).toBe("overview");
+            // @ts-expect-error - Values outside the declared checkbox options are not valid.
+            inputs.option("sections", "unknown");
+            // @ts-expect-error - Only checkbox-group fields accept options.
+            inputs.option("missing", "overview");
         });
     });
 
@@ -73,6 +85,46 @@ describe("GAS Utils, Card IO", () => {
             startTime: InputType.TIME,
             selections: InputType.ARRAY,
         } as const;
+
+        describe("Checkbox groups and inferred result types", () => {
+            const checkboxSchema = defineInputsSchema({
+                isEnabled: InputType.BOOLEAN,
+                sections: checkboxGroup(["overview", "details"]),
+                optionalName: InputType.STRING,
+            });
+
+            it("should return a boolean for every checkbox option, including unchecked options", () => {
+                const mockFormInputs: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
+                    sections: { "": {}, stringInputs: { value: ["details", "unrecognized"] } },
+                };
+
+                const result = getInputs(mockFormInputs, checkboxSchema.schema);
+
+                expect(result.sections).toEqual({ overview: false, details: true });
+                expect(result.isEnabled).toBe(false);
+            });
+
+            it("should return all checkbox options as false when the group is absent or empty", () => {
+                expect(getInputs({}, checkboxSchema.schema).sections).toEqual({ overview: false, details: false });
+
+                const emptyGroup: GoogleAppsScript.Addons.CommonEventObject["formInputs"] = {
+                    sections: { "": {}, stringInputs: { value: [] } },
+                };
+                expect(getInputs(emptyGroup, checkboxSchema.schema).sections).toEqual({ overview: false, details: false });
+            });
+
+            it("should keep booleans and checkbox groups required while other input types remain optional", () => {
+                const result = getInputs({}, checkboxSchema.schema);
+
+                const requiredValues: { isEnabled: boolean; sections: { overview: boolean; details: boolean } } = result;
+                expect(requiredValues.isEnabled).toBe(false);
+                expect(requiredValues.sections).toEqual({ overview: false, details: false });
+
+                // @ts-expect-error - Non-boolean inputs can be absent, so their result properties are optional.
+                const requiredOptionalName: string = result.optionalName;
+                expect(requiredOptionalName).toBeUndefined();
+            });
+        });
 
         describe("Standard Extraction", () => {
             it("should correctly extract and cast standard form inputs", () => {

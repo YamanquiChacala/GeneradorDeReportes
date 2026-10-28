@@ -150,10 +150,16 @@ export function notify(text: string): GoogleAppsScript.Card_Service.ActionRespon
     return CardService.newActionResponseBuilder().setNotification(CardService.newNotification().setText(text)).build();
 }
 
+/**
+ * Simple paragraph with a given color text.
+ */
 export function coloredParagraph(color: string, text: string): GoogleAppsScript.Card_Service.TextParagraph {
     return CardService.newTextParagraph().setText(`<font color="${color}">${text}</font>`);
 }
 
+/**
+ * A paragraph with a space for added horizontal space between widgets.
+ */
 export function spaceBetweenWidgets(): GoogleAppsScript.Card_Service.TextParagraph {
     return CardService.newTextParagraph().setText("&nbsp;");
 }

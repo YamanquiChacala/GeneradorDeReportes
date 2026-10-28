@@ -2,6 +2,7 @@ import { ReportSheetSchema } from "../common/gas-parts";
 import {
     buildCopyPasteRequest,
     buildFieldsMask,
+    buildHidePreviousPeriodsAssistanceRequests,
     buildProtectExtraSheetRequests,
     buildTransferRequests,
     buildUpdateCellsRequest,
@@ -21,10 +22,10 @@ import { loadReport } from "./load";
  * @param newPeriod - The period to apply to all student sheets.
  * @param resetComments - Whether to clear the copied comments and ability values before updating the period.
  */
-export function switchPeriod(reportFileId: string, newPeriod: Period, resetComments: boolean) {
+export function switchPeriod(reportFileId: string, newPeriod: Period, resetComments: boolean): ReportPersistentData {
     const { parsedReport, persistentData } = loadReport(reportFileId);
 
-    if (persistentData.currentPeriod === newPeriod && !resetComments) return; // Nothing to change
+    if (persistentData.currentPeriod === newPeriod && !resetComments) return persistentData; // Nothing to change
 
     // Update Persistent Data
     const updatePersistentDataRequests = updatePersistentData(parsedReport, persistentData, newPeriod);
@@ -41,15 +42,19 @@ export function switchPeriod(reportFileId: string, newPeriod: Period, resetComme
     // Update unprotected ranges of assistance
 
     // Hide calendar columns
+    const hideCalendarColumnsRequests = hideCalendarColumns(parsedReport, persistentData);
 
     const apiRequests: GoogleAppsScript.Sheets.Schema.Request[] = [
         ...updatePersistentDataRequests,
         ...updateStudentDataRequests,
         ...resetStudentsCommentsRequests,
         ...unprotectedRangesRequests,
+        ...hideCalendarColumnsRequests,
     ];
 
     Sheets?.Spreadsheets.batchUpdate({ requests: apiRequests }, reportFileId);
+
+    return persistentData;
 }
 
 /**
@@ -196,4 +201,12 @@ function updateUnprotectedRanges(
     const studentProtectionRequests = buildProtectExtraSheetRequests(parsedReport, userEmail, unprotectedRanges);
 
     return studentProtectionRequests;
+}
+
+function hideCalendarColumns(parsedReport: ParsedSpreadsheet<typeof ReportSheetSchema>, persistentData: ReportPersistentData): GoogleAppsScript.Sheets.Schema.Request[] {
+    const getMappedSheet = createRequiredGetter(parsedReport.mappedSheets, "hoja de reporte");
+
+    const assistanceSheetId = getMappedSheet(ReportSheetSchema.sheets.attendance.sheetName).properties?.sheetId ?? 0;
+
+    return buildHidePreviousPeriodsAssistanceRequests(assistanceSheetId, 9, persistentData.currentPeriod, persistentData.configData.dates, persistentData.calendar);
 }

@@ -1,7 +1,7 @@
 import { buildUtilityCard, headerIcon, notify, onPopCardStack, textButton } from "../common/gas-parts";
 import { Colors, getInputs } from "../common/gas-utils";
 import { Icon } from "../common/utils";
-import { type mainMenuCardName, mainMenuCards, NavParam, SingleStudentReportInputs, SwitchPeriodInputs } from "./cards";
+import { buildReportsPeriodsAndCalendarCard, type mainMenuCardName, mainMenuCards, NavParam, SingleStudentReportInputs, SwitchPeriodInputs } from "./cards";
 import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
 import { switchPeriod } from "./periods";
@@ -165,9 +165,12 @@ export function onSwitchPeriod(e: GoogleAppsScript.Addons.EventObject): GoogleAp
         const reportFileId = e?.sheets?.id;
         if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
 
-        switchPeriod(reportFileId, period, reset);
+        const persistentData = switchPeriod(reportFileId, period, reset);
 
-        return notify("✔️ Periodo Cambiado con éxito.");
+        return CardService.newActionResponseBuilder()
+            .setNotification(CardService.newNotification().setText("✔️ Periodo Cambiado con éxito."))
+            .setNavigation(CardService.newNavigation().updateCard(buildReportsPeriodsAndCalendarCard(persistentData)))
+            .build();
     } catch (error) {
         console.error(error);
         const errorMessage = error instanceof Error ? error.message : String(error);
