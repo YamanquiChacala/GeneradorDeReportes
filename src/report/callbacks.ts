@@ -1,10 +1,19 @@
 import { buildUtilityCard, headerIcon, notify, onPopCardStack, textButton } from "../common/gas-parts";
 import { Colors, getInputs } from "../common/gas-utils";
 import { Icon } from "../common/utils";
-import { buildReportsPeriodsAndCalendarCard, type mainMenuCardName, mainMenuCards, NavParam, SingleStudentReportInputs, SwitchPeriodInputs } from "./cards";
+import {
+    buildReportsPeriodsAndCalendarCard,
+    type mainMenuCardName,
+    mainMenuCards,
+    NavParam,
+    ProtectSectionsInputs,
+    SingleStudentReportInputs,
+    SwitchPeriodInputs,
+} from "./cards";
 import { generateAllReports, generateSingleReport } from "./generateReports";
 import { loadReportPersistentData } from "./load";
 import { switchPeriod } from "./periods";
+import { updateProtectedSections } from "./protections";
 
 const JOB_PREFIX = "reportJob:";
 const STALE_AFTER_MS = 15 * 60 * 1000;
@@ -156,7 +165,7 @@ export function triggerProcessGenerateAllReports() {
 }
 
 export function onSwitchPeriod(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
-    const mainErrorMessage = "❌ Error creando reporte individual: ";
+    const mainErrorMessage = "❌ Error cambiando periodo: ";
 
     try {
         const { period, reset } = getInputs(e.commonEventObject.formInputs, SwitchPeriodInputs.schema);
@@ -171,6 +180,29 @@ export function onSwitchPeriod(e: GoogleAppsScript.Addons.EventObject): GoogleAp
             .setNotification(CardService.newNotification().setText("✔️ Periodo Cambiado con éxito."))
             .setNavigation(CardService.newNavigation().updateCard(buildReportsPeriodsAndCalendarCard(persistentData)))
             .build();
+    } catch (error) {
+        console.error(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return notify(`${mainErrorMessage}${errorMessage}`);
+    }
+}
+
+export function onChangeProtectedSections(e: GoogleAppsScript.Addons.EventObject): GoogleAppsScript.Card_Service.ActionResponse {
+    const mainErrorMessage = "❌ Error actualizando secciones protegidas: ";
+
+    try {
+        const { protectedSections } = getInputs(e.commonEventObject.formInputs, ProtectSectionsInputs.schema);
+
+        const reportFileId = e?.sheets?.id;
+        if (reportFileId == null) throw new Error("Unexpected error, file should be defined.");
+
+        updateProtectedSections(reportFileId, protectedSections.abilities, protectedSections.comments, [
+            protectedSections.period1,
+            protectedSections.period2,
+            protectedSections.period3,
+        ]);
+
+        return notify("✔️ Protección actualizada.");
     } catch (error) {
         console.error(error);
         const errorMessage = error instanceof Error ? error.message : String(error);

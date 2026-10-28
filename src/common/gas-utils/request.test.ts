@@ -1037,7 +1037,7 @@ describe("GAS Util, Requests", () => {
                 { color: "white", name: "Segundo", subjects: 2 },
             ],
             calendar: [0, 1, 2, 3, 4, 5],
-            protectedSections: { habilities: true, comments: false, trimesters: [false, true, false] },
+            protectedSections: { abilities: true, comments: false, trimesters: [false, true, false] },
             students: [
                 {
                     type: StudentRowType.STUDENT,

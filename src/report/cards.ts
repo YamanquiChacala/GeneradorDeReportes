@@ -2,7 +2,7 @@ import { coloredParagraph, decoratedTextWithCallback, headerIcon, iconImage, spa
 import { Colors, checkboxGroup, defineActionParameters, defineInputsSchema, InputType, ParamType } from "../common/gas-utils";
 import { Period, type ProtectedSections, type ReportPersistentData, StudentRowType } from "../common/report-utils";
 import { Icon } from "../common/utils";
-import { onGenerateAllReports, onGenerateIndividualReport, onPushMenuCard, onSwitchPeriod } from "./callbacks";
+import { onChangeProtectedSections, onGenerateAllReports, onGenerateIndividualReport, onPushMenuCard, onSwitchPeriod } from "./callbacks";
 
 export const mainMenuCards = {
     reports: buildReportCreateReportsCard,
@@ -217,13 +217,13 @@ function buildProtectedSection(protectedSections: ProtectedSections): GoogleApps
         .setType(CardService.SelectionInputType.CHECK_BOX)
         .setTitle("Secciones a bloquear")
         .setFieldName(ProtectSectionsInputs.fieldName("protectedSections"))
-        .addItem("🔒 Habilidades", ProtectSectionsInputs.option("protectedSections", "abilities"), protectedSections.habilities)
+        .addItem("🔒 Habilidades", ProtectSectionsInputs.option("protectedSections", "abilities"), protectedSections.abilities)
         .addItem("🔒 Comentarios", ProtectSectionsInputs.option("protectedSections", "comments"), protectedSections.comments)
         .addItem("🔒 Calificaciones del 1er Periodo", ProtectSectionsInputs.option("protectedSections", "period1"), protectedSections.trimesters[0])
         .addItem("🔒 Calificaciones del 2do Periodo", ProtectSectionsInputs.option("protectedSections", "period2"), protectedSections.trimesters[1])
         .addItem("🔒 Calificaciones del 3er Periodo", ProtectSectionsInputs.option("protectedSections", "period3"), protectedSections.trimesters[2]);
 
-    const applyAction = CardService.newAction().setFunctionName(""); // TODO: Create callback
+    const applyAction = CardService.newAction().setFunctionName(onChangeProtectedSections.name);
 
     const applyButton = CardService.newTextButton()
         .setText("🔐 - Aplicar protección")

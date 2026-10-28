@@ -31,7 +31,7 @@ describe("Report Utils. Period Utilities", () => {
                 subjectGradingWeights: [1, 1, 1],
             },
             protectedSections: {
-                habilities: false,
+                abilities: false,
                 comments: false,
                 trimesters: [false, false, false],
             },

@@ -16,7 +16,7 @@ export interface ConfigData {
 }
 
 export interface ProtectedSections {
-    habilities: boolean;
+    abilities: boolean;
     comments: boolean;
     trimesters: [boolean, boolean, boolean];
 }

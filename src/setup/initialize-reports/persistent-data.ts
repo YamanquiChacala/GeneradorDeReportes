@@ -66,7 +66,7 @@ export function fillPersistentData(
     const persistentData: ReportPersistentData = {
         currentPeriod: Period.FIRST,
         protectedSections: {
-            habilities: false,
+            abilities: false,
             comments: false,
             trimesters: [false, true, true],
         },
