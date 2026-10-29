@@ -43,16 +43,16 @@
 
 # Menu 
 ## Reports
-* [ ] Generate individual report
+* [x] Generate individual report
     - Dropdown to select student
     - Text field to set file name
-* [ ] Generate all reports
+* [x] Generate all reports
 
 ## Periods
-* [ ] Set current period
+* [x] Set current period
     - Radio select period (3 in total)
-* [ ] Reset comments
-* [ ] Protect/unprotect period
+* [x] Reset comments
+* [x] Protect/unprotect period
     - Checkbox select period(s) (3 in total)
 
 ## Calendar
@@ -94,6 +94,7 @@
 * [ ] Update Template
 * [ ] Create script / github action to auto-deploy
 * [ ] Copy ~/.clasprc as a secret
+* [ ] Advance version number
 
 
 # Function Flow
@@ -131,6 +132,10 @@
             - ⚡ [`onGenerateIndividualReport`](../src/report/callbacks.ts) - Saves a PDF report of the selected student
                 - 🛠️ [`generateSingleReport`](../src/report/generateReports.ts) - Creates the HTML of a single report 📈
         - 📄 [`buildReportsPeriodsAndCalendarCard`](../src/report/cards.ts) - Menu to control periods and calendar
+            - ⚡ [`onSwitchPeriod`](../src/report/callbacks.ts) - Receives target Period
+                - 🛠️ [`switchPeriod`](../src/report/periods.ts) - Changes the Period
+            - ⚡ [`onChangeProtectedSections`](../src/report/callbacks.ts) - Receives the sections to protect
+                - 🛠️ [`updateProtectedSections`](../src/report/protections.ts) - Updates the protected sections
 
 
 
@@ -147,3 +152,23 @@
 ⚖️ (balance-scale)
 🗝️ (old-key)
 ✔️ (heavy_check_mark)
+
+
+### Deploy
+- push to github
+    - update version number. On `package.json`?
+- clasp
+    - automatizar authentication
+    - aceptar cambios a `appsscript.json`
+- script.google.com
+    - Implementar -> Administrar las implementaciones => Editar
+        - Cambiar a la versión más nueva del código
+        - Cambiar la descripción con el número de versión
+- console.cloud.google.com
+    - APIs y servicios => Pantalla de consentimiento de OAuth => Acceso a los datos
+        - Comparar con `appscript.json` y añadir/quitar permisos
+    - APIs y servicios habilitados => Google Workspace Marketplace SDK
+        - Permisos de OAuth
+            - Comparar con `appscript.json` y añadir/quitar permisos
+        - Ficha de PlayStore
+             
