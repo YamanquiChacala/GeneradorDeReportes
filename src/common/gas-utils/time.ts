@@ -11,7 +11,6 @@ export function getSheetsDate(epoch: number): number {
 /**
  * Converts a Sheets Epoch into a Unix Epoch.
  */
-
 export function getEpochDate(sheetsDate: number): number {
     return (sheetsDate - SHEETS_EPOCH_OFFSET) * MS_PER_DAY;
 }

@@ -19,11 +19,17 @@ export interface HSLColor {
 }
 
 export enum Icon {
+    FORWARD = "material-symbols/chevron-forward-rounded",
     WARNING = "material-symbols/warning-rounded",
     FOLDER_QUESTION = "mdi/folder-question",
     FOLDER = "noto/file-folder", // 📁
     CLIPBOARD = "noto/clipboard", // 📋 Used to represent the Setup
     CHART = "noto/bar-chart", // 📊 Used to represent the Report
+    PAGE = "noto/page-facing-up", // 📄
+    CALENDAR = "noto/spiral-calendar", //📅
+    STUDENT = "noto/graduation-cap", // 🧑‍🎓
+    BOOKS = "noto/books", // 📚
+    WEIGHTS = "noto/balance-scale", // ⚖️
 }
 
 export enum CssColorMap {

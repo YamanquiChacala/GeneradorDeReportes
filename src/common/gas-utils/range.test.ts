@@ -1,4 +1,4 @@
-import { createRange, createSingleCellRange, getRangeHeight, getRangeWidth, offsetGridRange, shrinkRangeWidth } from "./range";
+import { createRange, createSingleCellRange, getRangeData, getRangeHeight, getRangeWidth, getStringRangeData, offsetGridRange, shrinkRangeWidth } from "./range";
 
 describe("GAS Utils, Range", () => {
     describe("createRange", () => {
@@ -204,6 +204,164 @@ describe("GAS Utils, Range", () => {
                 startColumnIndex: 2,
                 endColumnIndex: 2, // Original width calculated as 0, remains 0.
             });
+        });
+    });
+
+    describe("getRangeData", () => {
+        it("returns range-sized data from sparse grid chunks and ignores cells outside the range", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = {
+                properties: { gridProperties: { rowCount: 10, columnCount: 10 } },
+                data: [
+                    {
+                        rowData: [{ values: [{ effectiveValue: { stringValue: "Origin" } }] }, { values: [{ effectiveValue: { numberValue: 12 } }] }],
+                    },
+                    {
+                        startRow: 3,
+                        startColumn: 2,
+                        rowData: [{ values: [{ effectiveValue: { stringValue: "Offset" } }] }],
+                    },
+                    {
+                        startRow: 8,
+                        startColumn: 2,
+                        rowData: [{ values: [{ effectiveValue: { stringValue: "Outside rows" } }] }],
+                    },
+                    {
+                        startRow: 2,
+                        startColumn: 8,
+                        rowData: [{ values: [{ effectiveValue: { stringValue: "Outside columns" } }] }],
+                    },
+                ],
+            };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 0,
+                endRowIndex: 5,
+                startColumnIndex: 0,
+                endColumnIndex: 5,
+            };
+
+            const result = getRangeData(sheet, range);
+
+            expect(result).toHaveLength(5);
+            expect(result[0]).toHaveLength(5);
+            expect(result[0]?.[0]?.effectiveValue?.stringValue).toBe("Origin");
+            expect(result[1]?.[0]?.effectiveValue?.numberValue).toBe(12);
+            expect(result[3]?.[2]?.effectiveValue?.stringValue).toBe("Offset");
+            expect(result[4]?.[4]).toStrictEqual({});
+        });
+
+        it("maps data correctly when the range starts at a nonzero row and column", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = {
+                data: [
+                    {
+                        startRow: 4,
+                        startColumn: 6,
+                        rowData: [{ values: [{ effectiveValue: { stringValue: "Selected cell" } }] }],
+                    },
+                ],
+            };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 3,
+                endRowIndex: 5,
+                startColumnIndex: 5,
+                endColumnIndex: 7,
+            };
+
+            const result = getRangeData(sheet, range);
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toHaveLength(2);
+            expect(result[1]?.[1]?.effectiveValue?.stringValue).toBe("Selected cell");
+        });
+
+        it("returns a correctly sized matrix of empty cells when grid data is absent", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = {};
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 2,
+                endRowIndex: 4,
+                startColumnIndex: 3,
+                endColumnIndex: 5,
+            };
+
+            const result = getRangeData(sheet, range);
+
+            expect(result).toHaveLength(2);
+            expect(result[0]).toHaveLength(2);
+            expect(result[0]?.[0]).toStrictEqual({});
+        });
+
+        it("uses sheet grid dimensions for missing range ends", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = {
+                properties: { gridProperties: { rowCount: 6, columnCount: 8 } },
+                data: [
+                    {
+                        startRow: 5,
+                        startColumn: 7,
+                        rowData: [{ values: [{ effectiveValue: { stringValue: "Bottom right" } }] }],
+                    },
+                ],
+            };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 2,
+                startColumnIndex: 3,
+            };
+
+            const result = getRangeData(sheet, range);
+
+            expect(result).toHaveLength(4);
+            expect(result[0]).toHaveLength(5);
+            expect(result[3]?.[4]?.effectiveValue?.stringValue).toBe("Bottom right");
+        });
+
+        it("returns an empty matrix when missing range ends cannot be resolved", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = { data: [] };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 2,
+                startColumnIndex: 3,
+            };
+
+            expect(getRangeData(sheet, range)).toStrictEqual([]);
+        });
+
+        it("returns an empty matrix for a range with zero dimensions", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = { data: [] };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 2,
+                endRowIndex: 2,
+                startColumnIndex: 3,
+                endColumnIndex: 3,
+            };
+
+            expect(getRangeData(sheet, range)).toStrictEqual([]);
+        });
+    });
+
+    describe("getStringRangeData", () => {
+        it("returns effective string values and uses empty strings for other or missing values", () => {
+            const sheet: GoogleAppsScript.Sheets.Schema.Sheet = {
+                data: [
+                    {
+                        rowData: [{ values: [{ formattedValue: "Text" }, { formattedValue: "12" }] }, { values: [{ formattedValue: "" }] }],
+                    },
+                ],
+            };
+            const range: GoogleAppsScript.Sheets.Schema.GridRange = {
+                sheetId: 1,
+                startRowIndex: 0,
+                endRowIndex: 2,
+                startColumnIndex: 0,
+                endColumnIndex: 2,
+            };
+
+            expect(getStringRangeData(sheet, range)).toStrictEqual([
+                ["Text", "12"],
+                ["", ""],
+            ]);
         });
     });
 });

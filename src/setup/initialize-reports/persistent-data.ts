@@ -1,6 +1,7 @@
 import { ReportSheetSchema, SetupSheetSchema } from "../../common/gas-parts";
 import type { ExtractRangeNames, ParsedSpreadsheet } from "../../common/gas-utils";
 import {
+    buildAddPersistentMetadata,
     buildFieldsMask,
     buildTransferRequests,
     buildUpdateSheetPropertiesRequest,
@@ -13,7 +14,7 @@ import {
     makeUserEntered,
     RangeBehavior,
 } from "../../common/gas-utils";
-import type { AcademicField, ConfigData, ReportPersistentData, StudentRow, WeightedSubject } from "../../common/report-utils";
+import { type AcademicField, type ConfigData, Period, type ReportPersistentData, type StudentRow, type WeightedSubject } from "../../common/report-utils";
 import { normalizeSubjectWeights, normalizeTrimesterWeights, parseAcademicFieldsAndSubjects, parseCalendarDays, parseStudentList } from "../../common/setup-utils";
 import { typedEntries } from "../../common/utils";
 
@@ -61,13 +62,11 @@ export function fillPersistentData(
         index: 0,
     });
 
-    // Build response
-    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [...configRequests, ...subjectRequests, ...studentRequests, ...calendarDaysRequests, propertiesRequest];
-
     // Build memory version of the persistent data, for use without calling get again.
     const persistentData: ReportPersistentData = {
+        currentPeriod: Period.FIRST,
         protectedSections: {
-            habilities: false,
+            abilities: false,
             comments: false,
             trimesters: [false, true, true],
         },
@@ -77,6 +76,19 @@ export function fillPersistentData(
         academicFields,
         subjects,
     };
+
+    // Add persistentData to report metadata
+    const persistentMetadataRequest = buildAddPersistentMetadata(persistentData);
+
+    // Build response
+    const requests: GoogleAppsScript.Sheets.Schema.Request[] = [
+        ...configRequests,
+        ...subjectRequests,
+        ...studentRequests,
+        ...calendarDaysRequests,
+        propertiesRequest,
+        persistentMetadataRequest,
+    ];
 
     return { persistentData, requests };
 }

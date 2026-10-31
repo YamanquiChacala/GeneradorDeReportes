@@ -1,6 +1,79 @@
-import { gcd, getRandomId, getStep, getUpperBoundIndex } from "./math";
+import { gcd, getRandomId, getStep, getUpperBoundIndex, pickRandom, randomInt } from "./math";
 
 describe("Math Utilities", () => {
+    describe("randomInt", () => {
+        let randomSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            randomSpy = jest.spyOn(Math, "random");
+        });
+
+        afterEach(() => {
+            randomSpy.mockRestore();
+        });
+
+        it("returns the minimum when Math.random is 0", () => {
+            randomSpy.mockReturnValue(0);
+            expect(randomInt(3, 8)).toBe(3);
+        });
+
+        it("can return the maximum when Math.random is close to 1", () => {
+            randomSpy.mockReturnValue(0.9999999999);
+            expect(randomInt(3, 8)).toBe(8);
+        });
+
+        it("returns the only possible value when the bounds are equal", () => {
+            randomSpy.mockReturnValue(0.5);
+            expect(randomInt(4, 4)).toBe(4);
+        });
+
+        it("supports ranges with negative bounds", () => {
+            randomSpy.mockReturnValue(0);
+            expect(randomInt(-5, -2)).toBe(-5);
+
+            randomSpy.mockReturnValue(0.9999999999);
+            expect(randomInt(-5, -2)).toBe(-2);
+        });
+    });
+
+    describe("pickRandom", () => {
+        let randomSpy: jest.SpyInstance;
+
+        beforeEach(() => {
+            randomSpy = jest.spyOn(Math, "random");
+        });
+
+        afterEach(() => {
+            randomSpy.mockRestore();
+        });
+
+        it("returns an empty array for empty options", () => {
+            expect(pickRandom([], 3)).toEqual([]);
+            expect(randomSpy).not.toHaveBeenCalled();
+        });
+
+        it("returns an empty array when count is zero", () => {
+            expect(pickRandom(["only option"], 0)).toEqual([]);
+            expect(randomSpy).not.toHaveBeenCalled();
+        });
+
+        it("can repeatedly select the only available option", () => {
+            randomSpy.mockReturnValue(0.5);
+            expect(pickRandom(["only option"], 3)).toEqual(["only option", "only option", "only option"]);
+            expect(randomSpy).toHaveBeenCalledTimes(3);
+        });
+
+        it("samples with replacement and can select either endpoint", () => {
+            randomSpy.mockReturnValueOnce(0).mockReturnValueOnce(0.9999999999).mockReturnValueOnce(0);
+            expect(pickRandom(["first", "last"], 3)).toEqual(["first", "last", "first"]);
+        });
+
+        it("returns values of the options' original type", () => {
+            randomSpy.mockReturnValueOnce(0).mockReturnValueOnce(0.9999999999);
+            expect(pickRandom([1, "two"], 2)).toEqual([1, "two"]);
+        });
+    });
+
     describe("getRandomId", () => {
         let randomSpy: jest.SpyInstance;
         let usedIds: Set<number>;

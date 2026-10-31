@@ -10,6 +10,16 @@ export function getRandomId(usedIds: Set<number>): number {
     return newId;
 }
 
+export function randomInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+export function pickRandom<T>(options: T[], count: number): T[] {
+    if (options.length === 0) return [];
+    // biome-ignore lint/style/noNonNullAssertion: guaranteed valid index
+    return Array.from({ length: count }, () => options[randomInt(0, options.length - 1)]!);
+}
+
 /**
  * Calculates how much to move in a circle of `n` elements to go over every element without repeating, while jumping as much as possible.
  */

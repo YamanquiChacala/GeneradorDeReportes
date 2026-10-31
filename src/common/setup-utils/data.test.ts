@@ -1631,6 +1631,8 @@ describe("Setup Utils. Data", () => {
                 textFormat: { fontFamily: "Bebas Neue", fontSize: 5 },
             },
         };
+        const boldFormat = { userEnteredFormat: { textFormat: { bold: true, fontSize: 10 } } };
+        const boldFormatFields = "userEnteredFormat.textFormat.bold";
 
         it("should build format data for attendance per class with field averages", () => {
             const result = buildSummaryPeriodFormat({ mappedRange, attendancePerClass: true, averagePerField: true, subjects, fields });
@@ -1678,6 +1680,11 @@ describe("Setup Utils. Data", () => {
                         fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
                         range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 16, endColumnIndex: 17 },
                     },
+                    {
+                        cell: boldFormat,
+                        fields: boldFormatFields,
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 17, endColumnIndex: 18 },
+                    },
                 ],
             });
         });
@@ -1708,6 +1715,11 @@ describe("Setup Utils. Data", () => {
                         cell: borderFormat,
                         fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
                         range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 13, endColumnIndex: 14 },
+                    },
+                    {
+                        cell: boldFormat,
+                        fields: boldFormatFields,
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 14, endColumnIndex: 15 },
                     },
                 ],
             });
@@ -1762,6 +1774,11 @@ describe("Setup Utils. Data", () => {
                         fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
                         range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 15, endColumnIndex: 16 },
                     },
+                    {
+                        cell: boldFormat,
+                        fields: boldFormatFields,
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 16, endColumnIndex: 17 },
+                    },
                 ],
             });
         });
@@ -1797,6 +1814,11 @@ describe("Setup Utils. Data", () => {
                         cell: borderFormat,
                         fields: "userEnteredFormat.borders.right,userEnteredFormat.padding.left,userEnteredFormat.padding.right,userEnteredFormat.horizontalAlignment,userEnteredFormat.textFormat.fontFamily,userEnteredFormat.textFormat.fontSize",
                         range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 12, endColumnIndex: 13 },
+                    },
+                    {
+                        cell: boldFormat,
+                        fields: boldFormatFields,
+                        range: { sheetId: 42, startRowIndex: 10, endRowIndex: 20, startColumnIndex: 13, endColumnIndex: 14 },
                     },
                 ],
             });

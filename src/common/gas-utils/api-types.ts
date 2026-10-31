@@ -90,3 +90,8 @@ export enum HorizontalAlign {
     CENTER = "CENTER",
     RIGHT = "RIGHT",
 }
+
+export enum DeveloperMetadataVisibility {
+    DOCUMENT = "DOCUMENT",
+    PROJECT = "PROJECT",
+}

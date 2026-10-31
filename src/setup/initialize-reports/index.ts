@@ -5,6 +5,7 @@ import {
     type ExtractRangeNames,
     FILE_VALIDATION_KEY,
     FileType,
+    getCellDataArray,
     getCellText,
     type MappedNamedRange,
     parseSpreadsheet,
@@ -43,6 +44,20 @@ export function initializeReport(setupFileId: string, parentId: string) {
         "namedRanges",
     );
     const SetupSpreadsheet = Sheets?.Spreadsheets.get(setupFileId, { fields: setupFieldsMask });
+
+    // Start replacement.
+    // URL for just the specific range data you need (e.g., 'Sheet1!A1:D10') as a simple array of strings
+    // or array of raw values appending ?valueRenderOption=UNFORMATTED_VALUE
+    // const dataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${setupFileId}/values/${encodeURIComponent(targetRange)}`;
+
+    // const token = ScriptApp.getOAuthToken();
+    // const headers = { Authorization: `Bearer ${token}` };
+    // const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${setupFileId}?fields=${encodeURIComponent(setupFieldsMask)}`;
+
+    // const responses = UrlFetchApp.fetchAll([{ url: metadataUrl, headers: headers, muteHttpExceptions: true }]);
+    // const SetupSpreadsheet = JSON.parse(responses[0]?.getContentText() ?? "");
+    // End replacement
+
     const { mappedRanges: setupMappedRanges } = parseSpreadsheet(SetupSpreadsheet, SetupSheetSchema);
 
     // Create report file.
@@ -95,11 +110,29 @@ function createReportFile(parentId: string, setupMappedRanges: Partial<Record<Ra
 
     if (groupName === "") throw new Error("Falta nombre del grupo.");
 
+    // Checking for duplicated students
+    const seen = new Set<string>();
+    const studentData = getCellDataArray(getRange(SetupSheetSchema.sheets.groupData.ranges.students), true);
+    for (const studentRow of studentData) {
+        const firstName = studentRow[0]?.effectiveValue?.stringValue?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
+        const lastName = studentRow[1]?.effectiveValue?.stringValue?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
+
+        if (!firstName && !lastName) continue;
+
+        const fullName = `${firstName}\0${lastName}`;
+
+        if (seen.has(fullName)) {
+            throw new Error("Alumno duplicado");
+        }
+
+        seen.add(fullName);
+    }
+
     const fileName = sanitizeFileName(groupName);
 
     const reportFile = Drive?.Files.copy(
         {
-            name: fileName,
+            name: `_${fileName}`,
             parents: [parentId],
             appProperties: {
                 [FILE_VALIDATION_KEY]: FileType.REPORT,

@@ -1,4 +1,4 @@
-import { getA1Notation, getColumnLetter, type MappedNamedRange } from "../gas-utils";
+import { getColumnLetter, getMappedRangeA1Notation, type MappedNamedRange } from "../gas-utils";
 import { DEFAULT_COMMENT } from "./constants";
 import type { AcademicField, Period } from "./types";
 
@@ -82,8 +82,8 @@ export function createStudentGeneralAttendanceFormula(
     attendanceSheetName: string,
     absences = false,
 ): string {
-    const firstNameA1 = getA1Notation({ mappedRange: firstNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
-    const lastNameA1 = getA1Notation({ mappedRange: lastNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const firstNameA1 = getMappedRangeA1Notation({ mappedRange: firstNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const lastNameA1 = getMappedRangeA1Notation({ mappedRange: lastNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
     const returnColumn = getColumnLetter((absences ? 4 : 3) + period * 2);
     return `=LET(
     first_names, '${attendanceSheetName}'!B:B,
@@ -91,6 +91,31 @@ export function createStudentGeneralAttendanceFormula(
     return_data, '${attendanceSheetName}'!${returnColumn}:${returnColumn},
     raw_result, XLOOKUP(${firstNameA1}&${lastNameA1}, ARRAYFORMULA(first_names&last_names), return_data),
     ARRAYFORMULA(IF(ISNUMBER(raw_result), ROUND(raw_result * { ${absences ? 1 : 10} }, 2), raw_result))
+)`;
+}
+
+/**
+ * Build a formula that looks up a student's absences for periods 1-3 and joins
+ * the non-empty results with " / ".
+ */
+export function createStudentGeneralAttendanceSummaryFormula(
+    firstNameMappedRange: MappedNamedRange,
+    lastNameMappedRange: MappedNamedRange,
+    attendanceSheetName: string,
+): string {
+    const firstNameA1 = getMappedRangeA1Notation({ mappedRange: firstNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const lastNameA1 = getMappedRangeA1Notation({ mappedRange: lastNameMappedRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+
+    // Columns E, G, and I hold the absences for periods 1, 2, and 3 respectively.
+    return `=LET(
+    first_names, '${attendanceSheetName}'!B:B,
+    last_names, '${attendanceSheetName}'!C:C,
+    search_key, ${firstNameA1}&${lastNameA1},
+    search_range, ARRAYFORMULA(first_names&last_names),
+    abs_1, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!E:E, ""),
+    abs_2, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!G:G, ""),
+    abs_3, XLOOKUP(search_key, search_range, '${attendanceSheetName}'!I:I, ""),
+    TEXTJOIN(" / ", TRUE, abs_1, abs_2, abs_3)
 )`;
 }
 
@@ -105,9 +130,9 @@ export function createStudentPerSubjectAttendanceFormula(
     lastNameRange: MappedNamedRange,
     attendanceSheetName: string,
 ): string {
-    const subjectA1 = getA1Notation({ mappedRange: subjectRange, width: 1, height: 1, rowOffset, lockColumns: true });
-    const firstNameA1 = getA1Notation({ mappedRange: firstNameRange, width: 1, height: 1, lockRows: true, lockColumns: true });
-    const lastNameA1 = getA1Notation({ mappedRange: lastNameRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const subjectA1 = getMappedRangeA1Notation({ mappedRange: subjectRange, width: 1, height: 1, rowOffset, lockColumns: true });
+    const firstNameA1 = getMappedRangeA1Notation({ mappedRange: firstNameRange, width: 1, height: 1, lockRows: true, lockColumns: true });
+    const lastNameA1 = getMappedRangeA1Notation({ mappedRange: lastNameRange, width: 1, height: 1, lockRows: true, lockColumns: true });
     const returnColum = getColumnLetter(3 + period * 2);
     return `=LET(
     start_row, MATCH(${subjectA1}, ${attendanceSheetName}!A:A, 0),
@@ -137,8 +162,8 @@ export function createStudentPerSubjectAttendanceFormula(
  * Formula to claculate each subject's average in the Student Template Sheet.
  */
 export function createIndividualSubjectAverageFormula(valuesRange: MappedNamedRange, rowOffset: number, weightsRange: MappedNamedRange): string {
-    const valuesA1 = getA1Notation({ mappedRange: valuesRange, rowOffset, colOffset: 1, height: 1, width: 3, lockColumns: true });
-    const weightsA1 = getA1Notation({ mappedRange: weightsRange, includeSheetName: true, lockRows: true, lockColumns: true });
+    const valuesA1 = getMappedRangeA1Notation({ mappedRange: valuesRange, rowOffset, colOffset: 1, height: 1, width: 3, lockColumns: true });
+    const weightsA1 = getMappedRangeA1Notation({ mappedRange: weightsRange, includeSheetName: true, lockRows: true, lockColumns: true });
 
     return `=IFERROR(
     ROUND(
@@ -156,9 +181,9 @@ export function createIndividualSubjectAverageFormula(valuesRange: MappedNamedRa
 export function createFinalSubjectAverageFormula(trim1: MappedNamedRange, trim2: MappedNamedRange, trim3: MappedNamedRange, rowOffset: number): string {
     const colOffset = (trim3.namedRange.range.endColumnIndex ?? 0) - 2;
 
-    const trim1A1 = getA1Notation({ mappedRange: trim1, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
-    const trim2A1 = getA1Notation({ mappedRange: trim2, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
-    const trim3A1 = getA1Notation({ mappedRange: trim3, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
+    const trim1A1 = getMappedRangeA1Notation({ mappedRange: trim1, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
+    const trim2A1 = getMappedRangeA1Notation({ mappedRange: trim2, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
+    const trim3A1 = getMappedRangeA1Notation({ mappedRange: trim3, rowOffset, colOffset, height: 1, width: 1, lockColumns: true });
 
     return `=IF(
     COUNT(${trim1A1}, ${trim2A1}, ${trim3A1})=3,
@@ -177,7 +202,7 @@ export function createFieldFormula(
     subjectsRange: MappedNamedRange,
     weightsRange: MappedNamedRange,
 ): string {
-    const valuesA1 = getA1Notation({
+    const valuesA1 = getMappedRangeA1Notation({
         mappedRange: subjectsRange,
         rowOffset: subjectsOffset,
         colOffset,
@@ -185,7 +210,7 @@ export function createFieldFormula(
         height: field.subjects,
         lockRows: true,
     });
-    const weightsA1 = getA1Notation({
+    const weightsA1 = getMappedRangeA1Notation({
         includeSheetName: true,
         mappedRange: weightsRange,
         rowOffset: subjectsOffset,
@@ -205,7 +230,7 @@ export function createFieldFormula(
  * Helper to calculate the average of the academic fields in the Student Template Sheet.
  */
 export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOffset: number, decimals: number): string {
-    const valuesA1 = getA1Notation({ mappedRange: mappedFields, colOffset, width: 1, lockRows: true });
+    const valuesA1 = getMappedRangeA1Notation({ mappedRange: mappedFields, colOffset, width: 1, lockRows: true });
     return `=IF(COUNT(${valuesA1}) <> ROWS(${valuesA1}),"", ROUND(AVERAGE(${valuesA1}), ${decimals}))`;
 }
 
@@ -213,8 +238,8 @@ export function createFieldAverageFormula(mappedFields: MappedNamedRange, colOff
  * Helper to crete the average of all the subjects in the Student Template Sheet.
  */
 export function createAllSubjectsAverageFormula(mappedSubjects: MappedNamedRange, mappedWeights: MappedNamedRange, colOffset: number, decimals: number): string {
-    const valuesA1 = getA1Notation({ mappedRange: mappedSubjects, colOffset, width: 1, lockRows: true });
-    const weightsA1 = getA1Notation({ mappedRange: mappedWeights, colOffset: 1, width: 1, includeSheetName: true, lockRows: true, lockColumns: true });
+    const valuesA1 = getMappedRangeA1Notation({ mappedRange: mappedSubjects, colOffset, width: 1, lockRows: true });
+    const weightsA1 = getMappedRangeA1Notation({ mappedRange: mappedWeights, colOffset: 1, width: 1, includeSheetName: true, lockRows: true, lockColumns: true });
     return `=IFERROR(ROUND(AVERAGE.WEIGHTED(${valuesA1}, ${weightsA1}), ${decimals}))`;
 }
 
@@ -222,7 +247,7 @@ export function createAllSubjectsAverageFormula(mappedSubjects: MappedNamedRange
  * Helper to create Status formula to validate a whole row in the Status Sheet
  */
 export function createSetupRowValidFormula(mappedRange: MappedNamedRange, rowOffset: number, colOffset: number): string {
-    const checkRangeA1 = getA1Notation({ mappedRange, rowOffset, colOffset, height: 1, width: -1, lockColumns: true });
+    const checkRangeA1 = getMappedRangeA1Notation({ mappedRange, rowOffset, colOffset, height: 1, width: -1, lockColumns: true });
     return `=IF(COUNTIF(${checkRangeA1}, "✔️") + COUNTIF(${checkRangeA1}, "❌") = 0, "", IF(COUNTIF(${checkRangeA1}, "❌") > 0, "❌", "✔️"))`;
 }
 
@@ -275,12 +300,11 @@ export function createSetupSepCommentLenghtValidationFormula(a1Cell: string) {
 export function createSummaryGeneralAbsencesFormula(assitanceSheetName: string, firstName: string, lastName: string, period: 0 | 1 | 2): string {
     const targetColumns: [string, string, string] = ["E", "G", "I"];
     const returnColumn = targetColumns[period];
-
-    // Wrap sheet name in single quotes and safely escape any existing single quotes
-    const safeSheetName = `'${assitanceSheetName.replace(/'/g, "''")}'`;
+    const safeFirstName = firstName.replace(/"/g, '""');
+    const safeLastName = lastName.replace(/"/g, '""');
 
     // Construct the final formula string
-    return `=FILTER(${safeSheetName}!$${returnColumn}$4:$${returnColumn}, ${safeSheetName}!$B$4:$B = "${firstName}", ${safeSheetName}!$C$4:$C = "${lastName}")`;
+    return `=FILTER('${assitanceSheetName}'!$${returnColumn}$4:$${returnColumn}, '${assitanceSheetName}'!$B$4:$B = "${safeFirstName}", '${assitanceSheetName}'!$C$4:$C = "${safeLastName}")`;
 }
 
 /**

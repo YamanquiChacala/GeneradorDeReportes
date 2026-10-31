@@ -21,16 +21,14 @@ export const CreateSetupFileParams = defineActionParameters({
  * Presents the user with a form to fill and a button to create the initialization file.
  */
 export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Card_Service.Card {
-    const card = CardService.newCardBuilder().setHeader(headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala" }));
+    const header = headerImage({ title: "Registro Inicial de Grupos", subtitle: "Montessori Chacala" });
+
+    const card = CardService.newCardBuilder().setHeader(header);
 
     const generalSection = CardService.newCardSection().setHeader("Configuración General:");
 
     generalSection.addWidget(
-        CardService.newTextInput()
-            .setValue("Secundaria")
-            .setFieldName(CreateSetupFileInputs.fieldName("groupName"))
-            .setTitle("Nombre del Grupo")
-            .setHint("Ejemplo: 5to y 6to"),
+        CardService.newTextInput().setFieldName(CreateSetupFileInputs.fieldName("groupName")).setTitle("Nombre del Grupo").setHint("Ejemplo: 5to y 6to"),
     );
 
     generalSection.addWidget(
@@ -47,27 +45,13 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
 
     const datesSection = CardService.newCardSection().setHeader("Calendario Escolar");
 
-    datesSection.addWidget(
-        CardService.newDatePicker().setValueInMsSinceEpoch(1787961600000).setFieldName(CreateSetupFileInputs.fieldName("dateStart")).setTitle("Primer dia de clases"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateStart")).setTitle("Primer dia de clases"));
 
-    datesSection.addWidget(
-        CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1793491200000)
-            .setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester1"))
-            .setTitle("Último día del primer trimestre"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester1")).setTitle("Último día del primer trimestre"));
 
-    datesSection.addWidget(
-        CardService.newDatePicker()
-            .setValueInMsSinceEpoch(1797292800000)
-            .setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester2"))
-            .setTitle("Último día del segundo trimestre"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateEndTrimester2")).setTitle("Último día del segundo trimestre"));
 
-    datesSection.addWidget(
-        CardService.newDatePicker().setValueInMsSinceEpoch(1812326400000).setFieldName(CreateSetupFileInputs.fieldName("dateEnd")).setTitle("Último día de clases"),
-    );
+    datesSection.addWidget(CardService.newDatePicker().setFieldName(CreateSetupFileInputs.fieldName("dateEnd")).setTitle("Último día de clases"));
 
     const createAction = CardService.newAction()
         .setFunctionName(onCreateSetupFile.name)
@@ -82,7 +66,7 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
 
     const footer = CardService.newFixedFooter().setPrimaryButton(submitButton);
 
-    return card.addSection(generalSection).addSection(datesSection).setFixedFooter(footer).build();
+    return card.addSection(generalSection).addSection(datesSection).setFixedFooter(footer).setPeekCardHeader(header).build();
 }
 
 export const GenerateCalendarParams = defineActionParameters({

@@ -16,7 +16,8 @@ export function getColumnLetter(column: number): string {
 }
 
 interface A1NotationParams {
-    mappedRange: MappedNamedRange;
+    range: GoogleAppsScript.Sheets.Schema.GridRange;
+    sheet?: GoogleAppsScript.Sheets.Schema.Sheet;
     includeSheetName?: boolean;
     customSheetName?: string;
     lockRows?: boolean;
@@ -27,11 +28,16 @@ interface A1NotationParams {
     width?: number;
 }
 
+interface MappedA1NotationParams extends Omit<A1NotationParams, "range" | "sheet"> {
+    mappedRange: MappedNamedRange;
+}
+
 /**
  * Returns the A1 notation of a range.
  */
 export function getA1Notation({
-    mappedRange,
+    range,
+    sheet,
     includeSheetName = false,
     customSheetName,
     lockRows = false,
@@ -41,7 +47,7 @@ export function getA1Notation({
     height,
     width,
 }: A1NotationParams): string {
-    const adjustedRange = offsetGridRange({ origin: mappedRange.namedRange.range, rowOffset, colOffset, height, width });
+    const adjustedRange = offsetGridRange({ origin: range, rowOffset, colOffset, height, width });
 
     // Missing start indices in GridRange imply 0
     const startRowIndex = adjustedRange.startRowIndex ?? 0;
@@ -75,7 +81,7 @@ export function getA1Notation({
     if (!hasEndRow && !hasEndCol) {
         // Fallback: Fully unbounded at both ends (e.g., starting at C3 and going to bottom-right).
         // Requires sheet boundaries to explicitly cap.
-        const gridProps = mappedRange.sheet.properties?.gridProperties;
+        const gridProps = sheet?.properties?.gridProperties;
         const maxRows = gridProps?.rowCount ?? 1000;
         const maxCols = gridProps?.columnCount ?? 1000;
         const maxColLetter = getColumnLetter(maxCols - 1);
@@ -116,11 +122,18 @@ export function getA1Notation({
         if (customSheetName) {
             return `'${customSheetName}'!${a1Notation}`;
         }
-        if (mappedRange.sheet.properties?.title) {
-            const escapedTitle = mappedRange.sheet.properties.title.replace(/'/g, "''");
+        if (sheet?.properties?.title) {
+            const escapedTitle = sheet.properties.title.replace(/'/g, "''");
             return `'${escapedTitle}'!${a1Notation}`;
         }
     }
 
     return a1Notation;
+}
+
+/**
+ * Returns the A1 notation of a mapped named range.
+ */
+export function getMappedRangeA1Notation({ mappedRange, ...params }: MappedA1NotationParams): string {
+    return getA1Notation({ range: mappedRange.namedRange.range, sheet: mappedRange.sheet, ...params });
 }

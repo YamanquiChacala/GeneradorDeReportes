@@ -71,12 +71,13 @@ export const ReportSheetSchema = {
         persistentData: {
             sheetName: "_Persistente",
             ranges: {
+                currentPeriod: "pers_Periodo",
                 attendancePerClass: "pers_AsistenciaPorAsignatura",
                 averagePerField: "pers_PromedioPorCampo",
                 subjectGradingWeights: "pers_Calif_Pesos",
                 protectSkills: "pers_ProtHabilidades",
                 protectComments: "pers_ProtObservaciones",
-                protectPeriods: "pers_protPeriods",
+                protectPeriods: "pers_ProtPeriodos",
                 dates: "pers_Fechas",
                 fields: "pers_CamposFormativos",
                 subjects: "pers_Asignaturas",

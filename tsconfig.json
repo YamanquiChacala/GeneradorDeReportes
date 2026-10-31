@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["google-apps-script", "jest", "node"],
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2023"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "@kitajs/html",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["google-apps-script", "jest", "node"],
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noUncheckedIndexedAccess": true,
@@ -18,5 +20,5 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitThis": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

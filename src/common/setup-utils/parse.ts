@@ -88,6 +88,7 @@ export function parseStudentList(studentSetupData: readonly GoogleAppsScript.She
     let studentNumber = 0;
     let firstTime = true;
     let emptyBefore = false;
+
     for (const studentRow of studentSetupData) {
         const firstName = studentRow[0]?.effectiveValue?.stringValue;
         const lastName = studentRow[1]?.effectiveValue?.stringValue;
@@ -98,6 +99,7 @@ export function parseStudentList(studentSetupData: readonly GoogleAppsScript.She
         }
 
         studentNumber++;
+
         const sheetName = sanitizeSheetName(`${firstName} ${lastName}`);
 
         const student: Student = {

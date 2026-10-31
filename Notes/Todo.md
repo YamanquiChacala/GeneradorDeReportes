@@ -27,6 +27,9 @@
 * [ ] Double check the first row is frozen (the student name) 
 * [ ] Check editable ranges for comments
 
+## Cards
+* [ ] Add peekHeader (`newCardHeader`) to all Cards (`card.setPeekCardHeader`)
+
 ## Student Sheets
 
 ## Status
@@ -38,20 +41,60 @@
 * [x] Use `createRequiredGetter` and siplified names everywhere.
 * [ ] Request "sheets.protectedRanges" to be able to edit them from the `protectedRangeId: number`;
 
-# Menu
-## Assistance
-* [ ] Recalculate periods
-* [ ] Insert / Delete days
-* [ ] Add / Remove / Reorder students
+# Menu 
+## Reports
+* [x] Generate individual report
+    - Dropdown to select student
+    - Text field to set file name
+* [x] Generate all reports
 
-## Persistant Data
-* [ ] Normalize weights (for grades and subjects) 
-* [ ] Change weights
+## Periods
+* [x] Set current period
+    - Radio select period (3 in total)
+* [x] Reset comments
+* [x] Protect/unprotect period
+    - Checkbox select period(s) (3 in total)
 
-## Deploy
+## Calendar
+* [ ] Add/remove day
+    - Day (range) select
+* [ ] Change period dates
+    - Text field for each period date (3 in total)
+
+## Students
+* [ ] Add student
+    - Full card with all the new studetn's data
+* [ ] Remove student
+    - Dropdown to select student
+* [ ] Reorder student
+    - Dropdown to select student
+    - Dropdown? to select new position
+
+## Grades
+* [ ] Change general weights
+    - Text field for each weight (3 in total)
+* [ ] Change subject weights
+    - Text field for each subject (about 15 in total)
+
+## Subjects / Fields
+* [ ] Rename Subject/Field
+    - Dropdown to select subject/field
+    - Text field to put new name
+* [ ] Reorder Subject/Field
+    - Dropdown to select subject/field
+    - Dropdown? to select new position
+* [ ] Add subject/field
+    - Text field for name
+    - Dropdown? for position
+* [ ] Remove subject/field
+    - Dropdown to select item
+
+
+# Automatic Deploy on GitHub
 * [ ] Update Template
 * [ ] Create script / github action to auto-deploy
 * [ ] Copy ~/.clasprc as a secret
+* [ ] Advance version number
 
 
 # Function Flow
@@ -81,8 +124,19 @@
                 - 🛠️ [`createStudentSheets`](../src/setup/initialize-reports/student-sheets.ts) - Create copies of the student template for each student.
                 - 🛠️ [`prepareStatusSheet`](../src/setup/initialize-reports/status.ts) - Prepare the Status sheet to reach to each student sheet.
                 - 🛠️ [`prepareSummarySheet`](../src/setup/initialize-reports/summary.ts) - Prepare the Summary to see the data of each student.
+    - 📄 [`buildReportOptionsMainCard`](../src/report/cards.ts) - Main 📊 Report Admin Menu
+        - ⚡ [`onPushMenuCard`](../src/report/callbacks.ts) - Navigate to a submenu
+        - 📄 [`buildReportCreateReportsCard`](../src/report/cards.ts) - Menu to create student reports
+            - ⚡ [`onGenerateAllReports`](../src/report/callbacks.ts) - Creates the PDF reports of all students
+                - 🛠️ [`generateAllReports`](../src/report/generateReports.ts) - Creates the HTML of all reports 📈
+            - ⚡ [`onGenerateIndividualReport`](../src/report/callbacks.ts) - Saves a PDF report of the selected student
+                - 🛠️ [`generateSingleReport`](../src/report/generateReports.ts) - Creates the HTML of a single report 📈
+        - 📄 [`buildReportsPeriodsAndCalendarCard`](../src/report/cards.ts) - Menu to control periods and calendar
+            - ⚡ [`onSwitchPeriod`](../src/report/callbacks.ts) - Receives target Period
+                - 🛠️ [`switchPeriod`](../src/report/periods.ts) - Changes the Period
+            - ⚡ [`onChangeProtectedSections`](../src/report/callbacks.ts) - Receives the sections to protect
+                - 🛠️ [`updateProtectedSections`](../src/report/protections.ts) - Updates the protected sections
 
-    - 📄 TODO Report file editing (this is the biggest UI entry point)
 
 
 
@@ -92,4 +146,29 @@
 🔀 (twisted)
 📋 (clipboard)
 📊 (bar-chart)
+📅 (date) 
+🧑‍🎓 (student)
+📚 (books)
+⚖️ (balance-scale)
+🗝️ (old-key)
+✔️ (heavy_check_mark)
 
+
+### Deploy
+- push to github
+    - update version number. On `package.json`?
+- clasp
+    - automatizar authentication
+    - aceptar cambios a `appsscript.json`
+- script.google.com
+    - Implementar -> Administrar las implementaciones => Editar
+        - Cambiar a la versión más nueva del código
+        - Cambiar la descripción con el número de versión
+- console.cloud.google.com
+    - APIs y servicios => Pantalla de consentimiento de OAuth => Acceso a los datos
+        - Comparar con `appscript.json` y añadir/quitar permisos
+    - APIs y servicios habilitados => Google Workspace Marketplace SDK
+        - Permisos de OAuth
+            - Comparar con `appscript.json` y añadir/quitar permisos
+        - Ficha de PlayStore
+             
