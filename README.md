@@ -5,6 +5,7 @@
 </div>
 
 [![codecov](https://codecov.io/github/YamanquiChacala/GeneradorDeReportes/graph/badge.svg?token=3H7BTF98TM)](https://codecov.io/github/YamanquiChacala/GeneradorDeReportes)
+[![Scc Count Badge](https://sloc.xyz/github/YamanquiChacala/GeneradorDeReportes/)](https://github.com/YamanquiChacala/GeneradorDeReportes/)
 
 # Sistema de Reportes
 
