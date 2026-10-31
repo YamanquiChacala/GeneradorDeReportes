@@ -16,13 +16,13 @@ jobs:
     steps:
       # 1. Grabs your code from the repository
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # 2. Sets up Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version-file: 'package.json'
           cache: 'npm'
 
       # 3. Installs your devDependencies from package.json
@@ -36,7 +36,7 @@ jobs:
       # 5. Uploads the lcov file to Codecov
       - name: Upload coverage reports to Codecov
         if: github.base_ref == 'main' || github.ref_name == 'main'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage/lcov.info
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Fail if this version was already released
         run: |
@@ -68,13 +68,17 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version-file: 'package.json'
           cache: 'npm'
+      
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       
       - name: Fail if this version was already released
         run: |
@@ -85,10 +89,6 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
-      
-      - name: Read version
-        id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       
       - name: Build
         run: npm run build
