@@ -22,29 +22,28 @@ Desde el Reporte, el complemento también permite generar archivos PDF individua
 ## Contenido
 
 - [Roles](#roles)
-- [Cómo obtener el complemento](#como-obtener-el-complemento)
+- [Cómo obtener el complemento](#cómo-obtener-el-complemento)
 - [Flujo de trabajo](#flujo-de-trabajo)
-- [Guía para administradores](#guia-para-administradores)
-- [Guía para docentes](#guia-para-docentes)
+- [Guía para administradores](#guía-para-administradores)
+- [Guía para docentes](#guía-para-docentes)
 - [Hojas del archivo Reporte](#hojas-del-archivo-reporte)
-- [Generación de reportes PDF](#generacion-de-reportes-pdf)
+- [Generación de reportes PDF](#generación-de-reportes-pdf)
 - [Funciones pendientes](#funciones-pendientes)
-- [Desarrollo del proyecto](#desarrollo-del-proyecto)
-- [Licencia](#licencia)
+- [Créditos y licencia](#créditos-y-licencia)
 
 ## Roles
 
 ### Administradores
 
-Preparan el Registro Inicial 📋 desde Drive, crean el Reporte 📊 desde ese archivo y administran las funciones disponibles del complemento en la hoja de cálculo. También generan los reportes en PDF 📄 y consultan el estado de captura del grupo.
+Preparan el Registro Inicial desde Drive, crean el Reporte desde ese archivo y administran las funciones disponibles del complemento en la hoja de cálculo. También generan los reportes en PDF y consultan el estado de captura del grupo.
 
 ### Docentes
 
-Trabajan directamente en el archivo Reporte 📊. No necesitan instalar ni abrir el complemento: utilizan las hojas de asistencia y las hojas individuales para registrar asistencia, evaluaciones, habilidades y comentarios.
+Trabajan directamente en el archivo Reporte. No necesitan instalar ni abrir el complemento: utilizan las hojas de asistencia y las hojas individuales para registrar asistencia, evaluaciones, habilidades y comentarios.
 
-![Reporte 📊](images/screenshots/Report_full.png)
+![Archivo Reporte](images/screenshots/Report_full.png)
 
-En la imagen puede verse el archivo de Reporte 📊, donde los maestros pueden tomar asistencia, y el complemento para los administradores a la derecha.
+En la imagen puede verse el archivo Reporte, donde los maestros pueden tomar asistencia, y el complemento para los administradores a la derecha.
 
 ## Cómo obtener el complemento
 
@@ -54,7 +53,7 @@ El complemento es **interno y exclusivo para la escuela**. Los administradores p
 :---:|:---:
 ![Permisos de la app 1](images/screenshots/oauth_1.png) | ![Permisos de la app 2](images/screenshots/oauth_2.png)
 
-Una vez instalado, se abre desde Drive para crear un Registro Inicial 📋 y desde Google Sheets para trabajar con un Registro Inicial 📋 o un Reporte 📊. La primera vez que se use, Google puede solicitar autorización para que el complemento acceda a los archivos necesarios.
+Una vez instalado, se abre desde Drive para crear un Registro Inicial y desde Google Sheets para trabajar con un Registro Inicial o un Reporte. La primera vez que se use, Google puede solicitar autorización para que el complemento acceda a los archivos necesarios.
 
 ## Flujo de trabajo
 
@@ -82,7 +81,7 @@ Drive
 
 Los archivos de trabajo se guardan en la carpeta elegida. El Registro Inicial puede duplicarse desde Sheets para preparar otro grupo con una configuración similar.
 
-![Creación de Registro Inicial 📋](images/screenshots/Drive_setup.png)
+![Creación de Registro Inicial](images/screenshots/Drive_setup.png)
 
 ### 2. Completar y revisar el Registro Inicial
 
@@ -95,24 +94,24 @@ Abre el archivo creado en Google Sheets y completa la información del grupo en 
 
 Revisa el calendario generado y marca los días que no sean escolares, según corresponda. Si cambiaste las fechas del ciclo, puedes usar **Regenerar Calendario** desde el complemento; al regenerarlo se borrarán los días festivos o excepciones que se hayan marcado manualmente.
 
-![Registro Inicial 📋, Información del grupo](images/screenshots/Setup_Form.png) | ![Registro Inicial 📋, Calendario](images/screenshots/Setup_Calendar.png) | ![Registro Inicial 📋, Complemento](images/screenshots/Setup.png)
+![Registro Inicial, información del grupo](images/screenshots/Setup_Form.png) | ![Registro Inicial, calendario](images/screenshots/Setup_Calendar.png) | ![Registro Inicial, complemento](images/screenshots/Setup.png)
 :---:|:---:|:---:
 
-### 3. Crear el archivo Reporte 📊
+### 3. Crear el archivo Reporte
 
-Con el Registro Inicial 📋 abierto en Sheets:
+Con el Registro Inicial abierto en Sheets:
 
 1. Abre el complemento.
 2. Verifica los datos del grupo y el calendario.
-3. Usa **📊 Crear Archivo de Calificaciones**.
+3. Usa **Crear Archivo de Calificaciones**.
 
 El complemento crea el Reporte a partir de la configuración del grupo y lo guarda junto al Registro Inicial. Incluye una hoja por estudiante, hojas de asistencia y consulta, y hojas internas ocultas que el sistema necesita para funcionar.
 
-![Pestañas del reporte 📊](images/screenshots/Report_Sheets.png)
+![Pestañas del Reporte](images/screenshots/Report_Sheets.png)
 
 ### 4. Administrar el Reporte
 
-Abre el archivo Reporte 📊 y usa el complemento de Sheets para las acciones disponibles, entre ellas:
+Abre el archivo Reporte y usa el complemento de Sheets para las acciones disponibles, entre ellas:
 
 - **Cambiar el periodo actual.** Al avanzar de periodo se actualiza el periodo mostrado en las hojas. Existe una opción para reiniciar las habilidades y los comentarios; al marcarla se borrarán esos datos de todos los estudiantes.
 - **Proteger secciones.** Se pueden bloquear o desbloquear las habilidades, los comentarios y las calificaciones de cada periodo para controlar qué partes pueden editar los docentes.
@@ -120,12 +119,12 @@ Abre el archivo Reporte 📊 y usa el complemento de Sheets para las acciones di
 
 Comprueba el periodo y las protecciones antes de que los docentes comiencen a capturar información.
 
-![Reporte 📊, menú principal](images/screenshots/Report_MainMenu.png) | ![Reporte 📊, Generación de reportes](images/screenshots/Report_GenerateReports.png) | ![Reporte 📊, Manejo de periodos](images/screenshots/Report_Periods.png)
+![Reporte, menú principal](images/screenshots/Report_MainMenu.png) | ![Reporte, generación de reportes](images/screenshots/Report_GenerateReports.png) | ![Reporte, manejo de periodos](images/screenshots/Report_Periods.png)
 :--:|:--:|:--:
 
 ## Guía para docentes
 
-Los docentes utilizan el archivo Reporte 📊 compartido por la escuela. **No necesitan instalar el complemento**: su trabajo se realiza completamente en Google Sheets.
+Los docentes utilizan el archivo Reporte compartido por la escuela. **No necesitan instalar el complemento**: su trabajo se realiza completamente en Google Sheets.
 
 Según las secciones que el administrador haya dejado editables, pueden:
 
@@ -137,7 +136,7 @@ Según las secciones que el administrador haya dejado editables, pueden:
 
 Las celdas protegidas no deben modificarse. Si una sección necesaria está bloqueada, el docente debe pedir al administrador que revise las protecciones.
 
-## Hojas del archivo Reporte 📊
+## Hojas del archivo Reporte
 
 Las pestañas visibles para el trabajo cotidiano son:
 
@@ -151,7 +150,7 @@ Las pestañas visibles para el trabajo cotidiano son:
 El archivo también contiene pestañas internas ocultas: **_Persistente**, **_AsistenciaTemplate** y **_EstudianteTemplate**. No las desocultes, renombres ni edites manualmente: hacerlo puede afectar el funcionamiento del Reporte.
 
 <details>
-<summary>Las diferentes pestañas del Reporte 📊</summary>
+<summary>Las diferentes pestañas del Reporte</summary>
 
 #### Asistencia
 ![Asistencia](images/screenshots/Report_Assistance.png)
@@ -173,7 +172,7 @@ Desde la sección **Reportes** del complemento abierto en el Reporte, el adminis
 
 Los PDF se guardan en la misma carpeta de Drive que el archivo Reporte. La generación grupal puede tardar varios minutos; espera a que aparezcan los archivos antes de iniciar otro proceso.
 
-![Reporte 📊, Generación de reportes](images/screenshots/Report_GenerateReports.png) | ![Reporte 📊 en PDF](images/screenshots/Report_pdf.png)
+![Reporte, generación de reportes](images/screenshots/Report_GenerateReports.png) | ![Reporte en PDF](images/screenshots/Report_pdf.png)
 :---:|:---:
 
 ## Funciones pendientes
