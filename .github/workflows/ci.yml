@@ -39,7 +39,7 @@ jobs:
         uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage/lcov.info
+          files: ./coverage/lcov.info
 
   version-check:
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
