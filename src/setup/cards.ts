@@ -28,11 +28,7 @@ export function buildCreateSetupFileCard(folderId: string): GoogleAppsScript.Car
     const generalSection = CardService.newCardSection().setHeader("Configuración General:");
 
     generalSection.addWidget(
-        CardService.newTextInput()
-            .setValue("Secundaria")
-            .setFieldName(CreateSetupFileInputs.fieldName("groupName"))
-            .setTitle("Nombre del Grupo")
-            .setHint("Ejemplo: 5to y 6to"),
+        CardService.newTextInput().setFieldName(CreateSetupFileInputs.fieldName("groupName")).setTitle("Nombre del Grupo").setHint("Ejemplo: 5to y 6to"),
     );
 
     generalSection.addWidget(
